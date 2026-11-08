@@ -6,7 +6,6 @@ vars:
   MYTODO_DB_USER: '{{.MYTODO_DB_USER | default "todoist"}}'
   MYTODO_DB_PASSWORD: '{{.MYTODO_DB_PASSWORD | default "todoist"}}'
   MYTODO_DB_NAME: '{{.MYTODO_DB_NAME | default "todoist"}}'
-  MYTODO_DATABASE_URL: '{{.MYTODO_DATABASE_URL | default "postgres://todoist:todoist@127.0.0.1:5432/todoist"}}'
   MYTODO_DB_DUMP_FILE: '{{.MYTODO_DB_DUMP_FILE | default (printf "dumps/todoist-%s.dump" (now | date "2006-01-02_150405"))}}'
 
 tasks:
@@ -107,7 +106,7 @@ tasks:
     desc: Run Drizzle migrations for the PostgreSQL database
     dir: apps/backend
     cmds:
-      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm exec drizzle-kit migrate --config drizzle.config.ts
+      - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm exec drizzle-kit migrate --config drizzle.config.ts
 
   dev:docker:db:dump:
     desc: Save a restorable custom-format dump from the dev Docker database
@@ -128,7 +127,7 @@ tasks:
     desc: List user accounts in the development database
     dir: apps/backend
     cmds:
-      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users list
+      - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users list
 
   dev:docker:users:create:
     desc: Create a user account (USERNAME=... PASSWORD=... [ADMIN=true])
@@ -139,7 +138,7 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}" && test -n "{{.PASSWORD}}"
-      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   dev:docker:users:update:
     desc: Update an account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
@@ -151,7 +150,7 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}"
-      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   dev:docker:users:delete:
     desc: Delete a user account (USERNAME=...)
@@ -160,4 +159,4 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}"
-      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users delete "{{.USERNAME}}"
+      - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users delete "{{.USERNAME}}"

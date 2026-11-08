@@ -38,7 +38,7 @@ pnpm install
 cp .env.example .env
 ```
 
-The backend uses this default database URL when `MYTODO_DATABASE_URL` is not provided:
+The backend reads `MYTODO_DB_HOST`, `MYTODO_DB_PORT`, `MYTODO_DB_USER`, `MYTODO_DB_PASSWORD`, and `MYTODO_DB_NAME`. If omitted, it defaults to this local connection:
 
 ```bash
 postgres://todoist:todoist@localhost:5432/todoist
@@ -96,15 +96,15 @@ task dev:docker:users:delete USERNAME=sam
 task dev:docker:users:list
 ```
 
-The Taskfile user commands use `MYTODO_DATABASE_URL`, or default to `postgres://todoist:todoist@127.0.0.1:5432/todoist`.
+The Taskfile user commands use the `MYTODO_DB_*` settings, which default to the local development database.
 
 ### Production Docker Compose with shared PostgreSQL
 
-The production stack joins the `infra` Docker network and uses PostgreSQL and Caddy from your shared infrastructure. Before starting it, create a dedicated database using your infrastructure's database provisioning method, then set the percent-encoded `MYTODO_DATABASE_URL` in `.env.production`:
+The production stack joins the `infra` Docker network and uses PostgreSQL and Caddy from your shared infrastructure. Before starting it, create a dedicated database using your infrastructure's database provisioning method, then set `MYTODO_DB_HOST`, `MYTODO_DB_PORT`, `MYTODO_DB_USER`, `MYTODO_DB_PASSWORD`, and `MYTODO_DB_NAME` in `.env.production`. Enter the database password as-is; the backend encodes it when building the connection string:
 
 ```bash
 cp deploy.env.example .env.production
-# Edit MYTODO_DATABASE_URL in .env.production
+# Edit the MYTODO_DB_* settings in .env.production
 docker compose --env-file .env.production up -d --build
 ```
 
@@ -130,9 +130,9 @@ Point the hostname to the server and reload the existing reverse-proxy Compose s
 To run without a shared infrastructure stack, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env.production` with a strong alphanumeric database password and a public hostname whose DNS points to this server:
 
 ```dotenv
-MYTODO_POSTGRES_USER=todoist
-MYTODO_POSTGRES_PASSWORD=replace-with-a-strong-alphanumeric-password
-MYTODO_POSTGRES_DB=todoist
+MYTODO_DB_USER=todoist
+MYTODO_DB_PASSWORD=replace-with-a-strong-alphanumeric-password
+MYTODO_DB_NAME=todoist
 MYTODO_DOMAIN=todoist.example.com
 ```
 
@@ -166,7 +166,6 @@ MYTODO_DB_PORT=5432
 MYTODO_DB_USER=todoist
 MYTODO_DB_PASSWORD=todoist
 MYTODO_DB_NAME=todoist
-MYTODO_DATABASE_URL=postgres://todoist:todoist@127.0.0.1:5432/todoist
 ```
 
 Create the database:

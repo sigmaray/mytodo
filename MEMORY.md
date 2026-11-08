@@ -1,5 +1,16 @@
 # Project Memory
 
+## 2026-11-08 — Remove MYTODO_DATABASE_URL configuration
+
+- Replaced the URL setting with `MYTODO_DB_*` connection fields. Added a pure backend helper that safely builds a PostgreSQL URL, and wired server, Drizzle, CLI, Compose, Taskfile, deployment examples, and the local production env file to the fields.
+- Verification: Compose configs validate for dev, test, shared-infra, and standalone stacks; Task migration dry-run resolves; no `MYTODO_DATABASE_URL` remains outside this historical memory; `pnpm build` and `git diff --check` pass. Unit/E2E tests were not run.
+
+## 2026-11-08 — Consolidate database environment variables
+
+- Removed the duplicate `MYTODO_POSTGRES_*` configuration group. Compose now maps the shared `MYTODO_DB_USER`, `MYTODO_DB_PASSWORD`, and `MYTODO_DB_NAME` variables to the PostgreSQL container's required `POSTGRES_*` names; Taskfile uses the same variables.
+- Kept `MYTODO_DATABASE_URL` for application connections, since its host and URL encoding differ by runtime context.
+- Verification: dev, test, and standalone Compose configs validate; no `MYTODO_POSTGRES_*` references remain; `git diff --check` passes.
+
 ## 2026-11-08 — Prefix project configuration variables with MYTODO_
 
 - Renamed variables in `.env.example`, the local `.env.production`, and deployment examples to `MYTODO_*`; updated Compose interpolation, Caddy domain substitution, Taskfile database variables, and README examples accordingly. Standard container-level variables such as `DATABASE_URL`, `PORT`, and `POSTGRES_USER` remain mapped inside services.

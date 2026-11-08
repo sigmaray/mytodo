@@ -1,7 +1,8 @@
 import { hashPassword } from "./auth";
 import { createPostgresUserRepository } from "./db/users-repository";
+import { getDatabaseUrl } from "./database-url";
 
-const databaseUrl = process.env.DATABASE_URL ?? "postgres://todoist:todoist@127.0.0.1:5432/todoist";
+const databaseUrl = getDatabaseUrl();
 const [action, ...args] = process.argv.slice(2);
 const users = createPostgresUserRepository(databaseUrl);
 
