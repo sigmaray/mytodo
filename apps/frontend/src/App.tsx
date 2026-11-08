@@ -17,20 +17,21 @@ import type { Project, ProjectId, Section, SectionId, Task, TaskId, TaskNode } f
 import clsx from "clsx";
 import { Archive, CalendarDays, ChevronLeft, ChevronRight, ClipboardCopy, Code2, Copy, Database, Download, Edit3, Eye, GripVertical, Inbox, KeyRound, ListChecks, MessageSquare, MoreHorizontal, Menu, MoveRight, Paperclip, Plus, Search, Settings, Tag, Trash2, Users, X } from "lucide-react";
 import type { DragEvent, FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, ReactElement, PointerEvent as ReactPointerEvent, UIEvent } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./vendor/bootstrap.min.css";
 import { createTaskApi, createToolsApi } from "./api";
+import { CommentAttachment, formatAttachmentSize, renderCommentMarkdown } from "./components/CommentAttachment";
+import { authStatusQueryKey, inboxDescriptionQueryKey, projectQueryKey, sectionQueryKey, settingsQueryKey, tablesQueryKey, taskQueryKey } from "./queryKeys";
+import { isTaskDueToday, taskDueDateTone, toLocalIsoDate } from "./dateUtils";
+const ToolsPage = lazy(() => import("./pages/ToolsPage").then((page) => ({ default: page.ToolsPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then((page) => ({ default: page.SettingsPage })));
+const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage").then((page) => ({ default: page.AdminUsersPage })));
+const ArchivedProjectsPage = lazy(() => import("./pages/ArchivedProjectsPage").then((page) => ({ default: page.ArchivedProjectsPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then((page) => ({ default: page.LoginPage })));
 import type { AppSettings, ApplicationApi, ToolsApi } from "./api";
 import "./App.css";
 
-const taskQueryKey = Object.freeze(["tasks"]);
-const projectQueryKey = Object.freeze(["projects"]);
-const sectionQueryKey = Object.freeze(["sections"]);
-const inboxDescriptionQueryKey = Object.freeze(["inbox-description"]);
-const tablesQueryKey = Object.freeze(["tools", "tables"]);
-const settingsQueryKey = Object.freeze(["app-settings"]);
-const authStatusQueryKey = Object.freeze(["auth-status"]);
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
 const createCommentId = (): string => {
@@ -49,60 +50,6 @@ const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
 };
 
 const notifyAttachedFiles = (files: ReadonlyArray<File>) => files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
-
-const renderInlineMarkdown = (text: string): ReadonlyArray<ReactElement | string> => {
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\((?:https?:\/\/|mailto:)[^)]+\))/g;
-  return text.split(pattern).filter(Boolean).map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
-    if (part.startsWith("`") && part.endsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
-    if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
-    const link = /^\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^)]+)\)$/.exec(part);
-    return link === null ? part : <a key={index} href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>;
-  });
-};
-
-const renderCommentMarkdown = (body: string) => body.split("\n").map((line, index) => {
-  const heading = /^(#{1,3})\s+(.+)$/.exec(line);
-  if (heading !== null) return <h4 key={index}>{renderInlineMarkdown(heading[2] ?? "")}</h4>;
-  if (line.startsWith("- ")) return <div className="comment-markdown-list-item" key={index}>• {renderInlineMarkdown(line.slice(2))}</div>;
-  return <p key={index}>{renderInlineMarkdown(line)}</p>;
-});
-
-const textPreviewExtensions = new Set(["md", "txt", "csv", "yaml", "yml", "json", "js", "jsx", "ts", "tsx", "css", "html", "py", "go", "rs", "java", "c", "cpp", "sh"]);
-const formatAttachmentSize = (size: number) => {
-  if (size < 1024) return `${size} B`;
-  const units = ["KB", "MB", "GB"];
-  let value = size / 1024;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) { value /= 1024; unitIndex += 1; }
-  return `${Number(value.toFixed(1))} ${units[unitIndex]}`;
-};
-
-const CommentAttachment = ({ attachment, onRemove }: Readonly<{ attachment: NonNullable<Task["comments"][number]["attachments"]>[number]; onRemove?: () => void }>) => {
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [preview, setPreview] = useState("");
-  const [previewLoaded, setPreviewLoaded] = useState(false);
-  const [previewError, setPreviewError] = useState("");
-  const extension = attachment.name.split(".").at(-1)?.toLowerCase() ?? "";
-  const canPreview = textPreviewExtensions.has(extension) || attachment.mimeType.startsWith("text/") || attachment.mimeType === "application/json";
-  useEffect(() => {
-    if (!previewOpen || previewLoaded || previewError.length > 0) return;
-    if (attachment.size > 512 * 1024) {
-      setPreviewError("Preview is limited to files up to 512 KB.");
-      return;
-    }
-    void fetch(`/attachments/${encodeURIComponent(attachment.id)}`).then(async (response) => {
-      if (!response.ok) throw new Error("Could not load preview.");
-      return response.text();
-    }).then((contents) => { setPreview(contents); setPreviewLoaded(true); }).catch(() => setPreviewError("Could not load preview."));
-  }, [attachment.id, attachment.size, previewError.length, previewLoaded, previewOpen]);
-  return <div className="comment-attachment">
-    {attachment.mimeType.startsWith("image/") ? <a href={`/attachments/${encodeURIComponent(attachment.id)}`} target="_blank" rel="noreferrer"><img className="comment-attachment-image" src={`/attachments/${encodeURIComponent(attachment.id)}`} alt={attachment.name} /></a> : null}
-    <a href={`/attachments/${encodeURIComponent(attachment.id)}`} download={attachment.name}>{attachment.name} ({Math.ceil(attachment.size / 1024)} KB)</a>
-    {canPreview ? <><button type="button" onClick={() => setPreviewOpen((open) => !open)}>{previewOpen ? "Hide preview" : "Preview"}</button>{previewOpen ? <div className="comment-attachment-preview" aria-label={`Preview ${attachment.name}`}>{previewError ? <p role="status">{previewError}</p> : <pre>{preview}</pre>}</div> : null}</> : null}
-    {onRemove ? <button type="button" className="danger comment-attachment-remove" aria-label={`Remove attachment ${attachment.name}`} onClick={onRemove}><Trash2 size={14} aria-hidden="true" />Remove</button> : null}
-  </div>;
-};
 
 type DragPlacement = "before" | "inside" | "after" | "outdent";
 type MobileDragItem = Readonly<{ kind: "task" | "project"; id: string }>;
@@ -472,9 +419,6 @@ const filterTaskTree = (tasks: ReadonlyArray<TaskNode>, predicate: (task: TaskNo
 const flattenTaskNodes = (tasks: ReadonlyArray<TaskNode>): ReadonlyArray<Task> =>
   Object.freeze(tasks.flatMap((task) => [task, ...flattenTaskNodes(task.children)]));
 
-const toLocalIsoDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-const isTaskDueToday = (dueDate: string) => dueDate === toLocalIsoDate(new Date());
-const taskDueDateTone = (dueDate: string) => dueDate < toLocalIsoDate(new Date()) ? "task-due-date-overdue" : "task-due-date-upcoming";
 
 type CalendarDay = Readonly<{
   date: string;
@@ -2638,354 +2582,6 @@ export const TaskApp = ({ api, attachmentsEnabled = false, projectArchivingEnabl
   );
 };
 
-export const ToolsPage = ({ api, navigationApi }: Readonly<{ api: ToolsApi; navigationApi?: ApplicationApi }>) => {
-  const navigate = useNavigate();
-  const sidebarScroll = useSidebarScrollPosition();
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedTable, setSelectedTable] = useState("");
-  useEffect(() => { const openQuickAdd = (event: globalThis.KeyboardEvent) => { const target = event.target; const typing = target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)); if (!typing && !event.ctrlKey && !event.metaKey && !event.altKey && ["q", "й"].includes(event.key.toLocaleLowerCase())) navigate("/?addTask=1"); }; window.addEventListener("keydown", openQuickAdd); return () => window.removeEventListener("keydown", openQuickAdd); }, []);
-  const [projectTitle, setProjectTitle] = useState("");
-  const [sql, setSql] = useState("SELECT * FROM tasks ORDER BY lexical_order;");
-  const [result, setResult] = useState<unknown>(Object.freeze({ ready: true }));
-  const [recordsLimit, setRecordsLimit] = useState<"10" | "100" | "all">("10");
-  const queryClient = useQueryClient();
-  const projects = useQuery({ queryKey: projectQueryKey, queryFn: navigationApi?.listProjects ?? (async () => Object.freeze([])) });
-  const taskTree = useQuery({ queryKey: taskQueryKey, queryFn: navigationApi?.listTasks ?? (async () => Object.freeze([])) });
-  const navigationSections = useQuery({ queryKey: sectionQueryKey, queryFn: navigationApi?.listSections ?? (async () => Object.freeze([])) });
-
-  const tables = useQuery({
-    queryKey: tablesQueryKey,
-    queryFn: api.listTables
-  });
-
-  const runAction = (action: () => Promise<unknown>) => async () => {
-    const data = await action();
-
-    setResult(data);
-    await queryClient.invalidateQueries({ queryKey: tablesQueryKey });
-  };
-
-  const clearTable = useMutation({
-    mutationFn: (table: string) => api.clearTable(table),
-    onSuccess: async (data) => {
-      setResult(data);
-      await queryClient.invalidateQueries({ queryKey: tablesQueryKey });
-    }
-  });
-
-  const runQuery = useMutation({
-    mutationFn: (nextSql: string) => api.runQuery(nextSql),
-    onSuccess: (data) => setResult(data)
-  });
-
-  const viewRecords = useMutation({ mutationFn: () => api.listRecords(tableValue, recordsLimit), onSuccess: setResult });
-
-  if (!toolsEnabled) {
-    return (
-      <main className="shell app-layout">
-        <AppSidebar api={navigationApi ?? null} />
-      <section className="workspace card shadow-sm" aria-label="Developer tools disabled">
-          <h1>Not found</h1>
-        </section>
-      </main>
-    );
-  }
-
-  const tableOptions = tables.data ?? Object.freeze([]);
-  const tableValue = selectedTable || tableOptions[0] || "";
-
-  return (
-    <main className="shell app-layout">
-      <AppSidebar api={navigationApi ?? null} />
-      <section className="workspace card shadow-sm tools-panel" aria-label="Database tools">
-        <header className="header">
-          <div><p className="eyebrow">Development tools</p><h1>Database Tools</h1><p className="tools-description">Browse table data, run SQL, and maintain the local database.</p></div>
-        </header>
-
-        <section className="card tools-card" aria-label="Browse table records">
-          <div className="card-body">
-            <div className="tools-card-heading"><Database size={20} /><div><h2>Browse table records</h2><p>Select a table and choose how many recent rows to inspect.</p></div></div>
-            <div className="tools-grid">
-              <label className="input-label" htmlFor="table-select">Table</label>
-              <select id="table-select" value={tableValue} onChange={(event) => setSelectedTable(event.target.value)}>
-                {tableOptions.map((table) => <option key={table} value={table}>{table}</option>)}
-              </select>
-              <label className="input-label" htmlFor="record-limit">Rows to view</label>
-              <select id="record-limit" value={recordsLimit} onChange={(event) => setRecordsLimit(event.target.value as "10" | "100" | "all")}>
-                <option value="10">Last 10</option><option value="100">Last 100</option><option value="all">All rows</option>
-              </select>
-              <button type="button" className="btn btn-primary" disabled={tableValue.length === 0 || viewRecords.isPending} onClick={() => viewRecords.mutate()}>{viewRecords.isPending ? "Loading records…" : "View records"}</button>
-              <button type="button" className="btn btn-outline-danger" disabled={tableValue.length === 0} onClick={() => clearTable.mutate(tableValue)}>Clear selected table</button>
-            </div>
-          </div>
-        </section>
-
-        <section className="card tools-card tools-maintenance" aria-label="Database maintenance">
-          <div className="card-body">
-            <div className="tools-card-heading"><Archive size={20} /><div><h2>Database maintenance</h2><p>Run migrations or manage development data.</p></div></div>
-            <div className="tools-maintenance-actions">
-              <button type="button" className="btn btn-outline-secondary" onClick={runAction(api.migrate)}>Run migrations</button>
-              <button type="button" className="btn btn-outline-secondary" onClick={runAction(api.seed)}>Seed test data</button>
-              <button type="button" className="btn btn-outline-danger" onClick={runAction(api.clearAllTables)}>Clear all tables</button>
-              <button type="button" className="btn btn-danger" onClick={runAction(api.dropAllTables)}>Drop all tables</button>
-            </div>
-          </div>
-        </section>
-
-        <form
-          className="sql-form card p-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            runQuery.mutate(sql);
-          }}
-        >
-          <label className="input-label" htmlFor="sql-query">
-            <span><Code2 size={16} aria-hidden="true" /> PostgreSQL query</span>
-          </label>
-          <textarea id="sql-query" value={sql} onChange={(event) => setSql(event.target.value)} />
-          <button type="submit">Run query</button>
-        </form>
-
-        <section className="card tools-result-card"><header><h2>Result</h2><span>{runQuery.isPending || viewRecords.isPending ? "Loading" : "Ready"}</span></header><pre className="query-result">{JSON.stringify(result, null, 2)}</pre></section>
-      </section>
-    </main>
-  );
-};
-
-export const SettingsPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const settings = useQuery({ queryKey: settingsQueryKey, queryFn: api.getSettings });
-  const authStatus = useQuery({ queryKey: authStatusQueryKey, queryFn: api.getAuthStatus });
-  const [confirmDelete, setConfirmDelete] = useState(true);
-  const [accountUsername, setAccountUsername] = useState("");
-  const [accountPassword, setAccountPassword] = useState("");
-  useEffect(() => {
-    const openQuickAdd = (event: globalThis.KeyboardEvent) => {
-      const target = event.target;
-      const typing = target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
-      if (!typing && !event.ctrlKey && !event.metaKey && !event.altKey && ["q", "й"].includes(event.key.toLocaleLowerCase())) navigate("/?addTask=1");
-    };
-    window.addEventListener("keydown", openQuickAdd);
-    return () => window.removeEventListener("keydown", openQuickAdd);
-  }, []);
-  useEffect(() => {
-    if (settings.data !== undefined) {
-      setConfirmDelete(settings.data.confirmDelete);
-      setAccountUsername(settings.data.username);
-    }
-  }, [settings.data]);
-
-  const saveSettings = useMutation({
-    mutationFn: api.updateSettings,
-    onSuccess: async (nextSettings) => {
-      queryClient.setQueryData(settingsQueryKey, nextSettings);
-    }
-  });
-
-  const updateAccount = useMutation({
-    mutationFn: api.updateOwnAccount,
-    onSuccess: async (user) => {
-      setAccountPassword("");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
-        queryClient.invalidateQueries({ queryKey: authStatusQueryKey })
-      ]);
-      setAccountUsername(user.username);
-    }
-  });
-
-  const logOut = async () => {
-    await api.logout();
-    await queryClient.invalidateQueries({ queryKey: authStatusQueryKey });
-  };
-
-  return (
-    <main className="shell app-layout">
-      <AppSidebar api={api} />
-      <section className="workspace card shadow-sm settings-panel" aria-label="Settings">
-        <header className="header">
-          <h1>Settings</h1>
-          <p className="settings-intro">Manage your preferences and your account.</p>
-        </header>
-
-        {settings.isLoading ? <p className="muted">Loading settings…</p> : null}
-        {settings.isError ? <p className="error">Unable to load settings.</p> : null}
-        {settings.data !== undefined ? (
-          <form
-            className="settings-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              saveSettings.mutate({ confirmDelete });
-            }}
-          >
-            <fieldset className="settings-group">
-              <legend>Deletion</legend>
-              <label className="settings-checkbox">
-                <input type="checkbox" checked={confirmDelete} onChange={(event) => setConfirmDelete(event.target.checked)} />
-                Ask for confirmation before deleting tasks, projects, or sections
-              </label>
-              <p className="settings-help">Enabled by default. This applies to your delete actions.</p>
-            </fieldset>
-
-            {saveSettings.isError ? <p className="error" role="alert">Unable to save settings. Check the login and password requirements.</p> : null}
-            {saveSettings.isSuccess ? <p className="settings-success" role="status">Settings saved.</p> : null}
-            <div className="settings-actions">
-              <button className="settings-save" type="submit" disabled={saveSettings.isPending}>
-                Save settings
-              </button>
-              {authStatus.data?.authenticated ? (
-                <button className="settings-logout" type="button" onClick={() => void logOut()}>
-                  <KeyRound size={16} aria-hidden="true" />
-                  Log out
-                </button>
-              ) : null}
-            </div>
-          </form>
-        ) : null}
-        {authStatus.data?.authenticated ? <section className="account-settings card border shadow-sm mt-4" aria-label="Your account">
-          <div className="card-header bg-light"><h2 className="h5 mb-0">Your account</h2></div>
-          <div className="card-body">
-            <form className="settings-credentials" onSubmit={(event) => { event.preventDefault(); updateAccount.mutate({ username: accountUsername.trim().toLowerCase(), ...(accountPassword.length > 0 ? { password: accountPassword } : {}) }); }}>
-              <label>Username<input required maxLength={64} autoComplete="username" value={accountUsername} onChange={(event) => setAccountUsername(event.target.value)} /></label>
-              <label>New password<input type="password" autoComplete="new-password" placeholder="Leave blank to keep" value={accountPassword} onChange={(event) => setAccountPassword(event.target.value)} /></label>
-              <p className="form-text text-muted mt-0 mb-0">Changing your password signs out other sessions.</p>
-              <button className="settings-save" type="submit" disabled={updateAccount.isPending}>Save account</button>
-            </form>
-            {updateAccount.isError ? <p className="error mt-3 mb-0" role="alert">Unable to update account. The username may already be in use.</p> : null}
-            {updateAccount.isSuccess ? <p className="settings-success mt-3 mb-0" role="status">Account updated.</p> : null}
-          </div>
-        </section> : null}
-      </section>
-    </main>
-  );
-};
-
-export const AdminUsersPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
-  const queryClient = useQueryClient();
-  const users = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newIsAdmin, setNewIsAdmin] = useState(false);
-  const [userDrafts, setUserDrafts] = useState<Record<string, { username: string; password: string; isAdmin: boolean }>>({});
-  useEffect(() => {
-    if (users.data !== undefined) setUserDrafts(Object.fromEntries(users.data.map((user) => [user.id, { username: user.username, password: "", isAdmin: user.isAdmin }])));
-  }, [users.data]);
-
-  const refreshUsers = async () => Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["users"] }),
-    queryClient.invalidateQueries({ queryKey: authStatusQueryKey })
-  ]);
-  const createUser = useMutation({
-    mutationFn: api.createUser,
-    onSuccess: async () => { setNewUsername(""); setNewPassword(""); setNewIsAdmin(false); await refreshUsers(); }
-  });
-  const updateUser = useMutation({
-    mutationFn: ({ id, patch }: Readonly<{ id: string; patch: { username?: string; password?: string; isAdmin?: boolean } }>) => api.updateUser(id, patch),
-    onSuccess: refreshUsers
-  });
-  const deleteUser = useMutation({ mutationFn: api.deleteUser, onSuccess: refreshUsers });
-  const adminCount = (users.data ?? []).filter((user) => user.isAdmin).length;
-
-  return <main className="shell app-layout">
-    <AppSidebar api={api} />
-    <section className="workspace card shadow-sm settings-panel" aria-label="User management">
-      <header className="header"><h1>User management</h1><p className="settings-intro">Create and manage workspace accounts.</p></header>
-      <section className="settings-group user-management" aria-label="Manage users">
-        <h2>Create user</h2>
-        <form className="settings-credentials" onSubmit={(event) => { event.preventDefault(); createUser.mutate({ username: newUsername.trim().toLowerCase(), password: newPassword, isAdmin: newIsAdmin }); }}>
-          <label>Username<input required maxLength={64} autoComplete="username" value={newUsername} onChange={(event) => setNewUsername(event.target.value)} /></label>
-          <label>Password<input required type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
-          <label className="settings-checkbox"><input type="checkbox" checked={newIsAdmin} onChange={(event) => setNewIsAdmin(event.target.checked)} />Administrator</label>
-          <button className="settings-save" type="submit" disabled={createUser.isPending}>Create user</button>
-        </form>
-        {createUser.isError ? <p className="error" role="alert">Could not create user. Usernames must be unique and passwords cannot be empty.</p> : null}
-        {users.isLoading ? <p className="muted">Loading users…</p> : null}
-        {users.isError ? <p className="error" role="alert">Unable to load users.</p> : null}
-        <h2>Accounts</h2>
-        <div className="managed-users">{(users.data ?? []).map((user) => {
-          const draft = userDrafts[user.id] ?? { username: user.username, password: "", isAdmin: user.isAdmin };
-          return <form className="managed-user" key={user.id} onSubmit={(event) => { event.preventDefault(); updateUser.mutate({ id: user.id, patch: { username: draft.username.trim().toLowerCase(), isAdmin: draft.isAdmin, ...(draft.password ? { password: draft.password } : {}) } }); }}>
-            <label>Username<input required maxLength={64} autoComplete="username" value={draft.username} onChange={(event) => setUserDrafts((current) => ({ ...current, [user.id]: { ...draft, username: event.target.value } }))} /></label>
-            <label>New password<input type="password" autoComplete="new-password" placeholder="Leave blank to keep" value={draft.password} onChange={(event) => setUserDrafts((current) => ({ ...current, [user.id]: { ...draft, password: event.target.value } }))} /></label>
-            <label className="settings-checkbox"><input type="checkbox" checked={draft.isAdmin} onChange={(event) => setUserDrafts((current) => ({ ...current, [user.id]: { ...draft, isAdmin: event.target.checked } }))} />Administrator</label>
-            <button type="submit" disabled={updateUser.isPending}>Save</button>
-            <button type="button" className="danger" disabled={deleteUser.isPending || (user.isAdmin && adminCount < 2)} onClick={() => { if (window.confirm(`Delete user ${user.username} and all their task data?`)) deleteUser.mutate(user.id); }}>Delete</button>
-          </form>;
-        })}</div>
-        {updateUser.isError || deleteUser.isError ? <p className="error" role="alert">Unable to update users. Keep at least one administrator and use unique usernames.</p> : null}
-      </section>
-    </section>
-  </main>;
-};
-
-export const ArchivedProjectsPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
-  const navigate = useNavigate();
-  const sidebarScroll = useSidebarScrollPosition();
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const [selectedProjectId, setSelectedProjectId] = useState<ProjectId | null>(null);
-  const [navigationProjectTitle, setNavigationProjectTitle] = useState("");
-  const projects = useQuery({ queryKey: projectQueryKey, queryFn: api.listProjects });
-  const sections = useQuery({ queryKey: sectionQueryKey, queryFn: api.listSections });
-  const tasks = useQuery({ queryKey: taskQueryKey, queryFn: api.listTasks });
-  const archived = (projects.data ?? []).filter((project) => project.archived);
-  const restore = async (project: Project) => { await api.archiveProject(project.id, false); await queryClient.invalidateQueries({ queryKey: projectQueryKey }); };
-  const remove = async (project: Project) => {
-    if (!window.confirm(`Delete project “${project.title}” and all its tasks?`)) return;
-    await api.deleteProject(project.id);
-    await queryClient.invalidateQueries({ queryKey: projectQueryKey });
-    await queryClient.invalidateQueries({ queryKey: taskQueryKey });
-  };
-  const renderTasks = (nodes: ReadonlyArray<TaskNode>): ReactElement => <ul className="archived-task-tree">{nodes.map((task) => <li key={task.id}><strong>{task.title}</strong>{task.description ? <p>{task.description}</p> : null}<div className="archived-task-meta">{task.dueDate ? <span className={clsx("archived-task-due-date", taskDueDateTone(task.dueDate))}><CalendarDays size={14} aria-hidden="true" />{isTaskDueToday(task.dueDate) ? "today" : task.dueDate}</span> : null}{task.labels.map((label) => <span className="badge text-bg-light" key={label}>{label}</span>)}</div>{task.children.length ? renderTasks(task.children) : null}</li>)}</ul>;
-  const selectedProject = archived.find((project) => project.id === selectedProjectId);
-  const archivedTaskRoots = (tasks.data ?? []).filter((task) => task.projectId === selectedProjectId && task.parentId === null);
-  return <main className="shell app-layout">
-    <AppSidebar api={api} />
-      <section className="workspace card shadow-sm"><h1>Archived projects</h1>
-      {archived.length === 0 ? <p className="empty">No archived projects.</p> : archived.map((project) => <article className="archived-project" key={project.id}><strong>{project.title}</strong><div><button type="button" onClick={() => setSelectedProjectId((current) => current === project.id ? null : project.id)}>{selectedProjectId === project.id ? "Hide tasks" : "View tasks"}</button><button type="button" onClick={() => void restore(project)}>Restore</button><button type="button" className="danger" onClick={() => void remove(project)}>Delete</button></div></article>)}
-      {selectedProject !== undefined ? <section className="archived-task-view" aria-label={`${selectedProject.title} tasks`}><h2>{selectedProject.title} tasks</h2>{tasks.isLoading ? <p>Loading tasks…</p> : archivedTaskRoots.length === 0 ? <p className="empty">This project has no tasks.</p> : renderTasks(archivedTaskRoots)}</section> : null}
-    </section>
-  </main>;
-};
-
-const LoginPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
-  const queryClient = useQueryClient();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const login = useMutation({
-    mutationFn: () => api.login(username, password),
-    onSuccess: async () => {
-      setPassword("");
-      await queryClient.invalidateQueries({ queryKey: authStatusQueryKey });
-    }
-  });
-
-  return (
-    <main className="shell auth-shell">
-      <section className="workspace card auth-panel" aria-label="Sign in">
-        <div className="sidebar-brand">
-          <span className="brand-mark">mt</span>
-          <strong>mytodo</strong>
-        </div>
-        <h1>Sign in</h1>
-        <form className="auth-form" onSubmit={(event) => { event.preventDefault(); login.mutate(); }}>
-          <label>
-            Login
-            <input autoComplete="username" required value={username} onChange={(event) => setUsername(event.target.value)} />
-          </label>
-          <label>
-            Password
-            <input autoComplete="current-password" required type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-          </label>
-          {login.isError ? <p className="error" role="alert">Login or password is incorrect.</p> : null}
-          <button className="settings-save" type="submit" disabled={login.isPending}>Sign in</button>
-        </form>
-      </section>
-    </main>
-  );
-};
-
 const AppRouter = () => {
   const api = createTaskApi();
   const authStatus = useQuery({ queryKey: authStatusQueryKey, queryFn: api.getAuthStatus });
@@ -3000,25 +2596,25 @@ const AppRouter = () => {
   }
 
   if (authStatus.data.accessMode === "password" && !authStatus.data.authenticated) {
-    return <LoginPage api={api} />;
+    return <Suspense fallback={<main className="auth-loading">Loading…</main>}><LoginPage api={api} /></Suspense>;
   }
 
   if (path.startsWith("/attachments") && authStatus.data.attachmentsEnabled !== true) return <Navigate to="/" replace />;
 
   if (path.startsWith("/admin/users")) {
     if (authStatus.data.user?.isAdmin !== true) return <Navigate to="/" replace />;
-    return <AdminUsersPage api={api} />;
+    return <Suspense fallback={<main className="auth-loading">Loading…</main>}><AdminUsersPage api={api} sidebar={<AppSidebar api={api} />} /></Suspense>;
   }
 
   if (path.startsWith("/settings")) {
-    return <SettingsPage api={api} />;
+    return <Suspense fallback={<main className="auth-loading">Loading…</main>}><SettingsPage api={api} sidebar={<AppSidebar api={api} />} /></Suspense>;
   }
 
-  if (path.startsWith("/archived-projects")) return authStatus.data.projectArchivingEnabled === true ? <ArchivedProjectsPage api={api} /> : <Navigate to="/" replace />;
+  if (path.startsWith("/archived-projects")) return authStatus.data.projectArchivingEnabled === true ? <Suspense fallback={<main className="auth-loading">Loading…</main>}><ArchivedProjectsPage api={api} sidebar={<AppSidebar api={api} />} /></Suspense> : <Navigate to="/" replace />;
 
   if (path.startsWith("/tools")) {
     if (authStatus.data.user?.isAdmin !== true) return <Navigate to="/" replace />;
-    return <ToolsPage api={createToolsApi()} navigationApi={api} />;
+    return <Suspense fallback={<main className="auth-loading">Loading…</main>}><ToolsPage api={createToolsApi()} sidebar={<AppSidebar api={api} />} /></Suspense>;
   }
 
   return <TaskApp api={api} attachmentsEnabled={authStatus.data.attachmentsEnabled === true} projectArchivingEnabled={authStatus.data.projectArchivingEnabled === true} />;

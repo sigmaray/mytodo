@@ -4,7 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AdminUsersPage, createQueryClient, SettingsPage, TaskApp, ToolsPage } from "./App";
+import { createQueryClient, TaskApp } from "./App";
+import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { ToolsPage } from "./pages/ToolsPage";
 import { createTaskApi } from "./api";
 import type { ApplicationApi, ToolsApi } from "./api";
 
@@ -1339,15 +1342,13 @@ describe("ToolsPage", () => {
 
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <BrowserRouter><ToolsPage api={api} navigationApi={baseApi(Object.freeze([]))} /></BrowserRouter>
+        <BrowserRouter><ToolsPage api={api} /></BrowserRouter>
       </QueryClientProvider>
     );
 
     expect(await screen.findByText("Database Tools")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View records" }));
     await waitFor(() => expect(screen.getByText(/"limit": "10"/)).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Inbox" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Tools" })).toHaveAttribute("href", "/tools");
     await userEvent.click(screen.getByRole("button", { name: "Clear selected table" }));
 
     await waitFor(() => expect(clearTable).toHaveBeenCalledWith("tasks"));
@@ -1359,27 +1360,6 @@ describe("ToolsPage", () => {
     await waitFor(() => expect(runQuery).toHaveBeenCalledWith("SELECT 1;"));
   });
 
-  it("hides the Tools navigation link from non-administrators", async () => {
-    const navigationApi = Object.freeze({
-      ...baseApi(Object.freeze([])),
-      getAuthStatus: async () => Object.freeze({ accessMode: "password" as const, authenticated: true, user: Object.freeze({ id: "member", username: "member", isAdmin: false }) })
-    });
-    const api: ToolsApi = Object.freeze({
-      listTables: async () => Object.freeze([]),
-      listRecords: async () => Object.freeze({}),
-      clearTable: async () => Object.freeze({}),
-      dropAllTables: async () => Object.freeze({}),
-      migrate: async () => Object.freeze({}),
-      clearAllTables: async () => Object.freeze({}),
-      seed: async () => Object.freeze({}),
-      runQuery: async () => Object.freeze({})
-    });
-
-    render(<QueryClientProvider client={createQueryClient()}><BrowserRouter><ToolsPage api={api} navigationApi={navigationApi} /></BrowserRouter></QueryClientProvider>);
-
-    expect(await screen.findByText("Database Tools")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Tools" })).not.toBeInTheDocument();
-  });
 });
 
 describe("Dates and Labels task views", () => {

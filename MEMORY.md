@@ -1,5 +1,25 @@
 # Project Memory
 
+## 2026-11-08 — Уточнить правила читаемости и сопровождения
+
+- В `AGENTS.md` добавлены правила организации frontend по feature-модулям, ограничения на ответственность `App.tsx` и Hono-обработчиков, требования к скриптам lint/format и порог eager JS chunk в 500 KiB с lazy-loading для тяжёлых маршрутов.
+- Исходный код приложения не менялся: эта работа задаёт обязательные правила для будущих изменений.
+- Проверка: `git diff --check`.
+
+## 2026-11-08 — Исправить пять находок технического аудита
+
+- Запрещены циклические перемещения задач в memory/PostgreSQL репозиториях; конкурентные переносы одного пользователя сериализуются advisory lock-ом.
+- Комментарии добавляются атомарно под блокировкой задачи. Удаление проекта и секции транзакционное.
+- Tools → Migrate включает `0007` и `0008`; `0007` стала идемпотентной. `0008` исправляет старые невалидные ссылки и добавляет составные FK и индексы для same-user целостности.
+- Добавлены backend- и PostgreSQL E2E-регрессии. Обновлён аудит `docs/technical-audit-2026-11-08.md` со статусами исправлений.
+- Проверки: `pnpm test` (105 тестов), `pnpm build`, `pnpm test:e2e` (33 теста), `drizzle-kit check` и `git diff --check` прошли. Изменения реализованы без классов; оставлен известный Vite chunk-size advisory.
+
+## 2026-11-08 — Технический аудит проекта
+
+- Создан `docs/technical-audit-2026-11-08.md` с приоритетными дефектами и рисками, оценками качества, планом исправлений и ограничениями аудита.
+- Основные находки: API допускает циклическое перемещение задач; параллельные обновления комментариев могут терять записи; Tools → Migrate не включает миграцию `0007`.
+- Проверки: `pnpm test` (103 теста) и `pnpm build` прошли. E2E и актуальные проверки уязвимостей зависимостей не запускались. Исходный код не менялся.
+
 ## 2026-11-08 — Add attachment indicators, removal, and library page
 
 - Task rows now show a paperclip when any comment has attachments. The feature-gated Attachments sidebar page lists files across tasks with image previews, direct file links, task links that open task details, sizes, and upload times (comment creation time).
@@ -968,3 +988,8 @@ Verification:
 - Added authenticated, dev-only endpoints for allowlisted table cleanup (`tasks`, `task_comments`, `sections`, `projects`) and entity creation (task, project, section, comment, attachment). Attachment setup writes a generated file key and metadata; table cleanup removes owned attachment files. Added an E2E scenario covering creation and selective cleanup.
 - The Playwright fixture now authenticates and resets through API requests before opening the SPA. Added batch setup helpers that create multiple tasks/projects before a single page reload, and batched mobile drag fixture setup.
 - Documented endpoint capabilities. Verification: `pnpm test` (103 tests), `pnpm build`, full `pnpm test:e2e` (32 tests), E2E TypeScript check, and `git diff --check` pass.
+# 2026-11-08 — Split frontend screens and add code quality tools
+
+- Extracted Tools, Settings, Admin Users, Archived Projects, and Login screens from `App.tsx` into lazy-loaded page modules. Moved repeated query keys, date helpers, and quick-add keyboard behavior into shared modules; extracted comment Markdown and attachment preview UI into a component.
+- Added Biome scripts and configuration for the new shared/page modules. Added a Vite vendor chunk so production JS chunks remain below the 500 KiB warning threshold.
+- Verification: `pnpm lint`, `pnpm format:check`, `pnpm test` (104 tests), and `pnpm build` pass. `pnpm test:e2e` started and passed its first three scenarios, but its runner did not complete in the available process window; a retry was blocked by occupied configured web-server URLs.
