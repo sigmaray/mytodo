@@ -87,13 +87,15 @@ const parseJson = async (request: Request) => {
 
 export const createApp = (
   repository: TaskRepository | ((userId: string) => TaskRepository) = createMemoryTaskRepository(),
-  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository; attachmentsDir?: string }> = Object.freeze({})
+  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository; attachmentsDir?: string; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean }> = Object.freeze({})
 ) => {
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
   const secureCookies = options.mode === "production";
   const attachmentsDir = options.attachmentsDir?.trim() ? resolve(options.attachmentsDir) : null;
-  const attachmentsEnabled = attachmentsDir !== null;
+  const attachmentsEnabled = (options.attachmentsEnabled ?? true) && attachmentsDir !== null;
+  const attachmentStorageAvailable = attachmentsEnabled && attachmentsDir !== null;
+  const projectArchivingEnabled = options.projectArchivingEnabled === true;
   const storedFilePath = (id: string) => attachmentsDir === null ? null : resolve(attachmentsDir, id);
   const repositoryFor = (userId: string) => typeof repository === "function" ? repository(userId) : repository;
   const requireAdmin = async (userId: string) => {
@@ -138,13 +140,13 @@ export const createApp = (
     const authenticated = activeUser !== null;
 
     context.header("Cache-Control", "no-store");
-    return context.json({ accessMode: "password", authenticated, attachmentsEnabled, user: effectiveUser === null ? null : { id: effectiveUser.id, username: effectiveUser.username, isAdmin: effectiveUser.isAdmin } });
+    return context.json({ accessMode: "password", authenticated, attachmentsEnabled, projectArchivingEnabled, user: effectiveUser === null ? null : { id: effectiveUser.id, username: effectiveUser.username, isAdmin: effectiveUser.isAdmin } });
   });
 
-  app.get("/features", (context) => context.json({ attachmentsEnabled }));
+  app.get("/features", (context) => context.json({ attachmentsEnabled, projectArchivingEnabled }));
 
   app.post("/tasks/:id/comments", bodyLimit({ maxSize: 26 * 1024 * 1024 }), async (context) => {
-    if (!attachmentsEnabled || attachmentsDir === null) return context.json({ error: "Attachments are disabled" }, 503);
+    if (!attachmentStorageAvailable || attachmentsDir === null) return context.json({ error: "Attachments are disabled" }, 503);
     const taskRepository = repositoryFor(context.get("userId"));
     const taskId = context.req.param("id");
     const task = (await taskRepository.list()).find((item) => item.id === taskId);
@@ -185,7 +187,7 @@ export const createApp = (
   });
 
   app.get("/attachments/:id", async (context) => {
-    if (!attachmentsEnabled) return context.json({ error: "Attachments are disabled" }, 503);
+    if (!attachmentStorageAvailable) return context.json({ error: "Attachments are disabled" }, 503);
     const id = context.req.param("id");
     const uuid = /^[0-9a-f-]{36}$/i.test(id);
     if (!uuid) return context.json({ error: "Attachment not found" }, 404);
@@ -329,7 +331,7 @@ export const createApp = (
     const target = await userRepository.getById(userId);
     if (target === null) return context.json({ error: "User not found" }, 404);
     if (target.isAdmin && (await userRepository.list()).filter((user) => user.isAdmin).length < 2) return context.json({ error: "At least one administrator is required" }, 409);
-    if (attachmentsDir !== null) {
+    if (attachmentStorageAvailable && attachmentsDir !== null) {
       const attachmentIds = (await repositoryFor(userId).list()).flatMap((task) => task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
       await Promise.all(attachmentIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
     }
@@ -414,6 +416,7 @@ export const createApp = (
   });
 
   app.patch("/projects/:id/archive", async (context) => {
+    if (!projectArchivingEnabled) return context.json({ error: "Project archiving is disabled" }, 503);
     const result = z.object({ archived: z.boolean() }).safeParse(await parseJson(context.req.raw));
     if (!result.success) return context.json({ error: "Invalid archive state" }, 400);
     const project = await repositoryFor(context.get("userId")).setProjectArchived(context.req.param("id"), result.data.archived);
@@ -511,7 +514,7 @@ export const createApp = (
     }
     const task = await taskRepository.patch(context.req.param("id"), result.data);
 
-    if (task !== null && previous !== undefined && attachmentsDir !== null && result.data.comments !== undefined) {
+    if (task !== null && previous !== undefined && attachmentStorageAvailable && attachmentsDir !== null && result.data.comments !== undefined) {
       const retained = new Set(task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
       const removed = previous.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []).filter((id) => !retained.has(id));
       await Promise.all(removed.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
@@ -539,7 +542,7 @@ export const createApp = (
     const descendantIds = new Set(collect(context.req.param("id")));
     const removedAttachmentIds = allTasks.filter((task) => descendantIds.has(task.id)).flatMap((task) => task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
     const deleted = await taskRepository.delete(context.req.param("id"));
-    if (deleted && attachmentsDir !== null) await Promise.all(removedAttachmentIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
+    if (deleted && attachmentStorageAvailable && attachmentsDir !== null) await Promise.all(removedAttachmentIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
 
     return deleted ? context.json({ deleted: true }) : context.json({ error: "Task not found" }, 404);
   });

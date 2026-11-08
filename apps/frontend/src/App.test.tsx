@@ -171,14 +171,27 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
+  it("hides stored attachments in task details when attachments are disabled", async () => {
+    const attachmentComment = Object.freeze({ id: "comment-attachment", body: "File", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 })]) });
+    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])));
+    expect(within(screen.getByRole("complementary", { name: "Navigation" })).queryByRole("link", { name: "Attachments" })).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
+    const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
+    expect(within(dialog).queryByRole("img", { name: "photo.png" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("link", { name: /photo.png/ })).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Attach files to comment")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Remove attachment photo.png" })).not.toBeInTheDocument();
+  });
+
   it("does not render an empty Markdown block for an attachment-only comment", async () => {
     const attachmentComment = Object.freeze({ id: "comment-attachment", body: "", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 })]) });
-    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])));
+    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])), true);
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
     expect(dialog.querySelector(".comment-markdown")).not.toBeInTheDocument();
     expect(dialog.querySelector(".comment-attachment a[download]")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Edit" }));
+    expect(within(dialog).getByRole("textbox", { name: "Edit comment comment-attachment" })).toHaveFocus();
     expect(within(dialog).getByRole("img", { name: "photo.png" })).toBeVisible();
     expect(dialog.querySelector(".comment-attachment a[download]")).toBeVisible();
   });
@@ -264,11 +277,13 @@ describe("TaskApp", () => {
     expect(createComment).toHaveBeenCalledTimes(1);
   });
 
-  it("pastes clipboard images into the initial comment in the task creation dialog", async () => {
+  it("pastes clipboard images into the task creation dialog without an initial comment field", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(Object.freeze({ ...baseApi(Object.freeze([])), createComment }), true);
     await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
     const dialog = screen.getByRole("dialog", { name: "Add task" });
+    expect(within(dialog).queryByLabelText("Initial task comment")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Initial comment")).not.toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText("New task title"), "Task with pasted image");
     const image = new File(["png data"], "pasted.png", { type: "image/png" });
     fireEvent.paste(within(dialog).getByLabelText("New task title"), { clipboardData: { items: [{ kind: "file", getAsFile: () => image }], files: [] } });
@@ -795,6 +810,19 @@ describe("TaskApp", () => {
     expect(within(menu).getByRole("button", { name: "Duplicate" })).toBeVisible();
     await userEvent.click(screen.getByRole("heading", { name: "Inbox", level: 1 }));
     await waitFor(() => expect(menu).not.toHaveAttribute("open"));
+  });
+
+  it("hides project archiving controls by default and keeps archived projects visible", async () => {
+    renderApp(Object.freeze({
+      ...baseApi(Object.freeze([])),
+      listProjects: async () => Object.freeze([project({ id: "archived-project", title: "Roadmap", archived: true })])
+    }));
+    const roadmap = await screen.findByRole("button", { name: "Roadmap" });
+    const sidebar = screen.getByRole("complementary", { name: "Navigation" });
+    expect(within(sidebar).queryByRole("link", { name: "Archived projects" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("Project menu Roadmap"));
+    expect(within(sidebar).queryByRole("button", { name: "Archive" })).not.toBeInTheDocument();
+    expect(roadmap).toBeVisible();
   });
 
   it("opens a duplicated project and saves its description independently", async () => {

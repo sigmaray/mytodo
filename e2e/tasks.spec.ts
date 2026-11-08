@@ -33,6 +33,7 @@ test("shows task context actions in Inbox and projects", async ({ page }, testIn
 
 const createTask = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add task Q" }).click();
+  await expect(page.getByLabel("Initial task comment")).toHaveCount(0);
   await page.getByLabel("New task title").fill(title);
   await page.getByRole("button", { name: "Add task", exact: true }).click();
   await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
@@ -456,6 +457,7 @@ test("shows truncated descriptions and comment counts in task rows", async ({ pa
   await row.getByRole("button", { name: title, exact: true }).click();
   const comments = taskDialog.locator(".task-comment");
   await comments.nth(0).getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(comments.nth(0).locator("textarea")).toBeFocused();
   await comments.nth(0).locator("textarea").fill("Edited first comment");
   await comments.nth(0).getByRole("button", { name: "Save comment" }).click();
   await expect(comments.nth(0)).toContainText("Edited first comment");
@@ -1053,4 +1055,16 @@ test("keeps the shared mobile sidebar consistent and closes it after navigation"
   await selectNavigationItem("Settings", "/settings");
   await selectNavigationItem("Archived projects", "/archived-projects");
   await selectNavigationItem("Inbox", "/");
+});
+
+test("shows project archiving controls when project archiving is enabled", async ({ page }, testInfo) => {
+  const projectTitle = `Archivable project ${Date.now()}-${testInfo.workerIndex}`;
+  await page.goto("/");
+  await createProject(page)(projectTitle);
+  const projectRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: projectTitle, exact: true }) });
+  await projectRow.getByLabel(`Project menu ${projectTitle}`).click();
+  await expect(projectRow.getByRole("button", { name: "Archive", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Archived projects", exact: true }).click();
+  await expect(page).toHaveURL(/\/archived-projects$/);
+  await expect(page.getByRole("heading", { name: "Archived projects" })).toBeVisible();
 });

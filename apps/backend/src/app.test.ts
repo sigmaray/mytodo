@@ -27,7 +27,7 @@ const createTestServer = async (app: ReturnType<typeof createApp>) => {
   return server;
 };
 
-const createTestAgent = async () => {
+const createTestAgent = async (options: Readonly<{ projectArchivingEnabled?: boolean }> = Object.freeze({})) => {
   const userRepository = createMemoryUserRepository([Object.freeze({
     id: "test-admin",
     username: "test-admin",
@@ -36,7 +36,7 @@ const createTestAgent = async () => {
     confirmDelete: true,
     inboxDescription: ""
   })]);
-  const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
+  const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository, ...options }));
   const agent = request.agent(server);
   await agent.post("/auth/login").send({ username: "test-admin", password: "test-admin-password" }).expect(200);
   return agent;
@@ -60,11 +60,23 @@ describe("comment attachments", () => {
     await agent.post(`/tasks/${task.id}/comments`).field("body", "A note").expect(503);
   });
 
+  it("keeps attachment APIs disabled when the environment feature flag is off even if storage is configured", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-disabled-"));
+    temporaryDirectories.add(directory);
+    const userRepository = createMemoryUserRepository([Object.freeze({ id: "test-admin", username: "test-admin", passwordHash: await hashPassword("test-admin-password"), isAdmin: true, confirmDelete: true, inboxDescription: "" })]);
+    const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository, attachmentsDir: directory, attachmentsEnabled: false }));
+    const agent = request.agent(server);
+    await agent.post("/auth/login").send({ username: "test-admin", password: "test-admin-password" }).expect(200);
+    await agent.get("/features").expect(200).expect(({ body }) => expect(body.attachmentsEnabled).toBe(false));
+    await agent.post("/tasks/task-1/comments").field("body", "A note").expect(503);
+    await agent.get("/attachments/00000000-0000-0000-0000-000000000000").expect(503);
+  });
+
   it("stores confirmed comment files privately and serves them only through the authenticated API", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-"));
     temporaryDirectories.add(directory);
     const userRepository = createMemoryUserRepository([Object.freeze({ id: "test-admin", username: "test-admin", passwordHash: await hashPassword("test-admin-password"), isAdmin: true, confirmDelete: true, inboxDescription: "" })]);
-    const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository, attachmentsDir: directory }));
+    const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository, attachmentsDir: directory, attachmentsEnabled: true }));
     const agent = request.agent(server);
     await agent.post("/auth/login").send({ username: "test-admin", password: "test-admin-password" }).expect(200);
     const task = (await agent.post("/tasks").send({ title: "Attachment task" }).expect(201)).body.task;
@@ -287,8 +299,15 @@ describe("POST /tasks", () => {
     await agent.delete("/projects/missing").expect(404);
   });
 
-  it("persists task details and supports archiving and duplicating projects", async () => {
+  it("disables project archiving by default in features and the API", async () => {
     const agent = await createTestAgent();
+    const project = (await agent.post("/projects").send({ title: "Plan" }).expect(201)).body.project as { id: string };
+    await agent.get("/features").expect(200).expect(({ body }) => expect(body.projectArchivingEnabled).toBe(false));
+    await agent.patch(`/projects/${project.id}/archive`).send({ archived: true }).expect(503);
+  });
+
+  it("persists task details and supports archiving and duplicating projects", async () => {
+    const agent = await createTestAgent({ projectArchivingEnabled: true });
     const project = (await agent.post("/projects").send({ title: "Plan" }).expect(201)).body.project as { id: string };
     const task = (await agent.post("/tasks").send({ title: "Draft", projectId: project.id }).expect(201)).body.task as { id: string };
     await agent.patch(`/tasks/${task.id}`).send({ description: "Details", dueDate: "2026-11-01", labels: ["work"], comments: [{ id: "c1", body: "First comment", createdAt: new Date().toISOString() }] }).expect(200);

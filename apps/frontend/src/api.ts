@@ -56,6 +56,7 @@ export type AuthStatus = Readonly<{
   authenticated: boolean;
   user: ManagedUser | null;
   attachmentsEnabled?: boolean;
+  projectArchivingEnabled?: boolean;
 }>;
 
 export type SettingsUpdate = Readonly<{
