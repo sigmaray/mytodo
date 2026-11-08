@@ -91,6 +91,24 @@ describe("comment attachments", () => {
     expect(JSON.stringify(listed.body)).toContain(attachment.id);
   });
 
+  it("keeps comments from concurrent attachment uploads", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-concurrent-"));
+    temporaryDirectories.add(directory);
+    const userRepository = createMemoryUserRepository([Object.freeze({ id: "test-admin", username: "test-admin", passwordHash: await hashPassword("test-admin-password"), isAdmin: true, confirmDelete: true, inboxDescription: "" })]);
+    const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository, attachmentsDir: directory, attachmentsEnabled: true }));
+    const agent = request.agent(server);
+    await agent.post("/auth/login").send({ username: "test-admin", password: "test-admin-password" }).expect(200);
+    const task = (await agent.post("/tasks").send({ title: "Concurrent comments" }).expect(201)).body.task;
+    const [first, second] = await Promise.all([
+      agent.post(`/tasks/${task.id}/comments`).field("body", "First").attach("files", Buffer.from("one"), { filename: "one.txt", contentType: "text/plain" }),
+      agent.post(`/tasks/${task.id}/comments`).field("body", "Second").attach("files", Buffer.from("two"), { filename: "two.txt", contentType: "text/plain" })
+    ]);
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    const listed = await agent.get("/tasks").expect(200);
+    expect(listed.body.tasks[0].comments.map((comment: { body: string }) => comment.body).toSorted()).toEqual(["First", "Second"]);
+  });
+
   it("allows editing and deleting comments with PostgreSQL-ordered attachment metadata", async () => {
     const createdAt = "2026-11-08T15:00:31.010Z";
     const attachment = Object.freeze({ id: "attachment-1", name: "image.png", size: 7754, mimeType: "image/png" });
@@ -196,6 +214,19 @@ describe("POST /tasks", () => {
       projectId: null,
       sectionId: sectionResponse.body.section.id
     });
+  });
+
+  it("rejects moving a task into itself or one of its descendants", async () => {
+    const agent = await createTestAgent();
+    const parent = (await agent.post("/tasks").send({ title: "Parent" }).expect(201)).body.task;
+    const child = (await agent.post("/tasks").send({ title: "Child", parentId: parent.id }).expect(201)).body.task;
+    const payload = { parentId: child.id, projectId: null, sectionId: null, beforeId: null, afterId: null };
+
+    await agent.put(`/tasks/${parent.id}/move`).send(payload).expect(404);
+    await agent.put(`/tasks/${parent.id}/move`).send({ ...payload, parentId: parent.id }).expect(404);
+    const listed = await agent.get("/tasks").expect(200);
+    expect(listed.body.tasks[0]).toMatchObject({ id: parent.id, parentId: null });
+    expect(listed.body.tree[0].children[0]).toMatchObject({ id: child.id, parentId: parent.id });
   });
 
   it("updates and deletes sections without deleting tasks", async () => {

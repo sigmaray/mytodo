@@ -28,7 +28,9 @@ const migrationFiles = Object.freeze([
   new URL("../drizzle/0003_remove_task_priorities.sql", import.meta.url),
   new URL("../drizzle/0004_scope_descriptions.sql", import.meta.url),
   new URL("../drizzle/0005_project_hierarchy.sql", import.meta.url),
-  new URL("../drizzle/0006_users.sql", import.meta.url)
+  new URL("../drizzle/0006_users.sql", import.meta.url),
+  new URL("../drizzle/0007_task_comments.sql", import.meta.url),
+  new URL("../drizzle/0008_data_integrity.sql", import.meta.url)
 ]);
 const protectedTables = Object.freeze(["sessions", "users"]);
 

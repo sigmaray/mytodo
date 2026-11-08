@@ -43,6 +43,7 @@ export type TaskRepository = Readonly<{
     sectionId: SectionId | null
   ) => Promise<Task>;
   patch: (id: TaskId, patch: TaskPatch) => Promise<Task | null>;
+  addComment: (id: TaskId, comment: Task["comments"][number]) => Promise<boolean>;
   move: (id: TaskId, move: TaskMove) => Promise<Task | null>;
   delete: (id: TaskId) => Promise<boolean>;
 }>;
@@ -56,6 +57,16 @@ const collectDescendantIds = (allTasks: ReadonlyArray<Task>, id: TaskId): Readon
       .filter((task) => task.parentId === id)
       .flatMap((task) => collectDescendantIds(allTasks, task.id))
   ]);
+
+const wouldCreateTaskCycle = (tasks: ReadonlyArray<Task>, taskId: TaskId, parentId: TaskId | null): boolean => {
+  const followsParentChain = (ancestorId: TaskId | null, visited: ReadonlyArray<TaskId>): boolean => {
+    if (ancestorId === null) return false;
+    if (ancestorId === taskId || visited.includes(ancestorId)) return true;
+    const parent = tasks.find((task) => task.id === ancestorId);
+    return followsParentChain(parent?.parentId ?? null, Object.freeze([...visited, ancestorId]));
+  };
+  return followsParentChain(parentId, Object.freeze([]));
+};
 
 const compareOrder = (left: Task, right: Task): number =>
   left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0;
@@ -303,12 +314,22 @@ export const createMemoryTaskRepository = (
 
       return updated;
     },
+    addComment: async (id, comment) => {
+      const existing = tasks.find((task) => task.id === id);
+      if (existing === undefined) return false;
+      const updated = Object.freeze({ ...existing, comments: Object.freeze([...existing.comments, comment]), updatedAt: now() });
+      replace(tasks.map((task) => task.id === id ? updated : task));
+      return true;
+    },
     move: async (id, move) => {
       const existing = tasks.find((task) => task.id === id);
 
       if (existing === undefined) {
         return null;
       }
+      if (move.parentId !== null && !tasks.some((task) => task.id === move.parentId)) return null;
+
+      if (wouldCreateTaskCycle(tasks, id, move.parentId)) return null;
 
       const updated = Object.freeze({
         ...existing,

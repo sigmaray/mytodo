@@ -219,7 +219,7 @@ export const createApp = (
         const task = (await taskRepository.list()).find((item) => item.id === result.data.taskId);
         if (task === undefined) return context.json({ error: "Task not found" }, 404);
         const comment = Object.freeze({ id: crypto.randomUUID(), body: result.data.body, createdAt: new Date().toISOString() });
-        await taskRepository.patch(task.id, { comments: Object.freeze([...task.comments, comment]) });
+        if (!(await taskRepository.addComment(task.id, comment))) return context.json({ error: "Task not found" }, 404);
         return context.json({ comment }, 201);
       }
       if (entity === "attachment") {
@@ -242,8 +242,7 @@ export const createApp = (
         const attachment = Object.freeze({ id, name: safeName, mimeType: file.type.slice(0, 128) || "application/octet-stream", size: file.size });
         const comment = Object.freeze({ id: crypto.randomUUID(), body, createdAt: new Date().toISOString(), attachments: Object.freeze([attachment]) });
         try {
-          const updated = await taskRepository.patch(task.id, { comments: Object.freeze([...task.comments, comment]) });
-          if (updated === null) throw new Error("Task not found");
+          if (!(await taskRepository.addComment(task.id, comment))) throw new Error("Task not found");
           return context.json({ comment, attachment }, 201);
         } catch {
           await rm(path, { force: true });
@@ -286,8 +285,7 @@ export const createApp = (
         return Object.freeze({ id, name: safeName, mimeType: file.type.slice(0, 128) || "application/octet-stream", size: file.size });
       }));
       const comment = Object.freeze({ id: crypto.randomUUID(), body, createdAt: new Date().toISOString(), ...(attachments.length ? { attachments: Object.freeze(attachments) } : {}) });
-      const updated = await taskRepository.patch(taskId, { comments: Object.freeze([...task.comments, comment]) });
-      if (updated === null) throw new Error("Task not found");
+      if (!(await taskRepository.addComment(taskId, comment))) throw new Error("Task not found");
       return context.json({ comment }, 201);
     } catch {
       await Promise.all(savedIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
