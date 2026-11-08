@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+test-results
+playwright-report
+.pnpm-cache
+.pnpm-data
+MEMORY.md
+aiignore
+gitignore

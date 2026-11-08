@@ -1,5 +1,12 @@
 # Project Memory
 
+## 2026-11-01 — Add and launch a production Docker Compose stack
+
+- Added a multi-stage root Dockerfile, production Nginx frontend/API proxy, and production `docker-compose.yml` joining the external `infra` network; documented deployment and bootstrap steps.
+- The requested infra PostgreSQL was not running and its `.env` was absent. Initialized it with a protected generated password on loopback port 5433 (5432 is occupied by the dev database), created the dedicated `todoist_clone` database, and wrote local ignored production credentials.
+- Built and launched `todoist-api` and `todoist-web`; migrations completed and both containers report healthy. Web serves on `127.0.0.1:18082`; a public HTTPS route through Caddy remains pending a production hostname because the infra reverse proxy is not currently configured or running.
+- Verification: Docker Compose config validation, production image builds, container health checks, frontend HTTP 200, API `/auth/status`, and `git diff --check` pass.
+
 ## 2026-11-01 — Make Ctrl+K layout independent and add advanced Markdown exports
 
 - Search now recognizes the physical `KeyK` code with Ctrl/Cmd, including non-English keyboard layouts.

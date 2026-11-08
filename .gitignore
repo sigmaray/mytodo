@@ -1,6 +1,8 @@
 aiignore/
 gitignore/
 .env
+.env.production
+.todoist-admin-password
 node_modules/
 dist/
 *.tsbuildinfo

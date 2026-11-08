@@ -67,6 +67,34 @@ http://127.0.0.1:5173/tools/
 
 The tools page is disabled in production mode.
 
+### Production Docker Compose with shared PostgreSQL
+
+The production stack joins the `infra` Docker network and uses the shared PostgreSQL instance from `~/r/sandbox/infra`. Before starting it, create a dedicated database and set the percent-encoded PostgreSQL URL in `.env.production`:
+
+```bash
+~/r/sandbox/infra/postgres/scripts/create-database.sh todoist
+cp deploy.env.example .env.production
+# Edit DATABASE_URL in .env.production
+docker compose --env-file .env.production up -d --build
+```
+
+The API applies Drizzle migrations before starting. Set the initial administrator password once:
+
+```bash
+docker compose --env-file .env.production exec todoist-api \
+  ../../node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
+```
+
+The web container listens on loopback port `18082` by default and joins `infra` so the shared Caddy proxy can reach it. Add a site block for your public hostname to `~/r/sandbox/infra/reverse-proxy/Caddyfile`:
+
+```caddyfile
+todoist.example.com {
+    reverse_proxy todoist-web:80
+}
+```
+
+Point the hostname to the server and reload the existing reverse-proxy Compose stack to enable HTTPS. Do not expose the API container directly; production session cookies require HTTPS.
+
 ### Tests
 
 ```bash
