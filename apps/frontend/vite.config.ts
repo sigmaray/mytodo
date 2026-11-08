@@ -9,7 +9,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": apiTarget,
-      "/attachments": apiTarget,
+      "/attachments": {
+        target: apiTarget,
+        bypass: (request) => request.headers.accept?.includes("text/html") ? request.url : undefined
+      },
       "/features": apiTarget,
       "/projects": apiTarget,
       "/sections": apiTarget,

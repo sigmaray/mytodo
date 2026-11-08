@@ -492,6 +492,8 @@ test("saves comment attachments on submit and serves them through the authentica
   await dialog.getByRole("button", { name: "Close task details" }).click();
   await page.getByRole("link", { name: "Attachments", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Attachments" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Attachments" })).toBeVisible();
   const pastedAttachmentRow = page.locator(".attachment-library-item").filter({ hasText: title }).filter({ hasText: "pasted.txt" });
   await expect(pastedAttachmentRow.getByRole("link", { name: "pasted.txt" })).toBeVisible();
   await expect(page.getByRole("link", { name: /notes\.md/ }).first()).toBeVisible();

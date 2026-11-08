@@ -200,12 +200,17 @@ describe("TaskApp", () => {
     expect(await screen.findByRole("heading", { name: "Attachments" })).toBeVisible();
     expect(await screen.findByRole("img", { name: "photo.png" })).toBeVisible();
     expect(document.querySelector('.attachment-library-file-link[href="/attachments/attachment-1"]')).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Plan MVP" })).toHaveAttribute("href", "/?task=task-1");
+    const taskLink = screen.getByRole("link", { name: "Plan MVP" });
+    expect(taskLink).toHaveAttribute("href", "/attachments");
     expect(screen.getByText("5 B")).toBeInTheDocument();
     expect(screen.getByText(new Date("2026-01-01T00:00:00.000Z").toLocaleString())).toBeInTheDocument();
     expect(within(screen.getByRole("complementary", { name: "Navigation" })).getByRole("link", { name: "Attachments" })).toBeVisible();
-    await userEvent.click(screen.getByRole("link", { name: "Plan MVP" }));
+    await userEvent.click(taskLink);
     expect(await screen.findByRole("dialog", { name: "Task details: Plan MVP" })).toBeVisible();
+    expect(window.location.pathname).toBe("/attachments");
+    await userEvent.click(screen.getByRole("button", { name: "Close task details" }));
+    expect(await screen.findByRole("heading", { name: "Attachments" })).toBeVisible();
+    expect(window.location.pathname).toBe("/attachments");
   });
 
   it("removes individual attachments and deletes an empty attachment-only comment", async () => {

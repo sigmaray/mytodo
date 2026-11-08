@@ -2314,7 +2314,7 @@ export const TaskApp = ({ api, attachmentsEnabled = false }: Readonly<{ api: App
               </div>
               <div className="attachment-library-details">
                 <a className="attachment-library-file-link" href={`/attachments/${encodeURIComponent(attachment.id)}`} download={attachment.name}>{attachment.name}</a>
-                <Link className="attachment-library-task-link" to={`/?task=${encodeURIComponent(attachment.taskId)}`} onClick={() => { const task = findTaskNode(allTasks, attachment.taskId); if (task !== null) openDetails(task); }}>{attachment.taskTitle}</Link>
+                <Link className="attachment-library-task-link" to="/attachments" onClick={() => { const task = findTaskNode(allTasks, attachment.taskId); if (task !== null) openDetails(task); }}>{attachment.taskTitle}</Link>
                 <dl><div><dt>Size</dt><dd>{formatAttachmentSize(attachment.size)}</dd></div><div><dt>Uploaded</dt><dd><time dateTime={attachment.uploadedAt}>{new Date(attachment.uploadedAt).toLocaleString()}</time></dd></div></dl>
               </div>
             </article>) : tasks.isLoading ? <p className="muted">Loading attachments...</p> : <p className="empty">No attachments yet.</p>}

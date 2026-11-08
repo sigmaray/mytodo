@@ -921,3 +921,14 @@ Verification:
 
 - Replaced Sonner with React-Toastify, imported its stylesheet, and portaled its bottom-right `ToastContainer` to `document.body` above the task dialog. Attachment confirmation notices appear immediately on paste or file selection, and stay visible for five seconds.
 - Added frontend and E2E assertions that the toast is visible at attachment time. Frontend tests/build and the focused attachment E2E pass.
+
+## 2026-11-08 — Keep Attachments page after opening a task
+
+- Fixed task links in the Attachments library to open task details without navigating away from `/attachments`; closing the dialog now leaves the attachment list in place.
+- Added frontend regression coverage for the route before and after opening and closing the task dialog.
+- Verification: `pnpm test` (98 tests), `pnpm build`, focused attachment E2E (1 passed), and `git diff --check` pass.
+
+## 2026-11-08 — Serve the Attachments SPA route in development
+
+- Vite previously proxied `GET /attachments` to the API, so reloading the Attachments page returned an API 404. The proxy now bypasses HTML navigation requests and serves the SPA, while attachment API/file requests remain proxied.
+- Added an E2E reload assertion on the Attachments page. Verification: all 98 unit/integration tests pass, production build passes, focused attachment E2E passes, and `git diff --check` passes.
