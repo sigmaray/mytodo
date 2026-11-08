@@ -993,3 +993,11 @@ Verification:
 - Extracted Tools, Settings, Admin Users, Archived Projects, and Login screens from `App.tsx` into lazy-loaded page modules. Moved repeated query keys, date helpers, and quick-add keyboard behavior into shared modules; extracted comment Markdown and attachment preview UI into a component.
 - Added Biome scripts and configuration for the new shared/page modules. Added a Vite vendor chunk so production JS chunks remain below the 500 KiB warning threshold.
 - Verification: `pnpm lint`, `pnpm format:check`, `pnpm test` (104 tests), and `pnpm build` pass. `pnpm test:e2e` started and passed its first three scenarios, but its runner did not complete in the available process window; a retry was blocked by occupied configured web-server URLs.
+
+## 2026-11-08 — Continue frontend and attachment modularization
+
+- Extracted the sidebar and search palette, task creation dialog, task comment panel, and shared form controls from `App.tsx`. Moved project-tree and query-cache helpers to shared modules.
+- Removed the duplicate, unused project creation and mobile project-drag state/handlers that remained in `TaskApp` after the sidebar extraction.
+- Expanded Biome lint and formatting checks to all application, domain, and E2E TypeScript/JavaScript. Formatted the checked files and removed stale imports/variables exposed by the wider lint run.
+- Added `attachmentStorage` for upload validation, private file writes/reads/deletes, and image MIME detection; app routes now retain HTTP and repository orchestration. Added storage tests for saving/removal, validation limits, and content-based MIME detection.
+- Verification: `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test` (107 tests), and `pnpm test:e2e` (33 tests) pass.

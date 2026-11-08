@@ -1,4 +1,6 @@
-export const getDatabaseUrl = (environment: Readonly<Record<string, string | undefined>> = process.env): string => {
+export const getDatabaseUrl = (
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): string => {
   if (environment.DATABASE_URL !== undefined) return environment.DATABASE_URL;
 
   const host = environment.MYTODO_DB_HOST ?? "localhost";

@@ -7,9 +7,9 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:e2e": "playwright test",
-    "lint": "biome lint apps/frontend/src/pages apps/frontend/src/hooks apps/frontend/src/components/CommentAttachment.tsx apps/frontend/src/queryKeys.ts apps/frontend/src/dateUtils.ts",
-    "format": "biome format --write apps/frontend/src/pages apps/frontend/src/hooks apps/frontend/src/components/CommentAttachment.tsx apps/frontend/src/queryKeys.ts apps/frontend/src/dateUtils.ts",
-    "format:check": "biome format apps/frontend/src/pages apps/frontend/src/hooks apps/frontend/src/components/CommentAttachment.tsx apps/frontend/src/queryKeys.ts apps/frontend/src/dateUtils.ts",
+    "lint": "biome lint apps packages e2e playwright.config.ts",
+    "format": "biome format --write apps packages e2e playwright.config.ts",
+    "format:check": "biome format apps packages e2e playwright.config.ts",
     "dev:backend": "pnpm --filter @todoist-clone/backend dev",
     "dev:frontend": "pnpm --filter @todoist-clone/frontend dev"
   },

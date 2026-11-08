@@ -1,9 +1,9 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Project, ProjectId, TaskNode } from "@todoist-clone/domain";
+import clsx from "clsx";
+import { CalendarDays } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays } from "lucide-react";
-import clsx from "clsx";
-import type { Project, ProjectId, TaskNode } from "@todoist-clone/domain";
 import type { ApplicationApi } from "../api";
 import { isTaskDueToday, taskDueDateTone } from "../dateUtils";
 import { projectQueryKey, taskQueryKey } from "../queryKeys";

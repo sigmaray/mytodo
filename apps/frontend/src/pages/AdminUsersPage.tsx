@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 

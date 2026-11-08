@@ -1,10 +1,11 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Code2, Database } from "lucide-react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import type { ToolsApi } from "../api";
-import { tablesQueryKey } from "../queryKeys";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
+import { tablesQueryKey } from "../queryKeys";
+
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
 export const ToolsPage = ({ api, sidebar }: Readonly<{ api: ToolsApi; sidebar?: ReactNode }>) => {

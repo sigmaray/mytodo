@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
 import type { Task } from "@todoist-clone/domain";
+import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const textPreviewExtensions = new Set([
   "md",

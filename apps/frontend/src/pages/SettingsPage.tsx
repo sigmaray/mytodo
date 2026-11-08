@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import type { ApplicationApi } from "../api";
-import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
+import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 
 export const SettingsPage = ({ api, sidebar }: Readonly<{ api: ApplicationApi; sidebar?: ReactNode }>) => {
   useQuickAddShortcut();

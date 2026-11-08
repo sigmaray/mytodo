@@ -1,11 +1,11 @@
+import { constants } from "node:fs";
+import { access, mkdir } from "node:fs/promises";
+import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app";
+import { getDatabaseUrl } from "./database-url";
 import { createPostgresTaskRepositoryFactory } from "./db/repository";
 import { createPostgresUserRepository } from "./db/users-repository";
-import { getDatabaseUrl } from "./database-url";
-import { access, mkdir } from "node:fs/promises";
-import { constants } from "node:fs";
-import { isAbsolute } from "node:path";
 
 const port = Number(process.env.PORT ?? 3000);
 const databaseUrl = getDatabaseUrl();
@@ -18,7 +18,8 @@ if (attachmentsEnabled && attachmentsDir === undefined) {
   throw new Error("MYTODO_ATTACHMENTS_DIR must be set when MYTODO_ATTACHMENTS_ENABLED=true");
 }
 if (attachmentsEnabled && attachmentsDir !== undefined) {
-  if (!isAbsolute(attachmentsDir)) throw new Error("MYTODO_ATTACHMENTS_DIR must be an absolute path inside the API container");
+  if (!isAbsolute(attachmentsDir))
+    throw new Error("MYTODO_ATTACHMENTS_DIR must be an absolute path inside the API container");
   await mkdir(attachmentsDir, { recursive: true });
   try {
     await access(attachmentsDir, constants.W_OK);
@@ -36,9 +37,9 @@ serve({
     projectArchivingEnabled,
     playwrightApiEnabled,
     attachmentsDir,
-    userRepository: createPostgresUserRepository(databaseUrl)
+    userRepository: createPostgresUserRepository(databaseUrl),
   }).fetch,
-  port
+  port,
 });
 
 console.log(`API listening on http://127.0.0.1:${port}`);

@@ -16,7 +16,7 @@ const deriveKey = (password: string, salt: Buffer) =>
       salt,
       keyLength,
       { N: scryptCost, r: scryptBlockSize, p: scryptParallelization, maxmem: 64 * 1024 * 1024 },
-      (error, key) => (error === null ? resolve(key) : reject(error))
+      (error, key) => (error === null ? resolve(key) : reject(error)),
     );
   });
 
@@ -30,11 +30,21 @@ export const hashPassword = async (password: string) => {
 export const verifyPassword = async (password: string, storedHash: string) => {
   const [algorithm, costText, blockSizeText, parallelizationText, saltText, keyText] = storedHash.split("$");
 
-  if (algorithm !== "scrypt" || costText !== String(scryptCost) || blockSizeText !== String(scryptBlockSize) || parallelizationText !== String(scryptParallelization)) {
+  if (
+    algorithm !== "scrypt" ||
+    costText !== String(scryptCost) ||
+    blockSizeText !== String(scryptBlockSize) ||
+    parallelizationText !== String(scryptParallelization)
+  ) {
     return false;
   }
 
-  if (saltText === undefined || keyText === undefined || !/^[0-9a-f]{32}$/i.test(saltText) || !/^[0-9a-f]{128}$/i.test(keyText)) {
+  if (
+    saltText === undefined ||
+    keyText === undefined ||
+    !/^[0-9a-f]{32}$/i.test(saltText) ||
+    !/^[0-9a-f]{128}$/i.test(keyText)
+  ) {
     return false;
   }
 

@@ -40,16 +40,22 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   const detailTitle = page.getByLabel("Edit task title");
   await expect(detailTitle).toHaveJSProperty("tagName", "TEXTAREA");
   await detailTitle.fill("line one\nline two\nline three");
-  expect(await detailTitle.evaluate((element) => Number.parseFloat(getComputedStyle(element).height))).toBeGreaterThan(38);
+  expect(
+    await detailTitle.evaluate((element) => Number.parseFloat(getComputedStyle(element).height)),
+  ).toBeGreaterThan(38);
   await page.getByLabel("Edit task title").press("Escape");
   await expect(taskDialog.getByRole("button", { name: "Edit task title" })).toHaveText(title);
   await taskDialog.getByRole("button", { name: "Edit task description" }).click();
   const detailDescription = page.getByLabel("Edit task description");
   await expect(detailDescription).toHaveJSProperty("tagName", "TEXTAREA");
   await detailDescription.fill("unsaved\ndescription\nwith multiple lines");
-  expect(await detailDescription.evaluate((element) => Number.parseFloat(getComputedStyle(element).height))).toBeGreaterThan(38);
+  expect(
+    await detailDescription.evaluate((element) => Number.parseFloat(getComputedStyle(element).height)),
+  ).toBeGreaterThan(38);
   await page.getByLabel("Edit task description").press("Escape");
-  await expect(taskDialog.getByRole("button", { name: "Edit task description" })).toHaveText("Add description");
+  await expect(taskDialog.getByRole("button", { name: "Edit task description" })).toHaveText(
+    "Add description",
+  );
   await taskDialog.getByRole("button", { name: "Edit task description" }).click();
   await page.getByLabel("Edit task description").fill("Task details saved from the dialog");
   await page.getByRole("button", { name: "Save" }).click();
@@ -60,9 +66,15 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   await expect(dateDialog.getByRole("button", { name: "Tomorrow" })).toBeVisible();
   const todayCell = dateDialog.locator('[aria-current="date"]');
   await expect(todayCell).toBeVisible();
-  await expect.poll(() => todayCell.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 214, 208)");
+  await expect
+    .poll(() => todayCell.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(255, 214, 208)");
   await dateDialog.getByRole("button", { name: "Today" }).click();
-  await expect.poll(() => dateDialog.locator('[aria-pressed="true"]').evaluate((element) => getComputedStyle(element).boxShadow)).toContain("rgb(200, 58, 45)");
+  await expect
+    .poll(() =>
+      dateDialog.locator('[aria-pressed="true"]').evaluate((element) => getComputedStyle(element).boxShadow),
+    )
+    .toContain("rgb(200, 58, 45)");
   await expect(dateDialog).toBeVisible();
   await expect(page.getByLabel("New date")).toHaveValue(new Date().toLocaleDateString("en-CA"));
   await dateDialog.getByRole("button", { name: "Save date" }).click();
@@ -83,7 +95,9 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   const commentEditor = page.getByLabel("Add comment");
   await expect(commentEditor).toHaveJSProperty("tagName", "TEXTAREA");
   await commentEditor.fill("First\ncomment");
-  expect(await commentEditor.evaluate((element) => Number.parseFloat(getComputedStyle(element).height))).toBeGreaterThan(38);
+  expect(
+    await commentEditor.evaluate((element) => Number.parseFloat(getComputedStyle(element).height)),
+  ).toBeGreaterThan(38);
   await page.getByRole("button", { name: "Add comment" }).click();
   const detailSubtaskTitle = page.getByLabel("New subtask title");
   await expect(detailSubtaskTitle).toHaveJSProperty("tagName", "TEXTAREA");
@@ -91,23 +105,39 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   await page.getByLabel("New subtask title").press("Enter");
   const locationPicker = taskDialog.getByLabel("Project, section, or Inbox");
   const optionLabels = await locationPicker.locator("option").allTextContents();
-  expect(optionLabels).toEqual([...optionLabels].sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }) || left.localeCompare(right)));
+  expect(optionLabels).toEqual(
+    [...optionLabels].sort(
+      (left, right) =>
+        left.localeCompare(right, undefined, { sensitivity: "base" }) || left.localeCompare(right),
+    ),
+  );
   expect(optionLabels).toContain(`${projectTitle} / ${sectionTitle}`);
   await locationPicker.selectOption({ label: `${projectTitle} / ${sectionTitle}` });
   await expect(taskDialog.locator(".task-details-header-path")).toContainText(sectionTitle);
   await expect(taskDialog.getByRole("link", { name: projectTitle, exact: true }).first()).toBeVisible();
-  const projectHref = await taskDialog.getByRole("link", { name: projectTitle, exact: true }).first().getAttribute("href");
+  const projectHref = await taskDialog
+    .getByRole("link", { name: projectTitle, exact: true })
+    .first()
+    .getAttribute("href");
   if (projectHref === null) throw new Error("Missing project navigation link");
   await page.goto(projectHref);
-  await expect(page.getByRole("region", { name: `Section ${sectionTitle}` }).getByRole("button", { name: title, exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: `Section ${sectionTitle}` })
+      .getByRole("button", { name: title, exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: title, exact: true }).click();
   const reopenedDialog = page.getByRole("dialog", { name: `Task details: ${title}` });
-  await expect(reopenedDialog.getByRole("button", { name: "Edit task description" })).toHaveText("Task details saved from the dialog");
+  await expect(reopenedDialog.getByRole("button", { name: "Edit task description" })).toHaveText(
+    "Task details saved from the dialog",
+  );
   await expect(reopenedDialog.locator(".task-detail-date")).toHaveAttribute("title", "Due 2026-11-01");
   await expect(reopenedDialog.locator(".label-picker-chip").nth(0)).toContainText("work");
   await expect(reopenedDialog.locator(".label-picker-chip").nth(1)).toContainText("review");
   await expect(reopenedDialog.locator(".task-comment .comment-markdown p")).toHaveText(["First", "comment"]);
-  await expect(reopenedDialog.getByRole("button", { name: "Nested from details", exact: true })).toBeVisible();
+  await expect(
+    reopenedDialog.getByRole("button", { name: "Nested from details", exact: true }),
+  ).toBeVisible();
   await reopenedDialog.getByRole("button", { name: "Nested from details", exact: true }).click();
   const childDialog = page.getByRole("dialog", { name: "Task details: Nested from details" });
   await expect(childDialog.getByRole("link", { name: title, exact: true })).toBeVisible();
@@ -177,17 +207,25 @@ test("renaming projects and sections preserves their visual order after reload",
   await page.reload();
   await expect(page.getByRole("button", { name: renamedProject, exact: true })).toBeVisible();
   await verifyProjectOrder();
-  const sourceProjectRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: projectNames[2], exact: true }) });
-  const targetProjectRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: projectNames[0], exact: true }) });
+  const sourceProjectRow = page
+    .locator(".project-nav-row")
+    .filter({ has: page.getByRole("button", { name: projectNames[2], exact: true }) });
+  const targetProjectRow = page
+    .locator(".project-nav-row")
+    .filter({ has: page.getByRole("button", { name: projectNames[0], exact: true }) });
   await sourceProjectRow.dragTo(targetProjectRow, { targetPosition: { x: 24, y: 1 } });
-  await expect.poll(async () => {
-    const names = await projectOrder();
-    return names.indexOf(projectNames[2]) < names.indexOf(projectNames[0]);
-  }).toBe(true);
+  await expect
+    .poll(async () => {
+      const names = await projectOrder();
+      return names.indexOf(projectNames[2]) < names.indexOf(projectNames[0]);
+    })
+    .toBe(true);
   await page.reload();
   await expect(page.getByRole("button", { name: projectNames[2], exact: true })).toBeVisible();
   const persistedProjectNames = await projectOrder();
-  expect(persistedProjectNames.indexOf(projectNames[2])).toBeLessThan(persistedProjectNames.indexOf(projectNames[0]));
+  expect(persistedProjectNames.indexOf(projectNames[2])).toBeLessThan(
+    persistedProjectNames.indexOf(projectNames[0]),
+  );
 
   await page.getByRole("button", { name: "Inbox", exact: true }).click();
   const sectionNames = [unique("Order section A"), unique("Order section B"), unique("Order section C")];
@@ -257,7 +295,11 @@ test("archives and restores projects, and views table records", async ({ page })
   await expect(copiedProjectTasks).toContainText(taskTitle);
   await expect(copiedProjectTasks).toContainText(subtaskTitle);
   await page.locator(`summary[aria-label="Project menu ${copyTitle}"]`).click();
-  await page.locator(".project-nav-row").filter({ hasText: copyTitle }).getByRole("button", { name: "Archive", exact: true }).click();
+  await page
+    .locator(".project-nav-row")
+    .filter({ hasText: copyTitle })
+    .getByRole("button", { name: "Archive", exact: true })
+    .click();
 
   await page.getByRole("link", { name: "Archived projects" }).click();
   const archivedProject = page.locator(".archived-project").filter({ hasText: copyTitle });

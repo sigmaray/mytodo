@@ -19,11 +19,17 @@ export type Task = Readonly<{
 }>;
 
 export type Attachment = Readonly<{ id: string; name: string; mimeType: string; size: number }>;
-export type Comment = Readonly<{ id: string; body: string; createdAt: string; attachments?: ReadonlyArray<Attachment> }>;
-
-export type TaskNode = Task & Readonly<{
-  children: ReadonlyArray<TaskNode>;
+export type Comment = Readonly<{
+  id: string;
+  body: string;
+  createdAt: string;
+  attachments?: ReadonlyArray<Attachment>;
 }>;
+
+export type TaskNode = Task &
+  Readonly<{
+    children: ReadonlyArray<TaskNode>;
+  }>;
 
 export type Project = Readonly<{
   id: ProjectId;

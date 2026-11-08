@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["apps/**", "packages/**", "e2e/**", "!**/dist/**", "!**/node_modules/**"]
+    "includes": [
+      "apps/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "packages/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "e2e/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "playwright.config.ts",
+      "!**/dist/**",
+      "!**/node_modules/**"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,9 +25,14 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "preset": "none",
       "correctness": {
         "noUnusedImports": "error",
-        "noUnreachable": "error"
+        "noUnreachable": "error",
+        "noUnusedVariables": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
       }
     }
   },
