@@ -1,4 +1,10 @@
-import type { Project, ProjectId, Section, SectionId, Task, TaskNode } from "@todoist-clone/domain";
+import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskNode } from "@todoist-clone/domain";
+
+export type TaskCommentInput = Readonly<{
+  id?: string;
+  body: string;
+  attachments?: Comment["attachments"];
+}>;
 
 export type TaskApi = Readonly<{
   listTasks: () => Promise<ReadonlyArray<TaskNode>>;
@@ -35,7 +41,7 @@ export type TaskApi = Readonly<{
       description?: string;
       dueDate?: string | null;
       labels?: ReadonlyArray<string>;
-      comments?: Task["comments"];
+      comments?: ReadonlyArray<TaskCommentInput>;
     }>,
   ) => Promise<Task>;
   moveTask: (

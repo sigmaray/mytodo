@@ -1001,3 +1001,15 @@ Verification:
 - Expanded Biome lint and formatting checks to all application, domain, and E2E TypeScript/JavaScript. Formatted the checked files and removed stale imports/variables exposed by the wider lint run.
 - Added `attachmentStorage` for upload validation, private file writes/reads/deletes, and image MIME detection; app routes now retain HTTP and repository orchestration. Added storage tests for saving/removal, validation limits, and content-based MIME detection.
 - Verification: `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test` (107 tests), and `pnpm test:e2e` (33 tests) pass.
+
+## 2026-11-08 — Укрепить целостность и индексы БД
+
+- Добавлена миграция `0009_database_constraints_and_indexes.sql`: `due_date` преобразуется в SQL `date` (некорректные legacy-значения становятся `NULL`), attachments ограничены JSON-массивом, существующие задачи нормализуются по проекту секции, а trigger запрещает несогласованные project/section связи. Добавлены индексы для FK-удалений, очистки сессий и сортировки соседних задач.
+- Drizzle-схема теперь отражает FK пользователей, case-insensitive unique username, тип даты, JSON check и новые индексы. API и оба репозитория отклоняют размещение задачи в секции другого проекта; добавлен регрессионный тест.
+- Проверки: `pnpm test` (108 тестов), `pnpm build`, `pnpm lint`, `pnpm format:check`, `drizzle-kit check`, полный `pnpm test:e2e` (33 теста) и `git diff --check` прошли.
+
+## 2026-11-08 — Перенести генерацию ID комментариев на backend
+
+- PATCH комментариев принимает необязательный ID только для сохранённых записей; неизвестные клиентские ID игнорируются, новые ID и `createdAt` выдаёт сервер. При редактировании ID и время создания существующего комментария сохраняются. Валидатор отклоняет дубли существующих ID.
+- Frontend больше не генерирует ID/время новых комментариев. DB-репозиторий сверяет комментарии под блокировкой задачи; добавлены API и UI регрессии.
+- Проверки: `pnpm test` (109 тестов), `pnpm build`, `pnpm lint`, `pnpm format:check`, полный `pnpm test:e2e` (33 теста) и `git diff --check` прошли.

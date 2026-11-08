@@ -596,6 +596,29 @@ describe("POST /tasks", () => {
     );
   });
 
+  it("assigns comment IDs and creation times on the server while preserving existing IDs", async () => {
+    const agent = await createTestAgent();
+    const task = (await agent.post("/tasks").send({ title: "Comment IDs" }).expect(201)).body.task;
+    const created = await agent
+      .patch(`/tasks/${task.id}`)
+      .send({ comments: [{ id: "client-generated-id", body: "First" }] })
+      .expect(200);
+    const firstComment = created.body.task.comments[0];
+    expect(firstComment.id).not.toBe("client-generated-id");
+    expect(firstComment.id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(firstComment.createdAt).toEqual(expect.any(String));
+
+    const edited = await agent
+      .patch(`/tasks/${task.id}`)
+      .send({ comments: [{ id: firstComment.id, body: "Edited", createdAt: "2000-01-01T00:00:00.000Z" }] })
+      .expect(200);
+    expect(edited.body.task.comments[0]).toMatchObject({
+      id: firstComment.id,
+      body: "Edited",
+      createdAt: firstComment.createdAt,
+    });
+  });
+
   it("reorders tasks with beforeId and afterId", async () => {
     const agent = await createTestAgent();
     const create = async (title: string) =>

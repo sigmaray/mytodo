@@ -40,9 +40,8 @@ const patchTaskSchema = z.object({
   comments: z
     .array(
       z.object({
-        id: z.string(),
+        id: z.string().optional(),
         body: z.string().max(5000),
-        createdAt: z.string(),
         attachments: z
           .array(z.object({ id: z.string(), name: z.string(), mimeType: z.string(), size: z.number() }))
           .optional(),
@@ -52,6 +51,12 @@ const patchTaskSchema = z.object({
       (comments) =>
         comments.every((comment) => comment.body.trim().length > 0 || (comment.attachments?.length ?? 0) > 0),
       "Comment text or at least one attachment is required",
+    )
+    .refine(
+      (comments) =>
+        new Set(comments.flatMap((comment) => (comment.id === undefined ? [] : [comment.id]))).size ===
+        comments.filter((comment) => comment.id !== undefined).length,
+      "Comment IDs must be unique",
     )
     .optional(),
   completed: z.boolean().optional(),
@@ -875,7 +880,7 @@ export const createApp = (
       const hasForgedAttachment = result.data.comments.some((comment) =>
         (comment.attachments ?? []).some(
           (attachment) =>
-            !(allowed.get(comment.id) ?? []).some(
+            !(comment.id === undefined ? [] : (allowed.get(comment.id) ?? [])).some(
               (existing) =>
                 existing.id === attachment.id &&
                 existing.name === attachment.name &&

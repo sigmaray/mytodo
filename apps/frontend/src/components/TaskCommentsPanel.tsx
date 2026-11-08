@@ -26,9 +26,6 @@ type TaskCommentsPanelProps = Readonly<{
   notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
 }>;
 
-const createCommentId = () =>
-  globalThis.crypto?.randomUUID?.() ?? `comment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) => {
   const {
     api,
@@ -166,9 +163,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   const comments = [
                     ...task.comments,
                     {
-                      id: createCommentId(),
                       body: detailComment.trim(),
-                      createdAt: new Date().toISOString(),
                     },
                   ];
                   await api.updateTask(task.id, { comments });
@@ -227,9 +222,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
               const comments = [
                 ...task.comments,
                 {
-                  id: createCommentId(),
                   body: detailComment.trim(),
-                  createdAt: new Date().toISOString(),
                 },
               ];
               await api.updateTask(task.id, { comments });

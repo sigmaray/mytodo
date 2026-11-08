@@ -611,13 +611,22 @@ export const createPostgresTaskRepository = (
       if (taskRow === undefined) return null;
       if (comments !== undefined) {
         await client.begin(async (transaction) => {
-          const existing = await transaction<
-            { id: string }[]
-          >`SELECT id FROM tasks WHERE id = ${id} AND user_id = ${userId} FOR UPDATE`;
-          if (existing.length === 0) throw new Error("Task not found while updating comments");
+          const existingTasks = await transaction<{ id: string }[]>`
+            SELECT id FROM tasks WHERE id = ${id} AND user_id = ${userId} FOR UPDATE
+          `;
+          if (existingTasks.length === 0) throw new Error("Task not found while updating comments");
+          const existingComments = await transaction<
+            { id: string; body: string; createdAt: Date; attachments: unknown }[]
+          >`SELECT id, body, created_at AS "createdAt", attachments FROM task_comments WHERE task_id = ${id} AND user_id = ${userId}`;
+          const existingById = new Map(existingComments.map((comment) => [comment.id, comment]));
           await transaction`DELETE FROM task_comments WHERE task_id = ${id} AND user_id = ${userId}`;
           for (const comment of comments) {
-            await transaction`INSERT INTO task_comments (id, task_id, user_id, body, created_at, attachments) VALUES (${comment.id}, ${id}, ${userId}, ${comment.body}, ${comment.createdAt}, ${JSON.stringify(comment.attachments ?? [])}::jsonb)`;
+            const previous = comment.id === undefined ? undefined : existingById.get(comment.id);
+            const commentId = previous?.id ?? crypto.randomUUID();
+            const createdAt =
+              previous === undefined ? new Date().toISOString() : normalizeDate(previous.createdAt);
+            const attachments = comment.attachments ?? previous?.attachments ?? [];
+            await transaction`INSERT INTO task_comments (id, task_id, user_id, body, created_at, attachments) VALUES (${commentId}, ${id}, ${userId}, ${comment.body}, ${createdAt}, ${JSON.stringify(attachments)}::jsonb)`;
           }
         });
       }

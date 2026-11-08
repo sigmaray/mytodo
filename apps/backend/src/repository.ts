@@ -1,12 +1,18 @@
-import type { Project, ProjectId, Section, SectionId, Task, TaskId } from "@todoist-clone/domain";
+import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskId } from "@todoist-clone/domain";
 import { generateLexicalOrder } from "@todoist-clone/domain";
+
+export type TaskCommentPatch = Readonly<{
+  id?: string;
+  body: string;
+  attachments?: Comment["attachments"];
+}>;
 
 export type TaskPatch = Readonly<{
   title?: string;
   description?: string;
   dueDate?: string | null;
   labels?: ReadonlyArray<string>;
-  comments?: Task["comments"];
+  comments?: ReadonlyArray<TaskCommentPatch>;
   completed?: boolean;
   projectId?: ProjectId | null;
   sectionId?: SectionId | null;
@@ -450,6 +456,24 @@ export const createMemoryTaskRepository = (
       const updated = Object.freeze({
         ...existing,
         ...patch,
+        comments:
+          patch.comments === undefined
+            ? existing.comments
+            : Object.freeze(
+                patch.comments.map((comment) => {
+                  const previous = existing.comments.find((item) => item.id === comment.id);
+                  return Object.freeze({
+                    id: previous?.id ?? crypto.randomUUID(),
+                    body: comment.body,
+                    createdAt: previous?.createdAt ?? now(),
+                    ...(comment.attachments === undefined
+                      ? previous?.attachments === undefined
+                        ? {}
+                        : { attachments: previous.attachments }
+                      : { attachments: Object.freeze([...comment.attachments]) }),
+                  });
+                }),
+              ),
         updatedAt: now(),
       });
 

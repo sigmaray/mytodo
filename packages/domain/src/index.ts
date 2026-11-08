@@ -8,4 +8,14 @@ export {
   renderAdvancedMarkdownDocument,
   renderTaskMarkdownDocument,
 } from "./pure";
-export type { Project, ProjectId, Section, SectionId, Task, TaskId, TaskNode } from "./types";
+export type {
+  Attachment,
+  Comment,
+  Project,
+  ProjectId,
+  Section,
+  SectionId,
+  Task,
+  TaskId,
+  TaskNode,
+} from "./types";

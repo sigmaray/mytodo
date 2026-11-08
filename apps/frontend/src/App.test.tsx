@@ -1,11 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Project, Section, Task, TaskNode } from "@todoist-clone/domain";
+import type { Comment, Project, Section, Task, TaskNode } from "@todoist-clone/domain";
 import { BrowserRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryClient, TaskApp } from "./App";
-import type { ApplicationApi, ToolsApi } from "./api";
+import type { ApplicationApi, TaskCommentInput, ToolsApi } from "./api";
 import { createTaskApi } from "./api";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -27,6 +27,18 @@ const task = (values: Partial<TaskNode> & Pick<TaskNode, "id" | "title">): TaskN
     children: Object.freeze([]),
     ...values,
   });
+
+const savedComments = (comments: ReadonlyArray<TaskCommentInput> = []): ReadonlyArray<Comment> =>
+  Object.freeze(
+    comments.map((comment, index) =>
+      Object.freeze({
+        id: comment.id ?? `server-comment-${index}`,
+        body: comment.body,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        ...(comment.attachments === undefined ? {} : { attachments: comment.attachments }),
+      }),
+    ),
+  );
 
 const project = (values: Partial<Project> & Pick<Project, "id" | "title">): Project =>
   Object.freeze({
@@ -347,7 +359,7 @@ describe("TaskApp", () => {
     ]);
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
-        task({ id, title: "Plan MVP", comments: patch.comments ?? [] }),
+        task({ id, title: "Plan MVP", comments: savedComments(patch.comments) }),
     );
     renderApp(
       Object.freeze({
@@ -537,9 +549,10 @@ describe("TaskApp", () => {
           id,
           title: "Plan release",
           labels: patch.labels ?? ["work"],
-          comments: patch.comments ?? [
-            Object.freeze({ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" }),
-          ],
+          comments:
+            patch.comments === undefined
+              ? [Object.freeze({ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" })]
+              : savedComments(patch.comments),
           dueDate: patch.dueDate === null ? null : "2026-01-03",
         }),
     );
@@ -599,8 +612,15 @@ describe("TaskApp", () => {
 
   it("asks before removing saved labels, comments, and subtasks from mobile sections", async () => {
     const updateTask = vi.fn(
-      async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
-        task({ id, title: "Plan release", ...patch }),
+      async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> => {
+        const { comments, ...fields } = patch;
+        return task({
+          id,
+          title: "Plan release",
+          ...fields,
+          ...(comments === undefined ? {} : { comments: savedComments(comments) }),
+        });
+      },
     );
     const deleteTask = vi.fn(async () => undefined);
     const child = task({ id: "child-1", title: "Write tests", parentId: "task-1" });
@@ -718,7 +738,7 @@ describe("TaskApp", () => {
           description: patch.description ?? "",
           dueDate: patch.dueDate ?? null,
           labels: patch.labels ?? [],
-          comments: patch.comments ?? [],
+          comments: savedComments(patch.comments),
         }),
     );
     renderApp(
@@ -758,7 +778,6 @@ describe("TaskApp", () => {
     expect(dialog.querySelector(".task-detail-date svg")).not.toBeNull();
     await userEvent.type(within(dialog).getByLabelText("Labels"), "work{Enter}");
     await waitFor(() => expect(updateTask).toHaveBeenCalledWith("task-1", { labels: ["work"] }));
-    vi.stubGlobal("crypto", Object.freeze({}));
     await userEvent.type(within(dialog).getByLabelText("Add comment"), "Looks good");
     await userEvent.click(within(dialog).getByRole("button", { name: "Add comment" }));
     await waitFor(() =>
@@ -767,6 +786,9 @@ describe("TaskApp", () => {
         expect.objectContaining({ comments: [expect.objectContaining({ body: "Looks good" })] }),
       ),
     );
+    const addedComment = updateTask.mock.calls.at(-1)?.[1].comments?.[0];
+    expect(addedComment).not.toHaveProperty("id");
+    expect(addedComment).not.toHaveProperty("createdAt");
     expect(within(dialog).queryByRole("button", { name: "Save task" })).not.toBeInTheDocument();
   });
 
@@ -1937,10 +1959,15 @@ describe("Dates and Labels task views", () => {
         storedTasks = Object.freeze([...storedTasks, created]);
         return created;
       },
-      updateTask: async (id: string, patch: Partial<Task>) => {
+      updateTask: async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]) => {
         const current = storedTasks.find((item) => item.id === id);
         if (current === undefined) throw new Error(`Unknown task ${id}`);
-        const updated = task({ ...current, ...patch });
+        const { comments, ...fields } = patch;
+        const updated = task({
+          ...current,
+          ...fields,
+          ...(comments === undefined ? {} : { comments: savedComments(comments) }),
+        });
         storedTasks = Object.freeze(storedTasks.map((item) => (item.id === id ? updated : item)));
         return updated;
       },
