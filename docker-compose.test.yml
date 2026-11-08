@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-todoist}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todoist}
-      POSTGRES_DB: ${POSTGRES_DB:-todoist}
+      POSTGRES_USER: ${MYTODO_POSTGRES_USER:-todoist}
+      POSTGRES_PASSWORD: ${MYTODO_POSTGRES_PASSWORD:-todoist}
+      POSTGRES_DB: ${MYTODO_POSTGRES_DB:-todoist}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
     environment:
       CI: "true"
       NODE_ENV: test
-      DATABASE_URL: postgres://${POSTGRES_USER:-todoist}:${POSTGRES_PASSWORD:-todoist}@postgres:5432/${POSTGRES_DB:-todoist}
+      DATABASE_URL: postgres://${MYTODO_POSTGRES_USER:-todoist}:${MYTODO_POSTGRES_PASSWORD:-todoist}@postgres:5432/${MYTODO_POSTGRES_DB:-todoist}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     volumes:
       - .:/workspace

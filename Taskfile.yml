@@ -1,13 +1,13 @@
 version: "3"
 
 vars:
-  DB_HOST: '{{.DB_HOST | default "127.0.0.1"}}'
-  DB_PORT: '{{.DB_PORT | default "5432"}}'
-  DB_USER: '{{.DB_USER | default "todoist"}}'
-  DB_PASSWORD: '{{.DB_PASSWORD | default "todoist"}}'
-  DB_NAME: '{{.DB_NAME | default "todoist"}}'
-  DATABASE_URL: '{{.DATABASE_URL | default "postgres://todoist:todoist@127.0.0.1:5432/todoist"}}'
-  DB_DUMP_FILE: '{{.DB_DUMP_FILE | default (printf "dumps/todoist-%s.dump" (now | date "2006-01-02_150405"))}}'
+  MYTODO_DB_HOST: '{{.MYTODO_DB_HOST | default "127.0.0.1"}}'
+  MYTODO_DB_PORT: '{{.MYTODO_DB_PORT | default "5432"}}'
+  MYTODO_DB_USER: '{{.MYTODO_DB_USER | default "todoist"}}'
+  MYTODO_DB_PASSWORD: '{{.MYTODO_DB_PASSWORD | default "todoist"}}'
+  MYTODO_DB_NAME: '{{.MYTODO_DB_NAME | default "todoist"}}'
+  MYTODO_DATABASE_URL: '{{.MYTODO_DATABASE_URL | default "postgres://todoist:todoist@127.0.0.1:5432/todoist"}}'
+  MYTODO_DB_DUMP_FILE: '{{.MYTODO_DB_DUMP_FILE | default (printf "dumps/todoist-%s.dump" (now | date "2006-01-02_150405"))}}'
 
 tasks:
   backend:
@@ -94,41 +94,41 @@ tasks:
     desc: Create the PostgreSQL database if it does not exist
     cmds:
       - |
-        PGPASSWORD="{{.DB_PASSWORD}}" psql -h "{{.DB_HOST}}" -p "{{.DB_PORT}}" -U "{{.DB_USER}}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '{{.DB_NAME}}'" | grep -q 1 \
-          || PGPASSWORD="{{.DB_PASSWORD}}" createdb -h "{{.DB_HOST}}" -p "{{.DB_PORT}}" -U "{{.DB_USER}}" "{{.DB_NAME}}"
+        PGPASSWORD="{{.MYTODO_DB_PASSWORD}}" psql -h "{{.MYTODO_DB_HOST}}" -p "{{.MYTODO_DB_PORT}}" -U "{{.MYTODO_DB_USER}}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '{{.MYTODO_DB_NAME}}'" | grep -q 1 \
+          || PGPASSWORD="{{.MYTODO_DB_PASSWORD}}" createdb -h "{{.MYTODO_DB_HOST}}" -p "{{.MYTODO_DB_PORT}}" -U "{{.MYTODO_DB_USER}}" "{{.MYTODO_DB_NAME}}"
 
   db:drop-tables:
     desc: Drop all tables in the PostgreSQL database
     cmds:
       - |
-        PGPASSWORD="{{.DB_PASSWORD}}" psql -h "{{.DB_HOST}}" -p "{{.DB_PORT}}" -U "{{.DB_USER}}" -d "{{.DB_NAME}}" -v ON_ERROR_STOP=1 -c 'DO $$ DECLARE item RECORD; BEGIN FOR item IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP EXECUTE format(''DROP TABLE IF EXISTS %I CASCADE'', item.tablename); END LOOP; END $$;'
+        PGPASSWORD="{{.MYTODO_DB_PASSWORD}}" psql -h "{{.MYTODO_DB_HOST}}" -p "{{.MYTODO_DB_PORT}}" -U "{{.MYTODO_DB_USER}}" -d "{{.MYTODO_DB_NAME}}" -v ON_ERROR_STOP=1 -c 'DO $$ DECLARE item RECORD; BEGIN FOR item IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP EXECUTE format(''DROP TABLE IF EXISTS %I CASCADE'', item.tablename); END LOOP; END $$;'
 
   db:migrate:
     desc: Run Drizzle migrations for the PostgreSQL database
     dir: apps/backend
     cmds:
-      - DATABASE_URL="{{.DATABASE_URL}}" pnpm exec drizzle-kit migrate --config drizzle.config.ts
+      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm exec drizzle-kit migrate --config drizzle.config.ts
 
   dev:docker:db:dump:
     desc: Save a restorable custom-format dump from the dev Docker database
     cmds:
-      - mkdir -p "$(dirname "{{.DB_DUMP_FILE}}")"
-      - docker compose --env-file .env.example -f docker-compose.dev.yml exec -T postgres pg_dump -U "{{.DB_USER}}" -d "{{.DB_NAME}}" --format=custom > "{{.DB_DUMP_FILE}}"
-      - echo "Database dump saved to {{.DB_DUMP_FILE}}"
+      - mkdir -p "$(dirname "{{.MYTODO_DB_DUMP_FILE}}")"
+      - docker compose --env-file .env.example -f docker-compose.dev.yml exec -T postgres pg_dump -U "{{.MYTODO_DB_USER}}" -d "{{.MYTODO_DB_NAME}}" --format=custom > "{{.MYTODO_DB_DUMP_FILE}}"
+      - echo "Database dump saved to {{.MYTODO_DB_DUMP_FILE}}"
 
   dev:docker:db:restore:
     desc: Restore a custom-format dump into the dev Docker database (replaces existing objects)
     vars:
-      DUMP_FILE: '{{.DUMP_FILE | default .DB_DUMP_FILE}}'
+      DUMP_FILE: '{{.DUMP_FILE | default .MYTODO_DB_DUMP_FILE}}'
     cmds:
       - test -f "{{.DUMP_FILE}}"
-      - docker compose --env-file .env.example -f docker-compose.dev.yml exec -T postgres pg_restore -U "{{.DB_USER}}" -d "{{.DB_NAME}}" --clean --if-exists --no-owner --no-privileges --exit-on-error < "{{.DUMP_FILE}}"
+      - docker compose --env-file .env.example -f docker-compose.dev.yml exec -T postgres pg_restore -U "{{.MYTODO_DB_USER}}" -d "{{.MYTODO_DB_NAME}}" --clean --if-exists --no-owner --no-privileges --exit-on-error < "{{.DUMP_FILE}}"
 
   dev:docker:users:list:
     desc: List user accounts in the development database
     dir: apps/backend
     cmds:
-      - DATABASE_URL="{{.DATABASE_URL}}" pnpm users list
+      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users list
 
   dev:docker:users:create:
     desc: Create a user account (USERNAME=... PASSWORD=... [ADMIN=true])
@@ -139,7 +139,7 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}" && test -n "{{.PASSWORD}}"
-      - DATABASE_URL="{{.DATABASE_URL}}" pnpm users create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   dev:docker:users:update:
     desc: Update an account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
@@ -151,7 +151,7 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}"
-      - DATABASE_URL="{{.DATABASE_URL}}" pnpm users update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   dev:docker:users:delete:
     desc: Delete a user account (USERNAME=...)
@@ -160,4 +160,4 @@ tasks:
     dir: apps/backend
     cmds:
       - test -n "{{.USERNAME}}"
-      - DATABASE_URL="{{.DATABASE_URL}}" pnpm users delete "{{.USERNAME}}"
+      - DATABASE_URL="{{.MYTODO_DATABASE_URL}}" pnpm users delete "{{.USERNAME}}"

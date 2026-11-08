@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-08 — Prefix project configuration variables with MYTODO_
+
+- Renamed variables in `.env.example`, the local `.env.production`, and deployment examples to `MYTODO_*`; updated Compose interpolation, Caddy domain substitution, Taskfile database variables, and README examples accordingly. Standard container-level variables such as `DATABASE_URL`, `PORT`, and `POSTGRES_USER` remain mapped inside services.
+- Verification: dev, test, shared-infra, and standalone Compose configs validate; Task database migration dry-run resolves `MYTODO_DATABASE_URL`; no unprefixed project config keys remain in env files; `git diff --check` passes.
+
 ## 2026-11-08 — Adjust mytodo logo mark typography
 
 - Set `.brand-mark` font size to 13px.

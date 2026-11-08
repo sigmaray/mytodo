@@ -4,9 +4,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-todoist}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
-      POSTGRES_DB: ${POSTGRES_DB:-todoist}
+      POSTGRES_USER: ${MYTODO_POSTGRES_USER:-todoist}
+      POSTGRES_PASSWORD: ${MYTODO_POSTGRES_PASSWORD:?Set MYTODO_POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${MYTODO_POSTGRES_DB:-todoist}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
@@ -26,7 +26,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgres://${POSTGRES_USER:-todoist}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-todoist}
+      DATABASE_URL: postgres://${MYTODO_POSTGRES_USER:-todoist}:${MYTODO_POSTGRES_PASSWORD}@postgres:5432/${MYTODO_POSTGRES_DB:-todoist}
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     environment:
-      TODOIST_DOMAIN: ${TODOIST_DOMAIN:?Set TODOIST_DOMAIN in .env.production}
+      MYTODO_DOMAIN: ${MYTODO_DOMAIN:?Set MYTODO_DOMAIN in .env.production}
     ports:
       - "80:80"
       - "443:443"
