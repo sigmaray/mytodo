@@ -366,6 +366,30 @@ describe("POST /tasks", () => {
     });
   });
 
+  it("rejects assigning a task to a section from a different project", async () => {
+    const agent = await createTestAgent();
+    const projectA = (await agent.post("/projects").send({ title: "A" }).expect(201)).body.project;
+    const projectB = (await agent.post("/projects").send({ title: "B" }).expect(201)).body.project;
+    const section = (
+      await agent.post("/sections").send({ title: "Section", projectId: projectA.id }).expect(201)
+    ).body.section;
+    await agent
+      .post("/tasks")
+      .send({ title: "Mismatch", projectId: projectB.id, sectionId: section.id })
+      .expect(400);
+
+    const task = (
+      await agent
+        .post("/tasks")
+        .send({ title: "Task", projectId: projectA.id, sectionId: section.id })
+        .expect(201)
+    ).body.task;
+    await agent
+      .put(`/tasks/${task.id}/move`)
+      .send({ parentId: null, projectId: projectB.id, sectionId: section.id, beforeId: null, afterId: null })
+      .expect(400);
+  });
+
   it("rejects moving a task into itself or one of its descendants", async () => {
     const agent = await createTestAgent();
     const parent = (await agent.post("/tasks").send({ title: "Parent" }).expect(201)).body.task;
@@ -416,13 +440,14 @@ describe("POST /tasks", () => {
     const sectionResponse = await agent.post("/sections").send({ title: "Later", projectId }).expect(201);
     const sectionTaskResponse = await agent
       .post("/tasks")
-      .send({ title: "In section", sectionId: sectionResponse.body.section.id })
+      .send({ title: "In section", projectId, sectionId: sectionResponse.body.section.id })
       .expect(201);
     await agent
       .post("/tasks")
       .send({
         title: "Subtask",
         parentId: sectionTaskResponse.body.task.id,
+        projectId,
         sectionId: sectionResponse.body.section.id,
       })
       .expect(201);

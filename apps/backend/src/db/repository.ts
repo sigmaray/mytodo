@@ -65,6 +65,21 @@ const sectionOrder = asc(sql`${sectionsTable.lexicalOrder} COLLATE "C"`);
 const nullableEq = <TColumn>(column: TColumn, value: string | null) =>
   value === null ? isNull(column as never) : eq(column as never, value);
 
+const hasValidTaskPlacement = async (
+  db: ReturnType<typeof drizzle>,
+  userId: string,
+  projectId: string | null,
+  sectionId: string | null,
+): Promise<boolean> => {
+  if (sectionId === null) return true;
+  const [section] = await db
+    .select({ projectId: sectionsTable.projectId })
+    .from(sectionsTable)
+    .where(and(eq(sectionsTable.id, sectionId), eq(sectionsTable.userId, userId)))
+    .limit(1);
+  return section !== undefined && section.projectId === projectId;
+};
+
 const findSiblingOrder = async (
   db: ReturnType<typeof drizzle>,
   parentId: TaskId | null,
@@ -524,6 +539,8 @@ export const createPostgresTaskRepository = (
         ).length === 0
       )
         throw new Error("Section not found");
+      if (!(await hasValidTaskPlacement(db, userId, projectId, sectionId)))
+        throw new Error("Section does not belong to project");
       const id = crypto.randomUUID();
       const lexicalOrder = await findSiblingOrder(db, parentId, projectId, sectionId, null, null, userId);
       const rows = await db
@@ -549,6 +566,15 @@ export const createPostgresTaskRepository = (
       return task;
     },
     patch: async (id, patch: TaskPatch) => {
+      const [currentTask] = await db
+        .select({ projectId: tasksTable.projectId, sectionId: tasksTable.sectionId })
+        .from(tasksTable)
+        .where(and(eq(tasksTable.id, id), eq(tasksTable.userId, userId)))
+        .limit(1);
+      if (currentTask === undefined) return null;
+      const nextProjectId = patch.projectId === undefined ? currentTask.projectId : patch.projectId;
+      const nextSectionId = patch.sectionId === undefined ? currentTask.sectionId : patch.sectionId;
+      if (!(await hasValidTaskPlacement(db, userId, nextProjectId, nextSectionId))) return null;
       if (
         patch.projectId != null &&
         (
@@ -647,6 +673,12 @@ export const createPostgresTaskRepository = (
           ).length === 0
         )
           return null;
+        if (move.sectionId !== null) {
+          const sectionRows = await transaction<{ projectId: string | null }[]>`
+            SELECT project_id AS "projectId" FROM sections WHERE id = ${move.sectionId} AND user_id = ${userId} LIMIT 1
+          `;
+          if (sectionRows[0]?.projectId !== move.projectId) return null;
+        }
         const siblings = await transaction<{ id: string; lexicalOrder: string }[]>`
           SELECT id, lexical_order AS "lexicalOrder" FROM tasks
           WHERE user_id = ${userId} AND id <> ${id}

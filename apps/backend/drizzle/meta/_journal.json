@@ -64,6 +64,13 @@
       "when": 1794172800000,
       "tag": "0008_data_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794176400000,
+      "tag": "0009_database_constraints_and_indexes",
+      "breakpoints": true
     }
   ]
 }

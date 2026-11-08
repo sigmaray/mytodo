@@ -833,6 +833,12 @@ export const createApp = (
       !(await taskRepository.listSections()).some((section) => section.id === result.data.sectionId)
     )
       return context.json({ error: "Section not found" }, 404);
+    if (
+      result.data.sectionId !== null &&
+      (await taskRepository.listSections()).find((section) => section.id === result.data.sectionId)
+        ?.projectId !== result.data.projectId
+    )
+      return context.json({ error: "Section does not belong to project" }, 400);
 
     const task = await taskRepository.create(
       result.data.title,
@@ -853,6 +859,15 @@ export const createApp = (
 
     const taskRepository = repositoryFor(context.get("userId"));
     const previous = (await taskRepository.list()).find((item) => item.id === context.req.param("id"));
+    const nextProjectId = result.data.projectId === undefined ? previous?.projectId : result.data.projectId;
+    const nextSectionId = result.data.sectionId === undefined ? previous?.sectionId : result.data.sectionId;
+    if (
+      nextSectionId !== null &&
+      nextSectionId !== undefined &&
+      (await taskRepository.listSections()).find((section) => section.id === nextSectionId)?.projectId !==
+        nextProjectId
+    )
+      return context.json({ error: "Section does not belong to project" }, 400);
     if (previous !== undefined && result.data.comments !== undefined) {
       const allowed = new Map(
         previous.comments.map((comment) => [comment.id, comment.attachments ?? Object.freeze([])]),
@@ -899,7 +914,14 @@ export const createApp = (
       return context.json({ error: "Invalid task move" }, 400);
     }
 
-    const task = await repositoryFor(context.get("userId")).move(context.req.param("id"), result.data);
+    const taskRepository = repositoryFor(context.get("userId"));
+    if (
+      result.data.sectionId !== null &&
+      (await taskRepository.listSections()).find((section) => section.id === result.data.sectionId)
+        ?.projectId !== result.data.projectId
+    )
+      return context.json({ error: "Section does not belong to project" }, 400);
+    const task = await taskRepository.move(context.req.param("id"), result.data);
 
     return task === null ? context.json({ error: "Task not found" }, 404) : context.json({ task });
   });

@@ -122,6 +122,8 @@ export const createMemoryTaskRepository = (
   const replace = (nextTasks: ReadonlyArray<Task>) => {
     tasks = Object.freeze(nextTasks.map((task) => Object.freeze({ ...task })));
   };
+  const hasValidTaskPlacement = (projectId: string | null, sectionId: string | null): boolean =>
+    sectionId === null || sections.find((section) => section.id === sectionId)?.projectId === projectId;
 
   return Object.freeze({
     list: async () => tasks,
@@ -409,6 +411,7 @@ export const createMemoryTaskRepository = (
       return true;
     },
     create: async (title, parentId, projectId, sectionId) => {
+      if (!hasValidTaskPlacement(projectId, sectionId)) throw new Error("Section does not belong to project");
       const createdAt = now();
       const task = Object.freeze({
         id: crypto.randomUUID(),
@@ -436,6 +439,13 @@ export const createMemoryTaskRepository = (
       if (existing === undefined) {
         return null;
       }
+      if (
+        !hasValidTaskPlacement(
+          patch.projectId === undefined ? existing.projectId : patch.projectId,
+          patch.sectionId === undefined ? existing.sectionId : patch.sectionId,
+        )
+      )
+        return null;
 
       const updated = Object.freeze({
         ...existing,
@@ -467,6 +477,7 @@ export const createMemoryTaskRepository = (
       if (move.parentId !== null && !tasks.some((task) => task.id === move.parentId)) return null;
 
       if (wouldCreateTaskCycle(tasks, id, move.parentId)) return null;
+      if (!hasValidTaskPlacement(move.projectId, move.sectionId)) return null;
 
       const updated = Object.freeze({
         ...existing,
