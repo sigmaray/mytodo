@@ -392,6 +392,13 @@ describe("PATCH /sections/:id/order", () => {
 });
 
 describe("settings and session authentication", () => {
+  it("keeps the Playwright reset API unavailable unless explicitly enabled outside production", async () => {
+    const agent = await createTestAgent();
+    await agent.post("/api/playwright/reset").expect(404);
+    expect(() => createApp(createMemoryTaskRepository(), { databaseUrl: "postgres://unused", mode: "production", playwrightApiEnabled: true })).toThrow(/cannot be enabled in production/i);
+    expect(() => createApp(createMemoryTaskRepository(), { playwrightApiEnabled: true })).toThrow(/requires a database url/i);
+  });
+
   it("blocks API access until the administrator configures a password", async () => {
     const server = await createTestServer(createApp());
     const agent = request(server);

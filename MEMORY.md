@@ -932,3 +932,33 @@ Verification:
 
 - Vite previously proxied `GET /attachments` to the API, so reloading the Attachments page returned an API 404. The proxy now bypasses HTML navigation requests and serves the SPA, while attachment API/file requests remain proxied.
 - Added an E2E reload assertion on the Attachments page. Verification: all 98 unit/integration tests pass, production build passes, focused attachment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Add an explicit attachments feature flag
+
+- Added `MYTODO_ATTACHMENTS_ENABLED` (defaults to `false`) as the explicit gate for attachment UI and API. Enabling it requires a writable `MYTODO_ATTACHMENTS_DIR`; startup reports a clear error if the directory is missing or invalid. Dev Compose and E2E explicitly enable attachments, while production examples document opt-in behavior.
+- Hid existing attachment previews and links in task dialogs when disabled; added frontend and backend regression coverage.
+- Verification: all 100 unit/integration tests pass, production build passes, attachment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Focus comment text when editing
+
+- Set autofocus on the comment editor shown after clicking Edit. Added a frontend assertion that the editor owns focus and an E2E assertion for the same interaction.
+- Verification: all 100 unit/integration tests pass, production build passes, focused comment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Make project archiving opt-in
+
+- Added `MYTODO_PROJECT_ARCHIVING_ENABLED`, defaulting to false in the backend and Compose. The feature status is published to the frontend; archive controls and the archived-project page are hidden when disabled, while existing archived projects remain visible. The archive API returns 503 when disabled.
+- Added backend and frontend regression tests, an enabled-feature E2E check, and documented the environment setting.
+- Verification: all 102 unit/integration tests pass, production build passes, focused E2E passes, and `git diff --check` passes. The unrelated full mobile sidebar E2E scenario failed while reopening navigation after its Dates route step.
+
+## 2026-11-08 — Remove Initial comment from Add task
+
+- Removed the Initial comment textarea from task creation and removed its draft state. New tasks still upload selected or pasted files as an attachment-only comment.
+- Added a component assertion that the field is absent and retained the paste-upload regression check; the Playwright task creation helper also asserts the field is absent.
+- Verification: all 102 unit/integration tests pass, production build passes, task creation E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Add an API for Playwright E2E setup
+
+- Added an authenticated `/api/playwright/reset` endpoint gated by `MYTODO_ENABLE_PLAYWRIGHT_API`; backend startup rejects enabling it in production or without a database URL. Playwright enables it only in its development server config, and the fixture resets the isolated test database before each case.
+- Added functional API helpers in `e2e/api.ts` for projects, sections, tasks, task updates, archiving, and reset. Replaced repeated UI setup for projects/tasks while keeping dedicated UI creation coverage. Documented this setup in README.
+- Fixed the mobile comment form width selector and made E2E checks robust for multiline Markdown comments and the form's actual layout.
+- Verification: `pnpm test` (103 tests), `pnpm build`, and full `pnpm test:e2e` (31 tests) pass; `git diff --check` passes.

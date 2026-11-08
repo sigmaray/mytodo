@@ -2122,7 +2122,7 @@ body {
   .details-subtask { min-width: 0; overflow-wrap: anywhere; }
   .task-comment { min-width: 0; }
   .task-comment > p { overflow-wrap: anywhere; }
-  .task-comments > .btn-primary { width: 100%; }
+  .task-comments .card > .btn-primary { width: 100%; }
   .task-details-modal input,
   .task-details-modal textarea,
   .task-details-modal select { min-height: 44px; font-size: 16px; }

@@ -106,7 +106,7 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   await expect(reopenedDialog.locator(".task-detail-date")).toHaveAttribute("title", "Due 2026-11-01");
   await expect(reopenedDialog.locator(".label-picker-chip").nth(0)).toContainText("work");
   await expect(reopenedDialog.locator(".label-picker-chip").nth(1)).toContainText("review");
-  await expect(page.getByText("First comment")).toBeVisible();
+  await expect(reopenedDialog.locator(".task-comment .comment-markdown p")).toHaveText(["First", "comment"]);
   await expect(reopenedDialog.getByRole("button", { name: "Nested from details", exact: true })).toBeVisible();
   await reopenedDialog.getByRole("button", { name: "Nested from details", exact: true }).click();
   const childDialog = page.getByRole("dialog", { name: "Task details: Nested from details" });

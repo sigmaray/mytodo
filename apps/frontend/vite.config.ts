@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": apiTarget,
+      "/api/playwright": apiTarget,
       "/attachments": {
         target: apiTarget,
         bypass: (request) => request.headers.accept?.includes("text/html") ? request.url : undefined

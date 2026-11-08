@@ -15,7 +15,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `DATABASE_URL=${databaseUrl} MYTODO_ATTACHMENTS_DIR=/tmp/mytodo-e2e-attachments pnpm --filter @todoist-clone/backend exec drizzle-kit migrate --config drizzle.config.ts && DATABASE_URL=${databaseUrl} pnpm --filter @todoist-clone/backend users update admin --password=todoist-e2e-password && DATABASE_URL=${databaseUrl} MYTODO_ATTACHMENTS_DIR=/tmp/mytodo-e2e-attachments PORT=${backendPort} pnpm --filter @todoist-clone/backend dev`,
+      command: `DATABASE_URL=${databaseUrl} MYTODO_ATTACHMENTS_DIR=/tmp/mytodo-e2e-attachments MYTODO_ATTACHMENTS_ENABLED=true MYTODO_PROJECT_ARCHIVING_ENABLED=true MYTODO_ENABLE_PLAYWRIGHT_API=true pnpm --filter @todoist-clone/backend exec drizzle-kit migrate --config drizzle.config.ts && DATABASE_URL=${databaseUrl} pnpm --filter @todoist-clone/backend users update admin --password=todoist-e2e-password && DATABASE_URL=${databaseUrl} MYTODO_ATTACHMENTS_DIR=/tmp/mytodo-e2e-attachments MYTODO_ATTACHMENTS_ENABLED=true MYTODO_PROJECT_ARCHIVING_ENABLED=true MYTODO_ENABLE_PLAYWRIGHT_API=true PORT=${backendPort} pnpm --filter @todoist-clone/backend dev`,
       url: `http://127.0.0.1:${backendPort}/auth/status`,
       reuseExistingServer: false
     },

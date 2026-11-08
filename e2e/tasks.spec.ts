@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { createE2eApi } from "./api";
 import type { Page } from "@playwright/test";
 import process from "node:process";
 
@@ -32,6 +33,13 @@ test("shows task context actions in Inbox and projects", async ({ page }, testIn
 });
 
 const createTask = (page: Page) => async (title: string) => {
+  const projectId = await page.evaluate(() => new URLSearchParams(window.location.search).get("project"));
+  await createE2eApi(page.request).createTask(title, { projectId });
+  await page.reload();
+  await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
+};
+
+const createTaskThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add task Q" }).click();
   await expect(page.getByLabel("Initial task comment")).toHaveCount(0);
   await page.getByLabel("New task title").fill(title);
@@ -40,6 +48,12 @@ const createTask = (page: Page) => async (title: string) => {
 };
 
 const createProject = (page: Page) => async (title: string) => {
+  const created = await createE2eApi(page.request).createProject(title);
+  await page.goto(`/?project=${encodeURIComponent(created.id)}`);
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+};
+
+const createProjectThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add project" }).click();
   await page.getByLabel("Project title").fill(title);
   const createdResponse = page.waitForResponse((response) => response.url().endsWith("/projects") && response.request().method() === "POST");
@@ -263,7 +277,7 @@ test("creates a task in the browser", async ({ page }, testInfo) => {
 
   await page.goto("/");
 
-  await createTask(page)(title);
+  await createTaskThroughUi(page)(title);
 
   await expect(page.getByText(title)).toBeVisible();
   await expect(page.getByRole("button", { name: `Edit task ${title}` })).toHaveCSS("opacity", "1");
@@ -328,7 +342,8 @@ test("adapts task details to a small mobile viewport", async ({ page }, testInfo
   await expect(dialog.getByLabel("Add comment")).toBeFocused();
   expect(await dialog.locator(".task-comments").evaluate((comments) => {
     const button = comments.querySelector<HTMLElement>(".btn-primary");
-    return button !== null && button.getBoundingClientRect().width >= comments.getBoundingClientRect().width - 33;
+    const formCard = comments.querySelector<HTMLElement>(".card");
+    return button !== null && formCard !== null && button.getBoundingClientRect().width >= formCard.getBoundingClientRect().width - 34;
   })).toBe(true);
   await dialog.getByRole("button", { name: "Date" }).click();
   const dateDialog = dialog.getByRole("dialog", { name: "Add date" });
@@ -719,7 +734,7 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Tools" })).toHaveAttribute("href", "/tools");
 
-  await createProject(page)(projectTitle);
+  await createProjectThroughUi(page)(projectTitle);
   await expect(page.getByRole("button", { name: projectTitle, exact: true })).toBeVisible();
 
   await page.locator(`summary[aria-label="Project menu ${projectTitle}"]`).click();
@@ -847,13 +862,13 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   await expect(page.getByRole("button", { name: "Export all ZIP" })).toHaveCount(0);
   const markdownDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export all markdown" }).click();
-  expect((await markdownDownload).suggestedFilename()).toBe("todoist-clone.md");
+  expect((await markdownDownload).suggestedFilename()).toBe("mytodo.md");
   const advancedMarkdownDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export all advanced markdown" }).click();
-  expect((await advancedMarkdownDownload).suggestedFilename()).toBe("todoist-clone-advanced.md");
+  expect((await advancedMarkdownDownload).suggestedFilename()).toBe("mytodo-advanced.md");
   const jsonDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export all JSON" }).click();
-  expect((await jsonDownload).suggestedFilename()).toBe("todoist-clone.json");
+  expect((await jsonDownload).suggestedFilename()).toBe("mytodo.json");
   await page.getByRole("button", { name: "Copy all JSON" }).click();
   await expect(page.locator(".export-page [role=status]")).toHaveText("All JSON copied");
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('"taskTree"');

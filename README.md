@@ -108,7 +108,9 @@ cp deploy.env.example .env
 task prod:docker
 ```
 
-The API applies Drizzle migrations before starting. `MYTODO_ATTACHMENTS_DIR` enables comment attachments when set to `/var/lib/mytodo/attachments`; leave it unset or empty to keep attachment controls and API operations disabled. The API stores files in the persistent `mytodo_attachments` volume. To keep that data on a specific host disk, override the API mount in a Compose override file with a bind mount to `/var/lib/mytodo/attachments`. Back up this storage together with the database. Set the initial administrator password once:
+The API applies Drizzle migrations before starting. Set `MYTODO_ATTACHMENTS_ENABLED=true` to show attachment controls and enable attachment API routes; it defaults to `false`. When enabled, `MYTODO_ATTACHMENTS_DIR` must point to a writable directory, normally `/var/lib/mytodo/attachments`. The API stores files in the persistent `mytodo_attachments` volume. To keep that data on a specific host disk, override the API mount in a Compose override file with a bind mount to `/var/lib/mytodo/attachments`. Back up this storage together with the database. Set the initial administrator password once:
+
+Project archiving is disabled by default. Set `MYTODO_PROJECT_ARCHIVING_ENABLED=true` to show project archive controls and the Archived projects page, and enable the archive API operation.
 
 ```bash
 task prod:docker:users:update USERNAME=admin PASSWORD='your-strong-password'
@@ -132,7 +134,9 @@ To run without a shared infrastructure stack, use `docker-compose.with-infra.yml
 MYTODO_DB_USER=todoist
 MYTODO_DB_PASSWORD=replace-with-a-strong-alphanumeric-password
 MYTODO_DB_NAME=todoist
+MYTODO_ATTACHMENTS_ENABLED=true
 MYTODO_ATTACHMENTS_DIR=/var/lib/mytodo/attachments
+MYTODO_PROJECT_ARCHIVING_ENABLED=false
 MYTODO_DOMAIN=todoist.example.com
 ```
 
@@ -155,6 +159,8 @@ task test:docker
 task test:docker:app
 pnpm test:e2e
 ```
+
+Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables the authenticated `/api/playwright/reset` endpoint used by the E2E fixture to clear test data between cases. The endpoint is unavailable in production and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` create projects, sections, and tasks through the app API so UI tests can focus on the behavior they verify.
 
 ### Database Tasks
 

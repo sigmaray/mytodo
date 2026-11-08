@@ -12,6 +12,7 @@ const databaseUrl = getDatabaseUrl();
 const mode = process.env.NODE_ENV ?? "development";
 const attachmentsEnabled = process.env.MYTODO_ATTACHMENTS_ENABLED?.trim().toLowerCase() === "true";
 const projectArchivingEnabled = process.env.MYTODO_PROJECT_ARCHIVING_ENABLED?.trim().toLowerCase() === "true";
+const playwrightApiEnabled = process.env.MYTODO_ENABLE_PLAYWRIGHT_API?.trim().toLowerCase() === "true";
 const attachmentsDir = process.env.MYTODO_ATTACHMENTS_DIR?.trim() || undefined;
 if (attachmentsEnabled && attachmentsDir === undefined) {
   throw new Error("MYTODO_ATTACHMENTS_DIR must be set when MYTODO_ATTACHMENTS_ENABLED=true");
@@ -33,6 +34,7 @@ serve({
     mode,
     attachmentsEnabled,
     projectArchivingEnabled,
+    playwrightApiEnabled,
     attachmentsDir,
     userRepository: createPostgresUserRepository(databaseUrl)
   }).fetch,

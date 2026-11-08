@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { z } from "zod";
+import postgres from "postgres";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 import { createSessionToken, hashPassword, hashSessionToken, sessionCookieName, sessionLifetimeSeconds, verifyPassword } from "./auth";
@@ -87,7 +88,7 @@ const parseJson = async (request: Request) => {
 
 export const createApp = (
   repository: TaskRepository | ((userId: string) => TaskRepository) = createMemoryTaskRepository(),
-  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository; attachmentsDir?: string; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean }> = Object.freeze({})
+  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository; attachmentsDir?: string; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean; playwrightApiEnabled?: boolean }> = Object.freeze({})
 ) => {
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
@@ -96,6 +97,10 @@ export const createApp = (
   const attachmentsEnabled = (options.attachmentsEnabled ?? true) && attachmentsDir !== null;
   const attachmentStorageAvailable = attachmentsEnabled && attachmentsDir !== null;
   const projectArchivingEnabled = options.projectArchivingEnabled === true;
+  const playwrightApiEnabled = options.playwrightApiEnabled === true;
+  if (playwrightApiEnabled && options.mode === "production") throw new Error("The Playwright API cannot be enabled in production");
+  if (playwrightApiEnabled && options.databaseUrl === undefined) throw new Error("The Playwright API requires a database URL");
+  const playwrightDatabase = playwrightApiEnabled && options.databaseUrl !== undefined ? postgres(options.databaseUrl, { max: 1 }) : null;
   const storedFilePath = (id: string) => attachmentsDir === null ? null : resolve(attachmentsDir, id);
   const repositoryFor = (userId: string) => typeof repository === "function" ? repository(userId) : repository;
   const requireAdmin = async (userId: string) => {
@@ -144,6 +149,28 @@ export const createApp = (
   });
 
   app.get("/features", (context) => context.json({ attachmentsEnabled, projectArchivingEnabled }));
+
+  if (playwrightApiEnabled && playwrightDatabase !== null) {
+    app.post("/api/playwright/reset", async (context) => {
+      const userId = context.get("userId");
+      const attachmentRows = await playwrightDatabase<{ attachments: unknown }[]>`SELECT attachments FROM task_comments`;
+      await playwrightDatabase.begin(async (transaction) => {
+        await transaction`DELETE FROM tasks`;
+        await transaction`DELETE FROM sections`;
+        await transaction`DELETE FROM projects`;
+        await transaction`DELETE FROM sessions WHERE user_id <> ${userId}`;
+        await transaction`DELETE FROM users WHERE id <> ${userId}`;
+        await transaction`UPDATE users SET confirm_delete = true, inbox_description = '' WHERE id = ${userId}`;
+      });
+      if (attachmentsDir !== null) {
+        const attachmentIds = attachmentRows.flatMap((row) => Array.isArray(row.attachments)
+          ? row.attachments.flatMap((attachment) => typeof attachment === "object" && attachment !== null && "id" in attachment && typeof attachment.id === "string" && /^[0-9a-f-]{36}$/i.test(attachment.id) ? [attachment.id] : [])
+          : []);
+        await Promise.all(attachmentIds.map((id) => rm(resolve(attachmentsDir, id), { force: true })));
+      }
+      return context.json({ reset: true });
+    });
+  }
 
   app.post("/tasks/:id/comments", bodyLimit({ maxSize: 26 * 1024 * 1024 }), async (context) => {
     if (!attachmentStorageAvailable || attachmentsDir === null) return context.json({ error: "Attachments are disabled" }, 503);
