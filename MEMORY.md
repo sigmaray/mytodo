@@ -1,5 +1,15 @@
 # Project Memory
 
+## 2026-11-08 — Simplify standalone production Task names
+
+- Renamed the standalone stack tasks by removing `with-infra`: the stack now uses `prod:docker` plus `down`, `ps`, `logs`, and `users:*` variants. Shared-infrastructure task names are unchanged.
+- Verification: renamed tasks appear in Task listing, dry-run successfully, and `git diff --check` passes.
+
+## 2026-11-08 — Add production user-management Task commands
+
+- Added production `users:list`, `users:create`, `users:update`, and `users:delete` tasks for both shared-infrastructure and self-contained Compose stacks.
+- Verification: Task lists all eight tasks, dry-run invocations resolve for every operation, and `git diff --check` passes.
+
 ## 2026-11-08 — Remove MYTODO_DATABASE_URL configuration
 
 - Replaced the URL setting with `MYTODO_DB_*` connection fields. Added a pure backend helper that safely builds a PostgreSQL URL, and wired server, Drizzle, CLI, Compose, Taskfile, deployment examples, and the local production env file to the fields.
