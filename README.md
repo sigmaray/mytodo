@@ -100,10 +100,9 @@ The CLI uses `DATABASE_URL`, or defaults to `postgres://todoist:todoist@127.0.0.
 
 ### Production Docker Compose with shared PostgreSQL
 
-The production stack joins the `infra` Docker network and uses the shared PostgreSQL instance from `~/r/sandbox/infra`. Before starting it, create a dedicated database and set the percent-encoded PostgreSQL URL in `.env.production`:
+The production stack joins the `infra` Docker network and uses PostgreSQL and Caddy from your shared infrastructure. Before starting it, create a dedicated database using your infrastructure's database provisioning method, then set the percent-encoded PostgreSQL URL in `.env.production`:
 
 ```bash
-~/r/sandbox/infra/postgres/scripts/create-database.sh todoist
 cp deploy.env.example .env.production
 # Edit DATABASE_URL in .env.production
 docker compose --env-file .env.production up -d --build
@@ -116,7 +115,7 @@ docker compose --env-file .env.production exec todoist-api \
   ../../node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
 ```
 
-The web container listens on loopback port `18082` by default and joins `infra` so the shared Caddy proxy can reach it. Add a site block for your public hostname to `~/r/sandbox/infra/reverse-proxy/Caddyfile`:
+The web container listens on loopback port `18082` by default and joins `infra` so the shared Caddy proxy can reach it. Add a site block for your public hostname to the Caddyfile used by your shared reverse proxy:
 
 ```caddyfile
 todoist.example.com {
@@ -128,7 +127,7 @@ Point the hostname to the server and reload the existing reverse-proxy Compose s
 
 ### Self-contained production Docker Compose
 
-To run without `~/r/sandbox/infra`, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env.production` with a strong alphanumeric database password and a public hostname whose DNS points to this server:
+To run without a shared infrastructure stack, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env.production` with a strong alphanumeric database password and a public hostname whose DNS points to this server:
 
 ```dotenv
 POSTGRES_USER=todoist

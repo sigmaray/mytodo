@@ -1,4 +1,4 @@
-# Production app stack. PostgreSQL and Caddy are provided by ~/r/sandbox/infra.
+# Production app stack. PostgreSQL and Caddy are provided by the shared infra stack.
 services:
   todoist-api:
     build:

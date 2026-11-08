@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-08 — Remove machine-specific infra paths from docs
+
+- Replaced local infrastructure paths in README, deployment env comments, and the production Compose comment with environment-neutral guidance.
+- Verification: repository search finds no remaining `~/r/sandbox/infra` references and `git diff --check` passes.
+
 ## 2026-11-08 — Make README English-only
 
 - Removed the duplicated Russian README section and added its user account setup and CLI instructions to the English development documentation.
