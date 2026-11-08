@@ -1,0 +1,3 @@
+{$TODOIST_DOMAIN} {
+	reverse_proxy todoist-web:80
+}

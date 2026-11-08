@@ -1,5 +1,31 @@
 # Project Memory
 
+## 2026-11-08 — Make README English-only
+
+- Removed the duplicated Russian README section and added its user account setup and CLI instructions to the English development documentation.
+- Verification: no Cyrillic characters remain in README and `git diff --check` passes.
+
+## 2026-11-08 — Add Task commands for shared-infrastructure production stack
+
+- Added `prod:docker:external-infra` with `down`, `ps`, and `logs` variants targeting `docker-compose.yml` and `.env.production`.
+- Verification: Task lists the new commands, each dry-run resolves, and `git diff --check` passes.
+
+## 2026-11-08 — Clarify standalone production Task names
+
+- Renamed the production Docker tasks to `prod:docker:with-infra` and its `down`, `ps`, and `logs` variants.
+- Verification: all renamed tasks appear in `task --list-all`, each dry-run resolves, and `git diff --check` passes.
+
+## 2026-11-08 — Add Task commands for the standalone production stack
+
+- Added `prod:docker`, `prod:docker:down`, `prod:docker:ps`, and `prod:docker:logs`, all targeting `.env.production` and `docker-compose.with-infra.yml`. The down command preserves named volumes.
+- Verification: Task lists all four commands, dry-runs each command successfully, and `git diff --check` passes.
+
+## 2026-11-08 — Add self-contained production Compose stack
+
+- Added `docker-compose.with-infra.yml` with the production API/web images, private PostgreSQL, and Caddy HTTPS proxy, with persistent database and certificate volumes.
+- Added a configurable Caddy site and preserved the forwarded HTTPS protocol through Nginx so production cookies remain secure. Documented setup and startup in README.
+- Verification: Docker Compose config validation and `git diff --check` pass; application test suites were not run (deployment configuration only).
+
 ## 2026-11-01 — Add and launch a production Docker Compose stack
 
 - Added a multi-stage root Dockerfile, production Nginx frontend/API proxy, and production `docker-compose.yml` joining the external `infra` network; documented deployment and bootstrap steps.

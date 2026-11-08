@@ -46,6 +46,14 @@ postgres://todoist:todoist@localhost:5432/todoist
 
 ### Development
 
+To run the entire application locally, including PostgreSQL, with Docker:
+
+```bash
+task dev:docker
+```
+
+The app is then available at `http://localhost:5173` and the API at `http://localhost:3000`.
+
 ```bash
 task backend
 task frontend
@@ -66,6 +74,29 @@ http://127.0.0.1:5173/tools/
 ```
 
 The tools page is disabled in production mode.
+
+### Users
+
+During migration, the existing account and its data are assigned to the `admin` user. If the account previously had a username configured, that username is preserved. To set the initial administrator password, run:
+
+```bash
+task dev:docker:users:list
+task dev:docker:users:update USERNAME=legacy-admin PASSWORD='password'
+```
+
+Then sign in as the administrator. Administrators can create, update, and delete accounts in Settings. Each user can access only their own tasks, projects, and sections, and at least one administrator must remain.
+
+Accounts can also be managed through the CLI:
+
+```bash
+task dev:docker:users:create USERNAME=sam PASSWORD='password'
+task dev:docker:users:create USERNAME=admin2 PASSWORD='password' ADMIN=true
+task dev:docker:users:update USERNAME=sam NAME=samuel PASSWORD='new-password' ADMIN=false
+task dev:docker:users:delete USERNAME=sam
+task dev:docker:users:list
+```
+
+The CLI uses `DATABASE_URL`, or defaults to `postgres://todoist:todoist@127.0.0.1:5432/todoist`.
 
 ### Production Docker Compose with shared PostgreSQL
 
@@ -94,6 +125,27 @@ todoist.example.com {
 ```
 
 Point the hostname to the server and reload the existing reverse-proxy Compose stack to enable HTTPS. Do not expose the API container directly; production session cookies require HTTPS.
+
+### Self-contained production Docker Compose
+
+To run without `~/r/sandbox/infra`, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env.production` with a strong alphanumeric database password and a public hostname whose DNS points to this server:
+
+```dotenv
+POSTGRES_USER=todoist
+POSTGRES_PASSWORD=replace-with-a-strong-alphanumeric-password
+POSTGRES_DB=todoist
+TODOIST_DOMAIN=todoist.example.com
+```
+
+Start the full stack and initialize the administrator password:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.with-infra.yml exec todoist-api \
+  ../../node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
+```
+
+Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data and Caddy certificates are stored in named Docker volumes. Back up the `postgres-data` volume regularly.
 
 ### Tests
 
@@ -131,135 +183,6 @@ task db:drop-tables
 ```
 
 Run Drizzle migrations:
-
-```bash
-task db:migrate
-```
-
-## Русский
-
-### Что Уже Есть
-
-- Бесконечная вложенность задач через `parentId`.
-- Приоритеты задач от P1 до P4.
-- Булев статус выполнения.
-- Поле лексической сортировки для будущего drag-and-drop.
-- Доменная логика вынесена в чистые функции в `packages/domain`.
-- Backend API в `apps/backend`.
-- Frontend SPA в `apps/frontend`.
-- Настроены unit, integration, UI и E2E тесты.
-
-### Структура Проекта
-
-```text
-packages/domain   Чистые типы и функции для задач
-apps/backend      Hono API, Drizzle schema, backend-тесты
-apps/frontend     React + Vite, TanStack Query, UI-тесты
-e2e               Playwright-тесты
-```
-
-### Требования
-
-- Node.js 22+
-- pnpm 11+
-- PostgreSQL 14+
-- Task, опционально, но удобно: https://taskfile.dev
-
-### Установка
-
-```bash
-pnpm install
-cp .env.example .env
-```
-
-Если `DATABASE_URL` не задан, backend использует адрес по умолчанию:
-
-```bash
-postgres://todoist:todoist@localhost:5432/todoist
-```
-
-### Разработка
-
-```bash
-task backend
-task frontend
-task dev:docker
-```
-
-В development и test окружениях доступны инструменты базы данных:
-
-```text
-http://127.0.0.1:5173/tools/
-```
-
-В production режиме страница инструментов отключена.
-
-### Пользователи
-
-При миграции существующий аккаунт и его данные переносятся пользователю `admin` (если раньше в настройках было задано имя, сохраняется оно). Для первой настройки пароля администратора выполните:
-
-```bash
-task dev:docker:users:list
-task dev:docker:users:update USERNAME=legacy-admin PASSWORD='пароль'
-```
-
-После этого войдите в приложение под администратором. В разделе Settings администраторы могут создавать, изменять и удалять аккаунты; каждый пользователь видит только свои задачи, проекты и секции. В системе должен оставаться хотя бы один администратор.
-
-Управление аккаунтами также доступно через CLI:
-
-```bash
-task dev:docker:users:create USERNAME=sam PASSWORD='пароль'
-task dev:docker:users:create USERNAME=admin2 PASSWORD='пароль' ADMIN=true
-task dev:docker:users:update USERNAME=sam NAME=samuel PASSWORD='новый-пароль' ADMIN=false
-task dev:docker:users:delete USERNAME=sam
-task dev:docker:users:list
-```
-
-CLI использует `DATABASE_URL` или PostgreSQL по умолчанию `postgres://todoist:todoist@127.0.0.1:5432/todoist`.
-
-Или напрямую через pnpm:
-
-```bash
-pnpm dev:backend
-pnpm dev:frontend
-```
-
-### Тесты
-
-```bash
-task test
-task test:unit
-task test:docker
-task test:docker:app
-pnpm test:e2e
-```
-
-### Команды Для Базы Данных
-
-Taskfile поддерживает эти переменные:
-
-```bash
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_USER=todoist
-DB_PASSWORD=todoist
-DB_NAME=todoist
-DATABASE_URL=postgres://todoist:todoist@127.0.0.1:5432/todoist
-```
-
-Создать базу данных:
-
-```bash
-task db:create
-```
-
-Удалить все таблицы в базе:
-
-```bash
-task db:drop-tables
-```
-
-Запустить Drizzle-миграции:
 
 ```bash
 task db:migrate

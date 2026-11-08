@@ -25,6 +25,46 @@ tasks:
     cmds:
       - docker compose --env-file .env.example -f docker-compose.dev.yml up
 
+  prod:docker:with-infra:
+    desc: Build and start the self-contained production stack
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
+
+  prod:docker:with-infra:down:
+    desc: Stop the self-contained production stack (keep database and certificates)
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.with-infra.yml down
+
+  prod:docker:with-infra:ps:
+    desc: Show containers in the self-contained production stack
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.with-infra.yml ps
+
+  prod:docker:with-infra:logs:
+    desc: Follow logs from the self-contained production stack
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.with-infra.yml logs -f
+
+  prod:docker:external-infra:
+    desc: Build and start production app using the shared infra network and PostgreSQL
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.yml up -d --build
+
+  prod:docker:external-infra:down:
+    desc: Stop production app using the shared infra network
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.yml down
+
+  prod:docker:external-infra:ps:
+    desc: Show containers for production app using shared infra
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.yml ps
+
+  prod:docker:external-infra:logs:
+    desc: Follow logs for production app using shared infra
+    cmds:
+      - docker compose --env-file .env.production -f docker-compose.yml logs -f
+
   test:
     desc: Run unit, integration, UI, and E2E tests
     cmds:
