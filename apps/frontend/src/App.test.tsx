@@ -1282,6 +1282,45 @@ describe("Dates and Labels task views", () => {
     expect(screen.getByRole("link", { name: "work" })).toHaveAttribute("href", "/labels?label=work");
   });
 
+  it("filters the Dates list by overdue, today, and upcoming dates", async () => {
+    window.history.replaceState({}, "", "/dates");
+    const today = new Date();
+    const isoDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    renderApp(baseApi(Object.freeze([
+      task({ id: "overdue-task", title: "Overdue task", dueDate: isoDate(yesterday) }),
+      task({ id: "today-task", title: "Today task", dueDate: isoDate(today) }),
+      task({ id: "upcoming-task", title: "Upcoming task", dueDate: isoDate(tomorrow) }),
+      task({ id: "undated-task", title: "Undated task" })
+    ])));
+
+    expect(await screen.findByRole("button", { name: "Overdue task" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Undated task" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Overdue$/ }));
+    expect(screen.getByRole("button", { name: "Overdue task" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Today task" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Today$/ }));
+    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Overdue task" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Upcoming$/ }));
+    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Today task" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^All$/ }));
+    expect(screen.getByRole("button", { name: "Overdue task" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Calendar" }));
+    expect(screen.queryByRole("navigation", { name: "Filter dated tasks" })).not.toBeInTheDocument();
+  });
+
   it("renders a complete navigable month calendar with a visible today marker", async () => {
     window.history.replaceState({}, "", "/dates");
     const now = new Date();

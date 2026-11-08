@@ -58,3 +58,87 @@ test("month calendar stays readable on mobile and moves tasks between days", asy
     await request.delete(`/tasks/${created.task.id}`);
   }
 });
+
+test("Dates list tabs show only tasks in their date range", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  const request = page.request;
+  const suffix = `${Date.now()}-${testInfo.workerIndex}`;
+  const todayDate = new Date();
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const taskCases = [
+    { title: `Overdue filter ${suffix}`, dueDate: localIsoDate(yesterdayDate) },
+    { title: `Today filter ${suffix}`, dueDate: localIsoDate(todayDate) },
+    { title: `Upcoming filter ${suffix}`, dueDate: localIsoDate(tomorrowDate) },
+    { title: `Undated filter ${suffix}`, dueDate: null }
+  ] as const;
+  const createdTaskIds: string[] = [];
+
+  try {
+    await page.goto("/");
+    for (const taskCase of taskCases) {
+      await page.getByRole("button", { name: "Add task Q" }).click();
+      const addDialog = page.getByRole("dialog", { name: "Add task" });
+      await addDialog.getByLabel("New task title").fill(taskCase.title);
+      if (taskCase.dueDate !== null) {
+        await addDialog.getByRole("button", { name: /Add date/ }).click();
+        const dateDialog = page.getByRole("dialog", { name: "Add date" });
+        await dateDialog.getByLabel("New task date").fill(taskCase.dueDate);
+        await dateDialog.getByRole("button", { name: "Set date" }).click();
+      }
+      const responsePromise = page.waitForResponse((response) => response.url().endsWith("/tasks") && response.request().method() === "POST");
+      await addDialog.getByRole("button", { name: "Add task", exact: true }).click();
+      const response = await responsePromise;
+      expect(response.ok()).toBe(true);
+      const created = await response.json() as Readonly<{ task: Readonly<{ id: string }> }>;
+      createdTaskIds.push(created.task.id);
+      await expect(page.getByRole("button", { name: taskCase.title, exact: true })).toBeVisible();
+    }
+
+    const persistedResponse = await request.get("/tasks");
+    expect(persistedResponse.ok()).toBe(true);
+    const persisted = await persistedResponse.json() as Readonly<{ tasks: ReadonlyArray<Readonly<{ id: string; title: string; dueDate: string | null }>> }>;
+    for (const [index, taskCase] of taskCases.entries()) {
+      expect(persisted.tasks).toContainEqual(expect.objectContaining({ id: createdTaskIds[index], title: taskCase.title, dueDate: taskCase.dueDate }));
+    }
+
+    await page.goto("/dates");
+    await expect(page.getByRole("heading", { name: "Dates" })).toBeVisible();
+    const datedTasks = page.getByLabel("Dates tasks");
+    const taskButton = (title: string) => datedTasks.getByRole("button", { name: title, exact: true });
+    const expectVisible = async (...titles: ReadonlyArray<string>) => {
+      for (const title of titles) await expect(taskButton(title)).toBeVisible();
+    };
+    const expectHidden = async (...titles: ReadonlyArray<string>) => {
+      for (const title of titles) await expect(taskButton(title)).toHaveCount(0);
+    };
+    const [overdue, today, upcoming, undated] = taskCases.map(({ title }) => title);
+
+    await expectVisible(overdue, today, upcoming);
+    await expectHidden(undated);
+
+    await datedTasks.getByRole("button", { name: "Overdue", exact: true }).click();
+    await expect(datedTasks.getByRole("button", { name: "Overdue", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expectVisible(overdue);
+    await expectHidden(today, upcoming, undated);
+
+    await datedTasks.getByRole("button", { name: "Today", exact: true }).click();
+    await expect(datedTasks.getByRole("button", { name: "Today", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expectVisible(today);
+    await expectHidden(overdue, upcoming, undated);
+
+    await datedTasks.getByRole("button", { name: "Upcoming", exact: true }).click();
+    await expect(datedTasks.getByRole("button", { name: "Upcoming", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expectVisible(upcoming);
+    await expectHidden(overdue, today, undated);
+
+    await datedTasks.getByRole("button", { name: "All", exact: true }).click();
+    await expect(datedTasks.getByRole("button", { name: "All", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expectVisible(overdue, today, upcoming);
+    await expectHidden(undated);
+  } finally {
+    await Promise.all(createdTaskIds.map((taskId) => request.delete(`/tasks/${taskId}`, { timeout: 10_000 })));
+  }
+});

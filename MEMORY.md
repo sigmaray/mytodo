@@ -1,5 +1,11 @@
 # Project Memory
 
+## 2026-11-08 — Add date filters to the Dates list view
+
+- Implemented `All`, `Overdue`, `Today`, and `Upcoming` filter tabs on `/dates` while List is selected. Filters compare task dates with the user's local calendar date; Calendar mode remains unchanged. Added an empty state for a filter with no matches and a responsive segmented-control style.
+- Added frontend regression coverage for all four filters and confirmed the tabs are hidden in Calendar mode.
+- Verification: focused `App.test.tsx` passed (55 tests); full `pnpm test` passed (88 total); `pnpm build` passed (Vite reports the existing large-chunk advisory); full `pnpm test:e2e` ran 28 tests with 18 passed and 10 unrelated existing timeouts/failures. Calendar E2E passed; `git diff --check` passes.
+
 ## 2026-11-08 — Document comparison with Todoist
 
 - Added `docs/comparison-with-todoist.md` in Russian, comparing the implemented mytodo features with Todoist's current official feature set. Covered self-hosting, account model, hierarchy, dates, labels, views, collaboration, and data management; linked official Todoist documentation.
