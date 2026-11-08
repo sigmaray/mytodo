@@ -993,6 +993,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
   const sidebarScroll = useSidebarScrollPosition();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [dateView, setDateView] = useState<"list" | "calendar">("list");
+  const [dateListFilter, setDateListFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [activeCalendarDate, setActiveCalendarDate] = useState<string | null>(null);
   const calendarDraggedTaskRef = useRef<TaskId | null>(null);
@@ -2001,8 +2002,17 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
     return () => document.removeEventListener("keydown", handleSelectionKeys);
   }, [selectionMode]);
   const selectedLabel = new URLSearchParams(window.location.search).get("label") ?? "";
+  const todayDate = toLocalIsoDate(new Date());
   const viewTasks = pageMode === "dates"
-    ? filterTaskTree(allTasks, (task) => Boolean(task.dueDate))
+    ? filterTaskTree(allTasks, (task) => {
+      if (!task.dueDate) return false;
+      switch (dateListFilter) {
+        case "all": return true;
+        case "overdue": return task.dueDate < todayDate;
+        case "today": return task.dueDate === todayDate;
+        case "upcoming": return task.dueDate > todayDate;
+      }
+    })
     : filterTaskTree(allTasks, (task) => task.labels.length > 0 && (!selectedLabel || task.labels.includes(selectedLabel)));
   const calendarTasks = Object.freeze(flatTasks.filter((task) => task.dueDate !== null));
   const calendarDays = buildCalendarDays(calendarMonth);
@@ -2137,6 +2147,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
         {pageMode === "dates" || pageMode === "labels" ? (
           <section className="drop-zone task-filter-page" aria-label={`${viewTitle} tasks`}>
             {pageMode === "dates" ? <div className="date-view-switch" aria-label="Date view"><button type="button" aria-pressed={dateView === "list"} onClick={() => setDateView("list")}>List</button><button type="button" aria-pressed={dateView === "calendar"} onClick={() => setDateView("calendar")}>Calendar</button></div> : null}
+            {pageMode === "dates" && dateView === "list" ? <nav className="date-list-filter" aria-label="Filter dated tasks">{([{ id: "all", label: "All" }, { id: "overdue", label: "Overdue" }, { id: "today", label: "Today" }, { id: "upcoming", label: "Upcoming" }] as const).map((filter) => <button type="button" key={filter.id} aria-pressed={dateListFilter === filter.id} onClick={() => setDateListFilter(filter.id)}>{filter.label}</button>)}</nav> : null}
             {pageMode === "labels" ? <nav className="label-filter-list" aria-label="Filter by label"><Link className={!selectedLabel ? "active" : ""} to="/labels">All labels</Link>{Array.from(new Set(flatTasks.flatMap((task) => task.labels))).sort().map((label) => <Link key={label} className={selectedLabel === label ? "active" : ""} to={`/labels?label=${encodeURIComponent(label)}`}>{label}</Link>)}</nav> : null}
             {pageMode === "dates" && dateView === "calendar" ? (
               <section className="calendar-panel" aria-labelledby="calendar-month-heading">
@@ -2171,7 +2182,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
                   </div>
                 </div>
               </section>
-            ) : viewTasks.length > 0 ? renderTaskNodes(viewTasks, taskActions) : <p className="empty">{pageMode === "dates" ? "No dated tasks yet." : "No tasks with this label."}</p>}
+            ) : viewTasks.length > 0 ? renderTaskNodes(viewTasks, taskActions) : <p className="empty">{pageMode === "dates" ? (dateListFilter === "all" ? "No dated tasks yet." : dateListFilter === "today" ? "No tasks due today." : `No ${dateListFilter} tasks.`) : "No tasks with this label."}</p>}
           </section>
         ) : pageMode === "export" ? (
           <section className="export-page" aria-label="Export data">
