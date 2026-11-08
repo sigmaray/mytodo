@@ -937,7 +937,7 @@ const AppSidebar = ({ api, selectedProjectId = null, onInboxSelect, onProjectSel
     {mobileSidebarOpen ? <button type="button" className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={closeSidebar} /> : null}
     <aside className={clsx("sidebar card shadow-sm", mobileSidebarOpen && "mobile-sidebar-open")} aria-label="Navigation" ref={sidebarScroll.ref} onScroll={sidebarScroll.onScroll}>
       <button type="button" className="mobile-sidebar-close" aria-label="Close navigation" onClick={closeSidebar}><X size={21} aria-hidden="true" /></button>
-      <div className="sidebar-brand"><span className="brand-mark">T</span><strong>Todoist Clone</strong></div>
+      <div className="sidebar-brand"><span className="brand-mark">mt</span><strong>mytodo</strong></div>
       <SearchPalette tasks={flattenTaskNodes(allTasks)} projects={allProjects} sections={allSections} onTaskSelect={handleTaskSelect} />
       {onAddTask !== undefined
         ? <button type="button" className="nav-button add-task-nav-button" onClick={() => { closeSidebar(); onAddTask(); }}><Plus size={17} aria-hidden="true" />Add task <kbd>Q</kbd></button>
@@ -2107,10 +2107,10 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
   }), null, 2);
 
   const exportMarkdown = () => {
-    downloadBlob(new Blob([allMarkdown], { type: "text/markdown;charset=utf-8" }), "todoist-clone.md");
+    downloadBlob(new Blob([allMarkdown], { type: "text/markdown;charset=utf-8" }), "mytodo.md");
   };
   const exportAdvancedMarkdown = () => {
-    downloadBlob(new Blob([allAdvancedMarkdown], { type: "text/markdown;charset=utf-8" }), "todoist-clone-advanced.md");
+    downloadBlob(new Blob([allAdvancedMarkdown], { type: "text/markdown;charset=utf-8" }), "mytodo-advanced.md");
   };
 
   return (
@@ -2194,7 +2194,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
             <section className="card export-format-card" aria-labelledby="json-export-title">
               <div><h2 id="json-export-title">JSON</h2><p>Complete structured data, including descriptions, dates, sections, task hierarchy, labels, comments, and archived projects.</p></div>
               <div className="export-format-actions">
-                <button type="button" className="btn-primary" onClick={() => downloadBlob(new Blob([allJson], { type: "application/json;charset=utf-8" }), "todoist-clone.json")}><Download size={16} aria-hidden="true" />Export all JSON</button>
+                <button type="button" className="btn-primary" onClick={() => downloadBlob(new Blob([allJson], { type: "application/json;charset=utf-8" }), "mytodo.json")}><Download size={16} aria-hidden="true" />Export all JSON</button>
                 <button type="button" onClick={async () => { await copyText(allJson); setCopyStatus("All JSON copied"); }}><ClipboardCopy size={16} aria-hidden="true" />Copy all JSON</button>
                 <button type="button" onClick={() => setMarkdownModal(Object.freeze({ title: "All data", markdown: allJson, format: "json" }))}><Eye size={16} aria-hidden="true" />Preview all JSON</button>
               </div>
@@ -2808,8 +2808,8 @@ const LoginPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
     <main className="shell auth-shell">
       <section className="workspace card auth-panel" aria-label="Sign in">
         <div className="sidebar-brand">
-          <span className="brand-mark">T</span>
-          <strong>Todoist Clone</strong>
+          <span className="brand-mark">mt</span>
+          <strong>mytodo</strong>
         </div>
         <h1>Sign in</h1>
         <form className="auth-form" onSubmit={(event) => { event.preventDefault(); login.mutate(); }}>

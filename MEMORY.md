@@ -1,5 +1,15 @@
 # Project Memory
 
+## 2026-11-08 — Adjust mytodo logo mark typography
+
+- Set `.brand-mark` font size to 13px.
+- Verification: confirmed only the brand mark style changed and `git diff --check` passes.
+
+## 2026-11-08 — Rename user-facing application to mytodo
+
+- Updated the browser title, sidebar and sign-in branding, README title, and exported Markdown/JSON filenames to `mytodo`.
+- Verification: searched the affected frontend/docs for old branding and ran `git diff --check`; tests were not run.
+
 ## 2026-11-08 — Remove machine-specific infra paths from docs
 
 - Replaced local infrastructure paths in README, deployment env comments, and the production Compose comment with environment-neutral guidance.
