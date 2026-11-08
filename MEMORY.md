@@ -962,3 +962,9 @@ Verification:
 - Added functional API helpers in `e2e/api.ts` for projects, sections, tasks, task updates, archiving, and reset. Replaced repeated UI setup for projects/tasks while keeping dedicated UI creation coverage. Documented this setup in README.
 - Fixed the mobile comment form width selector and made E2E checks robust for multiline Markdown comments and the form's actual layout.
 - Verification: `pnpm test` (103 tests), `pnpm build`, and full `pnpm test:e2e` (31 tests) pass; `git diff --check` passes.
+
+## 2026-11-08 — Expand the Playwright data API and reduce setup navigation
+
+- Added authenticated, dev-only endpoints for allowlisted table cleanup (`tasks`, `task_comments`, `sections`, `projects`) and entity creation (task, project, section, comment, attachment). Attachment setup writes a generated file key and metadata; table cleanup removes owned attachment files. Added an E2E scenario covering creation and selective cleanup.
+- The Playwright fixture now authenticates and resets through API requests before opening the SPA. Added batch setup helpers that create multiple tasks/projects before a single page reload, and batched mobile drag fixture setup.
+- Documented endpoint capabilities. Verification: `pnpm test` (103 tests), `pnpm build`, full `pnpm test:e2e` (32 tests), E2E TypeScript check, and `git diff --check` pass.

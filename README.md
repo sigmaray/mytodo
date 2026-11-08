@@ -160,7 +160,7 @@ task test:docker:app
 pnpm test:e2e
 ```
 
-Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables the authenticated `/api/playwright/reset` endpoint used by the E2E fixture to clear test data between cases. The endpoint is unavailable in production and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` create projects, sections, and tasks through the app API so UI tests can focus on the behavior they verify.
+Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables authenticated test endpoints for clearing all data, clearing an individual allowlisted table (`tasks`, `task_comments`, `sections`, or `projects`), and creating tasks, projects, sections, comments, and attachments. They are unavailable in production, and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` use these endpoints to prepare state so UI tests can focus on the behavior they verify.
 
 ### Database Tasks
 

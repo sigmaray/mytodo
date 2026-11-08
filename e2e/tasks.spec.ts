@@ -39,6 +39,14 @@ const createTask = (page: Page) => async (title: string) => {
   await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
 };
 
+const createTasks = (page: Page) => async (titles: ReadonlyArray<string>) => {
+  const projectId = await page.evaluate(() => new URLSearchParams(window.location.search).get("project"));
+  const api = createE2eApi(page.request);
+  for (const title of titles) await api.createTask(title, { projectId });
+  await page.reload();
+  await Promise.all(titles.map((title) => expect(page.getByRole("button", { name: title, exact: true })).toBeVisible()));
+};
+
 const createTaskThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add task Q" }).click();
   await expect(page.getByLabel("Initial task comment")).toHaveCount(0);
@@ -53,6 +61,13 @@ const createProject = (page: Page) => async (title: string) => {
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
 };
 
+const createProjects = (page: Page) => async (titles: ReadonlyArray<string>) => {
+  const api = createE2eApi(page.request);
+  for (const title of titles) await api.createProject(title);
+  await page.reload();
+  await Promise.all(titles.map((title) => expect(page.getByRole("button", { name: title, exact: true })).toBeVisible()));
+};
+
 const createProjectThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add project" }).click();
   await page.getByLabel("Project title").fill(title);
@@ -61,13 +76,38 @@ const createProjectThroughUi = (page: Page) => async (title: string) => {
   expect((await createdResponse).ok()).toBe(true);
 };
 
+test("Playwright API creates and clears individual data tables", async ({ page }, testInfo) => {
+  const api = createE2eApi(page.request);
+  const project = await api.createProject(`API project ${testInfo.workerIndex}-${Date.now()}`);
+  const section = await api.createSection("API section", project.id);
+  const task = await api.createTask("API task", { projectId: project.id, sectionId: section.id });
+  await api.createComment(task.id, "Seeded comment");
+  const attachment = await api.createAttachment(task.id, { name: "seed.txt", mimeType: "text/plain", buffer: Buffer.from("seed data") });
+
+  await page.goto(`/?project=${encodeURIComponent(project.id)}`);
+  await page.getByRole("button", { name: task.title, exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: `Task details: ${task.title}` });
+  await expect(dialog.getByText("Seeded comment")).toBeVisible();
+  await expect(dialog.getByRole("link", { name: /seed.txt/ })).toBeVisible();
+  expect(attachment.attachment.size).toBe(Buffer.byteLength("seed data"));
+
+  expect((await api.clearTable("task_comments")).deleted).toBe(2);
+  await page.reload();
+  await expect(page.getByRole("button", { name: task.title, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: task.title, exact: true }).click();
+  await expect(page.getByRole("dialog", { name: `Task details: ${task.title}` }).locator(".task-comment")).toHaveCount(0);
+
+  expect((await api.clearTable("tasks")).deleted).toBe(1);
+  expect((await api.clearTable("sections")).deleted).toBe(1);
+  expect((await api.clearTable("projects")).deleted).toBe(1);
+});
+
 test("moves a selected task group to a project with drag and drop", async ({ page }, testInfo) => {
   const sourceTitle = `Group source ${testInfo.workerIndex}-${Date.now()}`;
   const secondTitle = `Group second ${testInfo.workerIndex}-${Date.now()}`;
   const projectTitle = `Group destination ${testInfo.workerIndex}-${Date.now()}`;
   await page.goto("/");
-  await createTask(page)(sourceTitle);
-  await createTask(page)(secondTitle);
+  await createTasks(page)([sourceTitle, secondTitle]);
   await createProject(page)(projectTitle);
 
   await page.getByRole("button", { name: "Inbox", exact: true }).click();
@@ -810,8 +850,7 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   const firstOrderTask = `Order first ${suffix}`;
   const secondOrderTask = `Order second ${suffix}`;
 
-  await createTask(page)(firstOrderTask);
-  await createTask(page)(secondOrderTask);
+  await createTasks(page)([firstOrderTask, secondOrderTask]);
   await dragTaskBeforeTask(page)(secondOrderTask, firstOrderTask);
   await expect(page.getByLabel("Inbox tasks").locator(".task-title").filter({ hasText: secondOrderTask })).toBeVisible();
   await expect
@@ -840,8 +879,7 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   const dragParent = `Drag parent ${suffix}`;
   const dragChild = `Drag child ${suffix}`;
 
-  await createTask(page)(dragParent);
-  await createTask(page)(dragChild);
+  await createTasks(page)([dragParent, dragChild]);
   await dragTaskOntoTask(page)(dragChild, dragParent);
   const dragChildRow = page.locator(".task-row").filter({ has: page.getByRole("button", { name: dragChild, exact: true }) });
   await expect(dragChildRow).toHaveCSS("padding-left", "20px");
@@ -915,9 +953,7 @@ test("reorders projects reliably before and after siblings and persists the orde
   const middle = `Drag middle ${suffix}`;
   const last = `Drag last ${suffix}`;
   await page.goto("/");
-  await createProject(page)(first);
-  await createProject(page)(middle);
-  await createProject(page)(last);
+  await createProjects(page)([first, middle, last]);
   await dragProjectTo(page)(last, first, 0.1);
   await expect.poll(() => page.locator(".project-nav-row").evaluateAll((rows) => rows.map((row) => row.querySelector("button.nav-button")?.textContent?.trim()))).toContain(first);
   const order = async () => page.locator(".project-nav-row").evaluateAll((rows) => rows.map((row) => row.querySelector("button.nav-button")?.textContent?.trim()));
@@ -943,8 +979,7 @@ test("keeps project drop feedback stable and blocks dragging a project into its 
   const child = `Drag child ${suffix}`;
   const peer = `Drag peer ${suffix}`;
   await page.goto("/");
-  await createProject(page)(parent);
-  await createProject(page)(peer);
+  await createProjects(page)([parent, peer]);
   await page.locator(`summary[aria-label="Project menu ${parent}"]`).click();
   await page.getByRole("button", { name: "＋ Add subproject" }).click();
   await page.getByLabel("Project title").fill(child);
@@ -963,8 +998,7 @@ test("supports real mouse dragging of project rows", async ({ page }, testInfo) 
   const first = `Mouse drag first ${suffix}`;
   const second = `Mouse drag second ${suffix}`;
   await page.goto("/");
-  await createProject(page)(first);
-  await createProject(page)(second);
+  await createProjects(page)([first, second]);
   await dragProjectWithMouse(page)(second, first, 0.1);
   const rows = async () => page.locator(".project-nav-row").evaluateAll((items) => items.map((row) => row.querySelector("button.nav-button")?.textContent?.trim()));
   await expect.poll(async () => {
@@ -984,10 +1018,10 @@ test("nests a project with touch dragging in the mobile sidebar", async ({ page 
   const sourceTitle = `Touch source ${suffix}`;
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Open navigation" }).click();
-  await createProject(page)(targetTitle);
-  await page.getByRole("button", { name: "Open navigation" }).click();
-  await createProject(page)(sourceTitle);
+  const api = createE2eApi(page.request);
+  await api.createProject(targetTitle);
+  await api.createProject(sourceTitle);
+  await page.reload();
   await page.getByRole("button", { name: "Open navigation" }).click();
 
   const sourceRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: sourceTitle, exact: true }) });
