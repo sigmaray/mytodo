@@ -15,6 +15,9 @@ services:
       MYTODO_DB_USER: ${MYTODO_DB_USER:?Set MYTODO_DB_USER in .env.production}
       MYTODO_DB_PASSWORD: ${MYTODO_DB_PASSWORD:?Set MYTODO_DB_PASSWORD in .env.production}
       MYTODO_DB_NAME: ${MYTODO_DB_NAME:?Set MYTODO_DB_NAME in .env.production}
+      MYTODO_ATTACHMENTS_DIR: ${MYTODO_ATTACHMENTS_DIR:-}
+    volumes:
+      - mytodo_attachments:/var/lib/mytodo/attachments
     networks:
       - app-internal
       - infra
@@ -47,3 +50,6 @@ networks:
   infra:
     external: true
     name: infra
+
+volumes:
+  mytodo_attachments:

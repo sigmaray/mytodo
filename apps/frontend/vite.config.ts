@@ -9,6 +9,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": apiTarget,
+      "/attachments": apiTarget,
+      "/features": apiTarget,
       "/projects": apiTarget,
       "/sections": apiTarget,
       "/settings": {

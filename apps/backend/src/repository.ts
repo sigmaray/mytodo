@@ -6,7 +6,7 @@ export type TaskPatch = Readonly<{
   description?: string;
   dueDate?: string | null;
   labels?: ReadonlyArray<string>;
-  comments?: ReadonlyArray<Readonly<{ id: string; body: string; createdAt: string }>>;
+  comments?: Task["comments"];
   completed?: boolean;
   projectId?: ProjectId | null;
   sectionId?: SectionId | null;

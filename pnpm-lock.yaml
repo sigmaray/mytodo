@@ -108,6 +108,9 @@ importers:
       react-router-dom:
         specifier: ^7.18.4
         version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-toastify:
+        specifier: ^11.2.0
+        version: 11.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       vite:
         specifier: ^5.4.21
         version: 5.4.21(@types/node@22.20.4)
@@ -1773,6 +1776,12 @@ packages:
       react-dom:
         optional: true
 
+  react-toastify@11.2.0:
+    resolution: {integrity: sha512-lznu1N00MfEv4p9vGWNVqCfDQ3DxScDAZTFk6STMsEcLcRZKT4PCO0JxsNduGN7LJPBSkXXs/YuLydjh650T7Q==}
+    peerDependencies:
+      react: ^18 || ^19
+      react-dom: ^18 || ^19
+
   react@19.3.0:
     resolution: {integrity: sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog==}
     engines: {node: '>=0.10.0'}
@@ -3337,6 +3346,12 @@ snapshots:
       react: 19.3.0
       set-cookie-parser: 2.7.2
     optionalDependencies:
+      react-dom: 19.3.0(react@19.3.0)
+
+  react-toastify@11.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      clsx: 2.1.1
+      react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
   react@19.3.0: {}

@@ -1,8 +1,11 @@
 import { buildTaskTree } from "@todoist-clone/domain";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { z } from "zod";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { basename, extname, resolve } from "node:path";
 import { createSessionToken, hashPassword, hashSessionToken, sessionCookieName, sessionLifetimeSeconds, verifyPassword } from "./auth";
 import { createMemoryTaskRepository } from "./repository";
 import type { TaskRepository } from "./repository";
@@ -22,7 +25,7 @@ const patchTaskSchema = z.object({
   description: z.string().max(20000).optional(),
   dueDate: z.string().date().nullable().optional(),
   labels: z.array(z.string().trim().min(1).max(64)).max(50).optional(),
-  comments: z.array(z.object({ id: z.string(), body: z.string().min(1).max(5000), createdAt: z.string() })).optional(),
+  comments: z.array(z.object({ id: z.string(), body: z.string().max(5000), createdAt: z.string(), attachments: z.array(z.object({ id: z.string(), name: z.string(), mimeType: z.string(), size: z.number() })).optional() })).refine((comments) => comments.every((comment) => comment.body.trim().length > 0 || (comment.attachments?.length ?? 0) > 0), "Comment text or at least one attachment is required").optional(),
   completed: z.boolean().optional(),
   projectId: z.string().nullable().optional(),
   sectionId: z.string().nullable().optional()
@@ -84,11 +87,14 @@ const parseJson = async (request: Request) => {
 
 export const createApp = (
   repository: TaskRepository | ((userId: string) => TaskRepository) = createMemoryTaskRepository(),
-  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository }> = Object.freeze({})
+  options: Readonly<{ databaseUrl?: string; mode?: string; userRepository?: UserRepository; attachmentsDir?: string }> = Object.freeze({})
 ) => {
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
   const secureCookies = options.mode === "production";
+  const attachmentsDir = options.attachmentsDir?.trim() ? resolve(options.attachmentsDir) : null;
+  const attachmentsEnabled = attachmentsDir !== null;
+  const storedFilePath = (id: string) => attachmentsDir === null ? null : resolve(attachmentsDir, id);
   const repositoryFor = (userId: string) => typeof repository === "function" ? repository(userId) : repository;
   const requireAdmin = async (userId: string) => {
     const user = await userRepository.getById(userId);
@@ -100,7 +106,7 @@ export const createApp = (
   app.use("*", async (context, next) => {
     const path = context.req.path;
     const method = context.req.method;
-    const publicRoute = (path === "/auth/status" && method === "GET") || (path === "/auth/login" && method === "POST") || (path === "/auth/logout" && method === "POST");
+    const publicRoute = (path === "/auth/status" && method === "GET") || (path === "/features" && method === "GET") || (path === "/auth/login" && method === "POST") || (path === "/auth/logout" && method === "POST");
 
     if (publicRoute || method === "OPTIONS") {
       await next();
@@ -132,7 +138,76 @@ export const createApp = (
     const authenticated = activeUser !== null;
 
     context.header("Cache-Control", "no-store");
-    return context.json({ accessMode: "password", authenticated, user: effectiveUser === null ? null : { id: effectiveUser.id, username: effectiveUser.username, isAdmin: effectiveUser.isAdmin } });
+    return context.json({ accessMode: "password", authenticated, attachmentsEnabled, user: effectiveUser === null ? null : { id: effectiveUser.id, username: effectiveUser.username, isAdmin: effectiveUser.isAdmin } });
+  });
+
+  app.get("/features", (context) => context.json({ attachmentsEnabled }));
+
+  app.post("/tasks/:id/comments", bodyLimit({ maxSize: 26 * 1024 * 1024 }), async (context) => {
+    if (!attachmentsEnabled || attachmentsDir === null) return context.json({ error: "Attachments are disabled" }, 503);
+    const taskRepository = repositoryFor(context.get("userId"));
+    const taskId = context.req.param("id");
+    const task = (await taskRepository.list()).find((item) => item.id === taskId);
+    if (task === undefined) return context.json({ error: "Task not found" }, 404);
+    let form: FormData;
+    try { form = await context.req.formData(); } catch { return context.json({ error: "Invalid multipart form" }, 400); }
+    const body = String(form.get("body") ?? "").trim();
+    const files = form.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+    if (body.length > 5000 || (!body && files.length === 0)) return context.json({ error: "Comment text or at least one attachment is required" }, 400);
+    const invalidFile = files.some((file) => {
+      const extension = extname(file.name);
+      const validName = file.name.length > 0 && file.name.length <= 255 && (extension.length === 0 || /^\.[a-z0-9]{1,16}$/i.test(extension));
+      const validMime = file.type.length === 0 || /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/i.test(file.type);
+      return !validName || !validMime;
+    });
+    if (invalidFile) return context.json({ error: "Unsupported filename or MIME type" }, 400);
+    if (files.length > 10 || files.some((file) => file.size > 10 * 1024 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 25 * 1024 * 1024) return context.json({ error: "Attachment limits exceeded (10 files, 10 MB each, 25 MB total)" }, 413);
+    await mkdir(attachmentsDir, { recursive: true });
+    const savedIds: string[] = [];
+    try {
+      const attachments = await Promise.all(files.map(async (file) => {
+        const id = crypto.randomUUID();
+        const path = storedFilePath(id);
+        if (path === null) throw new Error("Attachments disabled");
+        await writeFile(path, new Uint8Array(await file.arrayBuffer()), { flag: "wx", mode: 0o600 });
+        savedIds.push(id);
+        const safeName = basename(file.name.replaceAll("\\", "/")).slice(0, 255) || "attachment";
+        return Object.freeze({ id, name: safeName, mimeType: file.type.slice(0, 128) || "application/octet-stream", size: file.size });
+      }));
+      const comment = Object.freeze({ id: crypto.randomUUID(), body, createdAt: new Date().toISOString(), ...(attachments.length ? { attachments: Object.freeze(attachments) } : {}) });
+      const updated = await taskRepository.patch(taskId, { comments: Object.freeze([...task.comments, comment]) });
+      if (updated === null) throw new Error("Task not found");
+      return context.json({ comment }, 201);
+    } catch {
+      await Promise.all(savedIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
+      return context.json({ error: "Could not save comment and attachments" }, 500);
+    }
+  });
+
+  app.get("/attachments/:id", async (context) => {
+    if (!attachmentsEnabled) return context.json({ error: "Attachments are disabled" }, 503);
+    const id = context.req.param("id");
+    const uuid = /^[0-9a-f-]{36}$/i.test(id);
+    if (!uuid) return context.json({ error: "Attachment not found" }, 404);
+    const tasks = await repositoryFor(context.get("userId")).list();
+    const attachment = tasks.flatMap((task) => task.comments.flatMap((comment) => (comment.attachments ?? []).filter((item) => item.id === id).map((item) => ({ item, taskId: task.id })))).at(0);
+    const path = storedFilePath(id);
+    if (attachment === undefined || path === null) return context.json({ error: "Attachment not found" }, 404);
+    try {
+      const contents = await readFile(path);
+      const safeName = attachment.item.name.replace(/[\r\n\"\\]/g, "_");
+      const isPng = contents.length >= 8 && contents.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      const isJpeg = contents.length >= 3 && contents[0] === 255 && contents[1] === 216 && contents[2] === 255;
+      const isGif = contents.length >= 6 && contents.subarray(0, 3).toString("ascii") === "GIF";
+      const isWebp = contents.length >= 12 && contents.subarray(0, 4).toString("ascii") === "RIFF" && contents.subarray(8, 12).toString("ascii") === "WEBP";
+      const safeImageType = isPng ? "image/png" : isJpeg ? "image/jpeg" : isGif ? "image/gif" : isWebp ? "image/webp" : null;
+      context.header("Content-Type", safeImageType ?? "application/octet-stream");
+      context.header("Content-Disposition", `${safeImageType === null ? "attachment" : "inline"}; filename="${safeName}"`);
+      context.header("X-Content-Type-Options", "nosniff");
+      context.header("Content-Security-Policy", "default-src 'none'; sandbox");
+      context.header("Cache-Control", "private, no-store");
+      return context.body(new Uint8Array(contents));
+    } catch { return context.json({ error: "Attachment not found" }, 404); }
   });
 
   app.post("/auth/login", async (context) => {
@@ -254,6 +329,10 @@ export const createApp = (
     const target = await userRepository.getById(userId);
     if (target === null) return context.json({ error: "User not found" }, 404);
     if (target.isAdmin && (await userRepository.list()).filter((user) => user.isAdmin).length < 2) return context.json({ error: "At least one administrator is required" }, 409);
+    if (attachmentsDir !== null) {
+      const attachmentIds = (await repositoryFor(userId).list()).flatMap((task) => task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
+      await Promise.all(attachmentIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
+    }
     await userRepository.delete(userId);
     return context.json({ deleted: true });
   });
@@ -421,7 +500,22 @@ export const createApp = (
       return context.json({ error: "Invalid task patch" }, 400);
     }
 
-    const task = await repositoryFor(context.get("userId")).patch(context.req.param("id"), result.data);
+    const taskRepository = repositoryFor(context.get("userId"));
+    const previous = (await taskRepository.list()).find((item) => item.id === context.req.param("id"));
+    if (previous !== undefined && result.data.comments !== undefined) {
+      const allowed = new Map(previous.comments.map((comment) => [comment.id, comment.attachments ?? Object.freeze([])]));
+      const hasForgedAttachment = result.data.comments.some((comment) => (comment.attachments ?? []).some((attachment) =>
+        !(allowed.get(comment.id) ?? []).some((existing) => existing.id === attachment.id && existing.name === attachment.name && existing.mimeType === attachment.mimeType && existing.size === attachment.size)
+      ));
+      if (hasForgedAttachment) return context.json({ error: "Attachment metadata cannot be changed through task updates" }, 400);
+    }
+    const task = await taskRepository.patch(context.req.param("id"), result.data);
+
+    if (task !== null && previous !== undefined && attachmentsDir !== null && result.data.comments !== undefined) {
+      const retained = new Set(task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
+      const removed = previous.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []).filter((id) => !retained.has(id));
+      await Promise.all(removed.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
+    }
 
     return task === null ? context.json({ error: "Task not found" }, 404) : context.json({ task });
   });
@@ -439,7 +533,13 @@ export const createApp = (
   });
 
   app.delete("/tasks/:id", async (context) => {
-    const deleted = await repositoryFor(context.get("userId")).delete(context.req.param("id"));
+    const taskRepository = repositoryFor(context.get("userId"));
+    const allTasks = await taskRepository.list();
+    const collect = (id: string): ReadonlyArray<string> => [id, ...allTasks.filter((task) => task.parentId === id).flatMap((task) => collect(task.id))];
+    const descendantIds = new Set(collect(context.req.param("id")));
+    const removedAttachmentIds = allTasks.filter((task) => descendantIds.has(task.id)).flatMap((task) => task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []));
+    const deleted = await taskRepository.delete(context.req.param("id"));
+    if (deleted && attachmentsDir !== null) await Promise.all(removedAttachmentIds.map(async (id) => { const path = storedFilePath(id); if (path !== null) await rm(path, { force: true }); }));
 
     return deleted ? context.json({ deleted: true }) : context.json({ error: "Task not found" }, 404);
   });

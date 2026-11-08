@@ -44,7 +44,6 @@ export const tasks = pgTable("tasks", {
   description: text("description").notNull().default(""),
   dueDate: text("due_date"),
   labels: text("labels").array().notNull().default([]),
-  comments: jsonb("comments").notNull().default([]),
   completed: boolean("completed").notNull().default(false),
   parentId: text("parent_id"),
   projectId: text("project_id"),
@@ -52,4 +51,13 @@ export const tasks = pgTable("tasks", {
   lexicalOrder: text("lexical_order").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const taskComments = pgTable("task_comments", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  attachments: jsonb("attachments").notNull().default([])
 });

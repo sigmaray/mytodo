@@ -1,5 +1,85 @@
 # Project Memory
 
+## 2026-11-08 — Keep comment attachments visible while editing
+
+- The comment edit branch showed only the textarea and actions. It now also renders the comment's existing attachments, including image previews, so they remain accessible while changing the body.
+- Extended the attachment-only comment test to enter edit mode and assert that the image and download link remain visible. Frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Fix 400 when editing comments with attachments
+
+- Investigated task `fdvdfvfd` in the dev PostgreSQL database; its comments include an attachment. PATCH validation rejected unchanged attachment metadata because it compared `JSON.stringify` output, which is sensitive to property order after PostgreSQL JSONB/Zod parsing. Replaced it with explicit value comparisons for attachment ID, name, MIME type, and size, preserving the forged-metadata rejection.
+- Added backend coverage for editing a comment with metadata in PostgreSQL-style key order, rejecting altered size, and deleting the comment. Verification: all unit/integration tests pass (95 total), full build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Save pasted files as comments immediately in task details
+
+- In an existing task's edit dialog, pasted clipboard files now immediately call `api.createComment` with the task ID, current comment draft text, and pasted files. Multiple quick pastes are serialized; success clears the matching text draft, invalidates task data, and shows the attachment toast. On failure the files remain in the composer draft and an error toast appears. Add task still stages pasted files because its task ID does not exist yet.
+- Added component coverage for paste outside the dialog and browser E2E coverage confirming an attachment-only comment is persisted immediately. Full unit/integration tests (94) and frontend build pass; focused E2E passes; `git diff --check` passes.
+
+## 2026-11-08 — Capture pasted attachments when task dialog lacks focus
+
+- The task-details and Add task dialogs handled paste only within their own DOM subtree, so copied files were ignored when focus remained on the trigger or another outside element. Added a document-level capture listener while either dialog is open; it processes clipboard files once, prevents browser paste, updates the relevant draft list, and shows the immediate attachment toast. The listener is enabled only when attachments are enabled.
+- Updated the task-details paste test to dispatch `paste` on `document.body`, outside the dialog. Verification: frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Show upload success toasts for attachments
+
+- Replaced Sonner with React-Toastify after the notification remained invisible in the user's app. The bottom-right container is portaled to `document.body`. When files are selected or pasted into either task dialog, the UI immediately shows `Файл «имя» прикреплён` for five seconds, once per accepted file. This is a draft attachment confirmation, before submission to the backend.
+- Verification: frontend tests pass (59 tests), all unit/integration tests passed (94 total before this follow-up), frontend build passes with the existing large-chunk advisory, and the focused attachment E2E passes including a visible-toast assertion. `git diff --check` passes.
+
+## 2026-11-08 — Verify comment editing and deletion after migration
+
+- Added edit and delete steps to the database-backed comment E2E scenario. This exercises the `task_comments` delete/reinsert path introduced with migration `0007`.
+- Verification: focused E2E passes through creating two comments, editing one, and deleting the other. The test did not reproduce a failure in the current migrated database.
+
+## 2026-11-08 — Capture clipboard files throughout both task dialogs
+
+- Moved paste handling from the comment textareas to `onPasteCapture` on the Add task and task details dialog roots. Clipboard files are now attached regardless of which field is focused, and the browser's default text paste is prevented when file items are found.
+- Verification: frontend tests pass (59 tests), including pasting while task title/description has focus; frontend build and `git diff --check` pass.
+
+## 2026-11-08 — Handle pasted clipboard images in both task dialogs
+
+- Clipboard paste now reads file items from `clipboardData.items` and falls back to `clipboardData.files`, covering browsers that expose copied images only as clipboard items. Wired this into the creation dialog's initial comment and the existing task comment composer; file picker selections also clear the native input after capture.
+- Verification: frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Hide empty comment bodies and clear file picker state
+
+- Render `.comment-markdown` only when the comment body contains non-whitespace text, so attachment-only comments have no empty gray bar. Reset the native file input immediately after reading its files; draft chips remain until submit, then disappear with the cleared draft state.
+- Verification: frontend tests pass (57 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Style the comment composer as a Bootstrap card
+
+- Wrapped the Add comment input, attachment controls, and submit button in a Bootstrap `.card border rounded p-3 mt-3` container so the composer reads as a separate block.
+- Verification: frontend tests pass (56 tests), including an assertion that the composer uses Bootstrap card/border/padding classes; `git diff --check` passes.
+
+## 2026-11-08 — Left-align rendered comment text
+
+- The broad `.task-comment > div` flex rule had applied right justification to `.comment-markdown` as well as the action buttons. Scoped the right-aligned flex layout to `.task-comment-actions` and explicitly left-aligned the Markdown block.
+- Verification: the focused E2E scenario passes with a computed `text-align: left` assertion; `git diff --check` passes.
+
+## 2026-11-08 — Allow attachment-only comments
+
+- Enabled comment submission with empty text when at least one attachment is selected. Kept submit disabled for an empty draft with no files, and enforced the same rule in multipart comment uploads and task comment patches. Initial task comments can also consist of attachments alone.
+- Verification: `pnpm test` passes (91 tests), `pnpm build` passes, and the focused attachment E2E passes.
+
+## 2026-11-08 — Implement comment attachments and Markdown display
+
+- Added the `MYTODO_ATTACHMENTS_DIR` gate, private local file writes with server-generated UUID names, limits (10 files, 10 MB each, 25 MB total), authenticated downloads and verified raster-image previews, attachment cleanup when comments/tasks/accounts are deleted, and task ownership checks. Migration `0007_task_comments` moves legacy JSONB comments into `task_comments`, which stores per-comment attachment metadata. Added attachment drafts, paste/file selection, initial task comments, image thumbnails, safe inline Markdown and text-file previews, and Compose storage volumes/configuration docs.
+- Verification: `pnpm test` passes (91 tests), `pnpm build` passes, both production Compose configs validate, and `git diff --check` passes. Attachment upload/preview/download and existing multi-comment E2E scenarios pass after migration. A full E2E run before the migration/proxy fixes had 17 passed and 13 failed (mostly existing UI/data-state timeouts); it was not rerun in full after the focused fixes.
+
+## 2026-11-08 — Specify attachment storage and feature gate
+
+- Updated `docs/comments-and-attachments-plan.md`: attachments are enabled only when `MYTODO_ATTACHMENTS_DIR` is set; without it, attachment UI/API operations are unavailable while plain comments remain usable. Specified `/var/lib/mytodo/attachments` in the backend container, the `mytodo_attachments` persistent volume (or administrator-selected host bind mount), DB metadata containing relative generated keys, and backup/configuration requirements.
+- Verification: documentation-only change; tests were not run.
+
+## 2026-11-08 — Strengthen Dates filter regression coverage
+
+- Reworked the frontend Dates filter test to create four tasks through the Add task UI against a stateful immutable mock API: overdue, today, upcoming, and undated. It asserts stored dates and exact visibility for All/Overdue/Today/Upcoming, plus that the subtabs disappear in Calendar mode.
+- Verification: `pnpm test` passes (88 tests), `pnpm build` passes with the existing chunk-size advisory, and `git diff --check` passes. The focused E2E Dates test was attempted but the accumulated default E2E database left task loading unresolved and the test timed out; no E2E changes were retained.
+
+## 2026-11-08 — Plan adding tasks from calendar days
+
+- Used `aiignore/prompts/next/09.2026-11-08.improve-calendar.md` as the request source and created `docs/calendar-day-task-creation-plan.md` in Russian. The plan recommends opening the existing task creation form from a calendar cell with that local date preselected, with an explicit add button, while preserving task opening and drag-and-drop.
+- Verification: documentation-only change; tests were not run.
+
 ## 2026-11-08 — Add date filters to the Dates list view
 
 - Implemented `All`, `Overdue`, `Today`, and `Upcoming` filter tabs on `/dates` while List is selected. Filters compare task dates with the user's local calendar date; Calendar mode remains unchanged. Added an empty state for a filter with no matches and a responsive segmented-control style.
@@ -830,3 +910,8 @@ Verification:
 - Added a fixed, bottom-right mobile quick-add button with a plus icon; it opens the task form using the current project or section placement.
 - Added mobile E2E assertions for button visibility and viewport placement.
 - Verification: frontend tests pass (46 tests), frontend production build passes, and `git diff --check` passes. E2E could not start because the configured Playwright webServer exited during startup.
+
+## 2026-11-08 — Make attachment upload notifications visible
+
+- Replaced Sonner with React-Toastify, imported its stylesheet, and portaled its bottom-right `ToastContainer` to `document.body` above the task dialog. Attachment confirmation notices appear immediately on paste or file selection, and stay visible for five seconds.
+- Added frontend and E2E assertions that the toast is visible at attachment time. Frontend tests/build and the focused attachment E2E pass.

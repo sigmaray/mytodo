@@ -1,5 +1,6 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
+import process from "node:process";
 
 test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
@@ -447,10 +448,50 @@ test("shows truncated descriptions and comment counts in task rows", async ({ pa
     await expect(taskDialog.getByRole("button", { name: "Add comment" })).toBeEnabled();
     await taskDialog.getByRole("button", { name: "Add comment" }).click();
     await expect(taskDialog.getByText(comment)).toBeVisible();
+    await expect(taskDialog.locator(".comment-markdown")).toHaveCSS("text-align", "left");
     if (index === 0) await taskDialog.getByRole("button", { name: "Close task details" }).click();
   }
   await taskDialog.getByRole("button", { name: "Close task details" }).click();
   await expect(row.getByLabel("2 comments")).toContainText("2");
+  await row.getByRole("button", { name: title, exact: true }).click();
+  const comments = taskDialog.locator(".task-comment");
+  await comments.nth(0).getByRole("button", { name: "Edit", exact: true }).click();
+  await comments.nth(0).locator("textarea").fill("Edited first comment");
+  await comments.nth(0).getByRole("button", { name: "Save comment" }).click();
+  await expect(comments.nth(0)).toContainText("Edited first comment");
+  await comments.nth(1).getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(comments).toHaveCount(1);
+  await expect(comments.first()).toContainText("Edited first comment");
+});
+
+test("saves comment attachments on submit and serves them through the authenticated API", async ({ page }, testInfo) => {
+  const title = `Attachment comment ${testInfo.workerIndex}-${Date.now()}`;
+  await page.goto("/");
+  await createTask(page)(title);
+  await page.getByRole("button", { name: title, exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: `Task details: ${title}` });
+  await page.evaluate(() => {
+    const clipboardFiles = new DataTransfer();
+    clipboardFiles.items.add(new File(["Pasted attachment"], "pasted.txt", { type: "text/plain" }));
+    document.body.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboardFiles }));
+  });
+  await expect(page.getByText("Файл «pasted.txt» прикреплён", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("link", { name: /pasted.txt/ })).toBeVisible();
+  await dialog.getByLabel("Add comment").fill("Read **the notes**");
+  await dialog.getByLabel("Attach files to comment").setInputFiles({ name: "notes.md", mimeType: "text/markdown", buffer: Buffer.from("# Notes") });
+  await expect(page.getByText("Файл «notes.md» прикреплён", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Add comment" }).click();
+  await expect(dialog.locator(".comment-markdown strong")).toHaveText("the notes");
+  const attachmentLink = dialog.getByRole("link", { name: /notes.md/ });
+  await expect(attachmentLink).toBeVisible();
+  const attachmentPath = await attachmentLink.getAttribute("href");
+  expect(attachmentPath).toMatch(/^\/attachments\//);
+  await attachmentLink.locator("..").getByRole("button", { name: "Preview" }).click();
+  await expect(dialog.getByLabel("Preview notes.md").locator("pre")).toHaveText("# Notes");
+  const backendPort = process.env.E2E_BACKEND_PORT ?? "3100";
+  const response = await page.request.get(`http://127.0.0.1:${backendPort}${attachmentPath}`);
+  expect(response.ok()).toBe(true);
+  expect(await response.text()).toBe("# Notes");
 });
 
 test("adds, suggests, and removes labels with the shared label picker", async ({ page }, testInfo) => {

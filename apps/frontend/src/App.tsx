@@ -4,6 +4,8 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { FloatingFocusManager, FloatingOverlay, useFloating } from "@floating-ui/react";
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   computeDropPlacement,
   computeIndentPlacement,
@@ -36,6 +38,61 @@ const createCommentId = (): string => {
   return typeof cryptoApi?.randomUUID === "function"
     ? cryptoApi.randomUUID()
     : `comment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
+  const itemFiles = Array.from(clipboardData.items)
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => file !== null);
+  return Object.freeze(itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files));
+};
+
+const notifyAttachedFiles = (files: ReadonlyArray<File>) => files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
+
+const renderInlineMarkdown = (text: string): ReadonlyArray<ReactElement | string> => {
+  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\((?:https?:\/\/|mailto:)[^)]+\))/g;
+  return text.split(pattern).filter(Boolean).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
+    if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
+    const link = /^\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^)]+)\)$/.exec(part);
+    return link === null ? part : <a key={index} href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>;
+  });
+};
+
+const renderCommentMarkdown = (body: string) => body.split("\n").map((line, index) => {
+  const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+  if (heading !== null) return <h4 key={index}>{renderInlineMarkdown(heading[2] ?? "")}</h4>;
+  if (line.startsWith("- ")) return <div className="comment-markdown-list-item" key={index}>• {renderInlineMarkdown(line.slice(2))}</div>;
+  return <p key={index}>{renderInlineMarkdown(line)}</p>;
+});
+
+const textPreviewExtensions = new Set(["md", "txt", "csv", "yaml", "yml", "json", "js", "jsx", "ts", "tsx", "css", "html", "py", "go", "rs", "java", "c", "cpp", "sh"]);
+
+const CommentAttachment = ({ attachment }: Readonly<{ attachment: NonNullable<Task["comments"][number]["attachments"]>[number] }>) => {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [preview, setPreview] = useState("");
+  const [previewLoaded, setPreviewLoaded] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const extension = attachment.name.split(".").at(-1)?.toLowerCase() ?? "";
+  const canPreview = textPreviewExtensions.has(extension) || attachment.mimeType.startsWith("text/") || attachment.mimeType === "application/json";
+  useEffect(() => {
+    if (!previewOpen || previewLoaded || previewError.length > 0) return;
+    if (attachment.size > 512 * 1024) {
+      setPreviewError("Preview is limited to files up to 512 KB.");
+      return;
+    }
+    void fetch(`/attachments/${encodeURIComponent(attachment.id)}`).then(async (response) => {
+      if (!response.ok) throw new Error("Could not load preview.");
+      return response.text();
+    }).then((contents) => { setPreview(contents); setPreviewLoaded(true); }).catch(() => setPreviewError("Could not load preview."));
+  }, [attachment.id, attachment.size, previewError.length, previewLoaded, previewOpen]);
+  return <div className="comment-attachment">
+    {attachment.mimeType.startsWith("image/") ? <a href={`/attachments/${encodeURIComponent(attachment.id)}`} target="_blank" rel="noreferrer"><img className="comment-attachment-image" src={`/attachments/${encodeURIComponent(attachment.id)}`} alt={attachment.name} /></a> : null}
+    <a href={`/attachments/${encodeURIComponent(attachment.id)}`} download={attachment.name}>{attachment.name} ({Math.ceil(attachment.size / 1024)} KB)</a>
+    {canPreview ? <><button type="button" onClick={() => setPreviewOpen((open) => !open)}>{previewOpen ? "Hide preview" : "Preview"}</button>{previewOpen ? <div className="comment-attachment-preview" aria-label={`Preview ${attachment.name}`}>{previewError ? <p role="status">{previewError}</p> : <pre>{preview}</pre>}</div> : null}</> : null}
+  </div>;
 };
 
 type DragPlacement = "before" | "inside" | "after" | "outdent";
@@ -73,9 +130,10 @@ type AutoGrowTextareaProps = Readonly<{
   required?: boolean;
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
+  onPaste?: React.ClipboardEventHandler<HTMLTextAreaElement>;
 }>;
 
-const AutoGrowTextarea = ({ value, onChange, ariaLabel, id, placeholder, autoFocus, required, className, onKeyDown }: AutoGrowTextareaProps) => {
+const AutoGrowTextarea = ({ value, onChange, ariaLabel, id, placeholder, autoFocus, required, className, onKeyDown, onPaste }: AutoGrowTextareaProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resize = () => {
     const textarea = textareaRef.current;
@@ -85,7 +143,7 @@ const AutoGrowTextarea = ({ value, onChange, ariaLabel, id, placeholder, autoFoc
   };
   useEffect(resize, [value]);
   useLayoutEffect(() => { if (autoFocus) textareaRef.current?.focus(); }, [autoFocus]);
-  return <textarea ref={textareaRef} id={id} aria-label={ariaLabel} autoFocus={autoFocus} required={required} className={className} placeholder={placeholder} rows={1} value={value} onChange={(event) => { onChange(event.target.value); resize(); }} onInput={resize} onKeyDown={onKeyDown} />;
+  return <textarea ref={textareaRef} id={id} aria-label={ariaLabel} autoFocus={autoFocus} required={required} className={className} placeholder={placeholder} rows={1} value={value} onChange={(event) => { onChange(event.target.value); resize(); }} onInput={resize} onKeyDown={onKeyDown} onPaste={onPaste} />;
 };
 
 type LabelPickerProps = Readonly<{
@@ -986,7 +1044,7 @@ const AppSidebar = ({ api, selectedProjectId = null, onInboxSelect, onProjectSel
   </>;
 };
 
-export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
+export const TaskApp = ({ api, attachmentsEnabled = false }: Readonly<{ api: ApplicationApi; attachmentsEnabled?: boolean }>) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
@@ -1000,6 +1058,8 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addTaskTitle, setAddTaskTitle] = useState("");
   const [addTaskDescription, setAddTaskDescription] = useState("");
+  const [addTaskInitialComment, setAddTaskInitialComment] = useState("");
+  const [addTaskFiles, setAddTaskFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
   const [addTaskDate, setAddTaskDate] = useState("");
   const [addTaskDatePickerOpen, setAddTaskDatePickerOpen] = useState(false);
   const [addTaskDateBeforePicker, setAddTaskDateBeforePicker] = useState("");
@@ -1060,6 +1120,8 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
   const projectCreateInputRef = useRef<HTMLInputElement>(null);
   const sectionCreateInputRef = useRef<HTMLInputElement>(null);
   const [detailComment, setDetailComment] = useState("");
+  const [detailCommentFiles, setDetailCommentFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
+  const pastedCommentSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [detailSubtask, setDetailSubtask] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentBody, setEditingCommentBody] = useState("");
@@ -1125,6 +1187,38 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [detailsTaskId, markdownModal, scopeExportOpen, addTaskOpen, editingDetailField, datePickerOpen, detailLabelInput, targetProjectId, targetSectionId, currentPath]);
+  useEffect(() => {
+    if (!attachmentsEnabled || (!addTaskOpen && detailsTaskId === null)) return;
+    const attachPastedFiles = (event: globalThis.ClipboardEvent) => {
+      if (event.clipboardData === null) return;
+      const files = pastedFiles(event.clipboardData);
+      if (files.length === 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (addTaskOpen) {
+        const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length));
+        setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles]));
+        notifyAttachedFiles(acceptedFiles);
+        return;
+      }
+      if (detailsTaskId === null) return;
+      const acceptedFiles = files.slice(0, 10);
+      const commentBody = detailComment.trim();
+      pastedCommentSaveQueueRef.current = pastedCommentSaveQueueRef.current
+        .then(async () => {
+          await api.createComment(detailsTaskId, commentBody, acceptedFiles);
+          notifyAttachedFiles(acceptedFiles);
+          if (commentBody.length > 0) setDetailComment((current) => current.trim() === commentBody ? "" : current);
+          await queryClient.invalidateQueries({ queryKey: taskQueryKey });
+        })
+        .catch(() => {
+          setDetailCommentFiles((current) => Object.freeze([...current, ...acceptedFiles].slice(0, 10)));
+          acceptedFiles.forEach((file) => toast.error(`Не удалось сохранить файл «${file.name}»`));
+        });
+    };
+    document.addEventListener("paste", attachPastedFiles, true);
+    return () => document.removeEventListener("paste", attachPastedFiles, true);
+  }, [attachmentsEnabled, addTaskOpen, addTaskFiles, detailsTaskId, detailComment, api, queryClient]);
   const tasks = useQuery({
     queryKey: taskQueryKey,
     queryFn: api.listTasks
@@ -2029,6 +2123,8 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
     setAddTaskPlacement(placement);
     setAddTaskTitle("");
     setAddTaskDescription("");
+    setAddTaskInitialComment("");
+    setAddTaskFiles(Object.freeze([]));
     setAddTaskDate("");
     setAddTaskLabels(Object.freeze([]));
     setAddTaskLabelInput("");
@@ -2125,6 +2221,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
 
   return (
     <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={finishDndDrag}>
+    {createPortal(<ToastContainer position="bottom-right" autoClose={5000} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="light" />, document.body)}
     <main className="shell app-layout">
       <AppSidebar api={api} selectedProjectId={targetProjectId} onInboxSelect={() => { clearSelection(); setTargetProjectId(null); setTargetSectionId(null); }} onProjectSelect={(id) => { clearSelection(); setTargetProjectId(id); setTargetSectionId(null); }} onTaskSelect={(task) => { const node = findTaskNode(allTasks, task.id); if (node !== null) openDetails(node); }} onAddTask={() => openAddTaskDialog(pageMode === "tasks" ? (targetSectionId === null ? targetProjectId === null ? inboxPlacement : projectPlacement(targetProjectId) : sectionPlacement(targetSectionId)) : inboxPlacement)} isProjectDropActive={(id) => activeDropZone === (id === null ? inboxPlacement : projectPlacement(id))} onInboxDragEnter={markDropZone(null, null)} onInboxDragOver={markDropZone(null, null)} onInboxDragLeave={() => setActiveDropZone(null)} onInboxDrop={moveDroppedTask(null, null)} onProjectDragEnter={(id) => markDropZone(id, null)} onProjectDragOver={(id) => markDropZone(id, null)} onProjectDragLeave={() => () => setActiveDropZone(null)} onProjectDrop={(id) => moveDroppedTask(id, null)} />
       <button type="button" className="mobile-quick-add" aria-label="Quick add task" onClick={() => openAddTaskDialog(pageMode === "tasks" ? (targetSectionId === null ? targetProjectId === null ? inboxPlacement : projectPlacement(targetProjectId) : sectionPlacement(targetSectionId)) : inboxPlacement)}><Plus size={25} aria-hidden="true" /></button>
@@ -2403,7 +2500,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
         </section>
       </div> : null}
       {addTaskOpen ? <div className="task-details-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setAddTaskOpen(false); }}>
-        <section className="add-task-dialog" role="dialog" aria-modal="true" aria-label="Add task" onKeyDown={(event) => { if (event.key === "Escape" && !addTaskDatePickerOpen) setAddTaskOpen(false); }}>
+        <section className="add-task-dialog" role="dialog" aria-modal="true" aria-label="Add task" onPasteCapture={(event) => { if (!attachmentsEnabled) return; const files = pastedFiles(event.clipboardData); if (files.length > 0) { event.preventDefault(); const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length)); setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles])); notifyAttachedFiles(acceptedFiles); } }} onKeyDown={(event) => { if (event.key === "Escape" && !addTaskDatePickerOpen) setAddTaskOpen(false); }}>
           <header><h2>Add task</h2><button type="button" aria-label="Close add task" onClick={() => setAddTaskOpen(false)}><X size={18} /></button></header>
           <form onSubmit={async (event) => {
             event.preventDefault();
@@ -2411,6 +2508,14 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
             if (!taskTitle) return;
             const placement = parsePlacement(addTaskPlacement, allSections);
             const created = await api.createTask(taskTitle, placement.projectId, placement.sectionId, null);
+            if (addTaskInitialComment.trim() || addTaskFiles.length) {
+              try {
+                await api.createComment(created.id, addTaskInitialComment.trim(), addTaskFiles);
+              } catch (error) {
+                await api.deleteTask(created.id);
+                throw error;
+              }
+            }
             const labels = normalizeLabels([...addTaskLabels, addTaskLabelInput]);
             const patch: Parameters<ApplicationApi["updateTask"]>[1] = { description: addTaskDescription, dueDate: addTaskDate || null, labels };
             if (patch.description || patch.dueDate || patch.labels?.length) await api.updateTask(created.id, patch);
@@ -2429,6 +2534,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
             </div>
             <label className={`add-task-optional${!addTaskDate && !showAddTaskDate ? " add-task-optional-hidden" : ""}`}><div className="add-task-mobile-heading"><span>Date</span><button type="button" className="add-task-mobile-collapse" aria-label="Remove date and hide section" onClick={() => { setAddTaskDate(""); setShowAddTaskDate(false); }}><X size={17} aria-hidden="true" /></button></div>{addTaskDate ? <div className="task-detail-meta-value"><button type="button" className="task-detail-date" onClick={() => { setAddTaskDateBeforePicker(addTaskDate); setAddTaskDatePickerOpen(true); }}>{new Date(`${addTaskDate}T00:00:00`).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</button><button type="button" aria-label="Remove task date" className="add-task-desktop-remove-date" onClick={() => setAddTaskDate("")}>×</button></div> : <button type="button" aria-label="Add date" className="btn-primary add-task-date-button" onClick={() => { setAddTaskDateBeforePicker(addTaskDate); setAddTaskDatePickerOpen(true); }}>＋ Add date</button>}</label>
             <div className={`add-task-labels add-task-optional${!addTaskLabels.length && !showAddTaskLabels ? " add-task-optional-hidden" : ""}`}><div className="add-task-mobile-heading"><span className="form-field-label">Labels</span><button type="button" className="add-task-mobile-collapse" aria-label="Remove labels and hide section" onClick={() => { setAddTaskLabels(Object.freeze([])); setAddTaskLabelInput(""); setShowAddTaskLabels(false); }}><X size={17} aria-hidden="true" /></button></div><LabelPicker autoFocus={showAddTaskLabels && !addTaskLabels.length} selected={addTaskLabels} options={availableLabels} inputLabel="New task labels" inputValue={addTaskLabelInput} onInputChange={setAddTaskLabelInput} onChange={setAddTaskLabels} /></div>
+            {attachmentsEnabled ? <section className="add-task-attachments"><label>Initial comment<AutoGrowTextarea ariaLabel="Initial task comment" value={addTaskInitialComment} onChange={setAddTaskInitialComment} /></label><label className="attachment-picker">Attach files<input aria-label="Attach files to new task" type="file" multiple onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length)); setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles])); notifyAttachedFiles(acceptedFiles); event.currentTarget.value = ""; }} /></label>{addTaskFiles.map((file, index) => <span className="attachment-draft" key={`${file.name}-${file.lastModified}-${index}`}>{file.name}<button type="button" aria-label={`Remove ${file.name}`} onClick={() => setAddTaskFiles(Object.freeze(addTaskFiles.filter((_, itemIndex) => index !== itemIndex)))}>×</button></span>)}</section> : null}
             <div><button type="button" onClick={() => setAddTaskOpen(false)}>Cancel</button><button type="submit" className="btn-primary">Add task</button></div>
           </form>
           {addTaskDatePickerOpen ? <div className="task-date-picker-backdrop"><section className="task-date-picker" role="dialog" aria-modal="true" aria-label="Add date" onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setAddTaskDate(addTaskDateBeforePicker); setAddTaskDatePickerOpen(false); if (!addTaskDateBeforePicker) setShowAddTaskDate(false); } }}><h3>Add date</h3><DatePickerPanel autoFocus inputLabel="New task date" value={addTaskDate} onChange={setAddTaskDate} /><div className="task-date-picker-actions"><button type="button" onClick={() => { setAddTaskDate(addTaskDateBeforePicker); setAddTaskDatePickerOpen(false); if (!addTaskDateBeforePicker) setShowAddTaskDate(false); }}>Cancel</button><button type="button" className="btn-primary" onClick={() => setAddTaskDatePickerOpen(false)}>Set date</button></div></section></div> : null}
@@ -2436,7 +2542,7 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
       </div> : null}
       {selectedDetailsTask !== null ? (
         <div className="task-details-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDetailsTaskId(null); }}>
-          <section className="task-details-modal" role="dialog" aria-modal="true" aria-label={`Task details: ${selectedDetailsTask.title}`} onKeyDown={(event) => { if (event.key === "Escape" && editingDetailField === null && !datePickerOpen) setDetailsTaskId(null); }}>
+          <section className="task-details-modal" role="dialog" aria-modal="true" aria-label={`Task details: ${selectedDetailsTask.title}`} onPasteCapture={(event) => { if (!attachmentsEnabled) return; const files = pastedFiles(event.clipboardData); if (files.length > 0) { event.preventDefault(); const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length)); setDetailCommentFiles(Object.freeze([...detailCommentFiles, ...acceptedFiles])); notifyAttachedFiles(acceptedFiles); } }} onKeyDown={(event) => { if (event.key === "Escape" && editingDetailField === null && !datePickerOpen) setDetailsTaskId(null); }}>
             <header className="task-details-header"><div className="task-details-header-path"><a href={selectedDetailsProject === null ? "/" : `/?project=${encodeURIComponent(selectedDetailsProject.id)}`}>{selectedDetailsProject?.title ?? "Inbox"}</a>{selectedDetailsSection !== null ? <><span aria-hidden="true">/</span><span>{selectedDetailsSection.title}</span></> : null}{selectedDetailsParent !== null ? <><span aria-hidden="true">/</span><a href={`/?task=${encodeURIComponent(selectedDetailsParent.id)}`}>{selectedDetailsParent.title}</a></> : null}<span aria-hidden="true">/</span><strong>{selectedDetailsTask.title}</strong></div><div><button type="button" aria-label="Close task details" onClick={() => setDetailsTaskId(null)}><X size={18} /></button></div></header>
             <div className="task-details-layout">
               <div className="task-details-main">
@@ -2453,10 +2559,13 @@ export const TaskApp = ({ api }: Readonly<{ api: ApplicationApi }>) => {
                 </section>
               <section className={`task-comments task-details-optional${selectedDetailsTask.comments.length === 0 && !showMobileComments ? " task-details-optional-hidden" : ""}`}><div className="task-details-optional-heading"><h3>Comments</h3><button type="button" className="task-details-mobile-collapse" aria-label="Remove all comments and hide section" onClick={() => void closeMobileComments()}><X size={17} aria-hidden="true" /></button></div>
                 {selectedDetailsTask.comments.map((comment) => <article className="task-comment" key={comment.id}>
-                  {editingCommentId === comment.id ? <><AutoGrowTextarea ariaLabel={`Edit comment ${comment.id}`} value={editingCommentBody} onChange={setEditingCommentBody} /><div><button type="button" className="btn-primary" onClick={async () => { const comments = selectedDetailsTask.comments.map((item) => item.id === comment.id ? Object.freeze({ ...item, body: editingCommentBody.trim() }) : item); await api.updateTask(selectedDetailsTask.id, { comments }); setEditingCommentId(null); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Save comment</button><button type="button" onClick={() => setEditingCommentId(null)}>Cancel</button></div></> : <><p>{comment.body}</p><small>{new Date(comment.createdAt).toLocaleString()}</small><div><button type="button" onClick={() => { setEditingCommentId(comment.id); setEditingCommentBody(comment.body); }}>Edit</button><button type="button" className="danger" onClick={async () => { if (!confirmDeletion("Delete this comment?")) return; await api.updateTask(selectedDetailsTask.id, { comments: selectedDetailsTask.comments.filter((item) => item.id !== comment.id) }); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Delete</button></div></>}
+                  {editingCommentId === comment.id ? <><AutoGrowTextarea ariaLabel={`Edit comment ${comment.id}`} value={editingCommentBody} onChange={setEditingCommentBody} />{comment.attachments?.map((attachment) => <CommentAttachment key={attachment.id} attachment={attachment} />)}<div className="task-comment-actions"><button type="button" className="btn-primary" onClick={async () => { const comments = selectedDetailsTask.comments.map((item) => item.id === comment.id ? Object.freeze({ ...item, body: editingCommentBody.trim() }) : item); await api.updateTask(selectedDetailsTask.id, { comments }); setEditingCommentId(null); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Save comment</button><button type="button" onClick={() => setEditingCommentId(null)}>Cancel</button></div></> : <>{comment.body.trim() ? <div className="comment-markdown">{renderCommentMarkdown(comment.body)}</div> : null}{comment.attachments?.map((attachment) => <CommentAttachment key={attachment.id} attachment={attachment} />)}<small>{new Date(comment.createdAt).toLocaleString()}</small><div className="task-comment-actions"><button type="button" onClick={() => { setEditingCommentId(comment.id); setEditingCommentBody(comment.body); }}>Edit</button><button type="button" className="danger" onClick={async () => { if (!confirmDeletion("Delete this comment?")) return; await api.updateTask(selectedDetailsTask.id, { comments: selectedDetailsTask.comments.filter((item) => item.id !== comment.id) }); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Delete</button></div></>}
                 </article>)}
-                <label>Add comment<AutoGrowTextarea autoFocus={showMobileComments && selectedDetailsTask.comments.length === 0} ariaLabel="Add comment" value={detailComment} onChange={setDetailComment} onKeyDown={async (event) => { if (event.key === "Enter" && event.ctrlKey) { event.preventDefault(); if (!detailComment.trim()) return; const comments = [...selectedDetailsTask.comments, { id: createCommentId(), body: detailComment.trim(), createdAt: new Date().toISOString() }]; await api.updateTask(selectedDetailsTask.id, { comments }); setDetailComment(""); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); } }} /><small className="editor-hint">Press Ctrl+Enter to save.</small></label>
-                <button type="button" className="btn-primary" disabled={!detailComment.trim()} onClick={async () => { const comments = [...selectedDetailsTask.comments, { id: createCommentId(), body: detailComment.trim(), createdAt: new Date().toISOString() }]; await api.updateTask(selectedDetailsTask.id, { comments }); setDetailComment(""); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Add comment</button>
+                <div className="card border rounded p-3 mt-3">
+                <label>Add comment<AutoGrowTextarea autoFocus={showMobileComments && selectedDetailsTask.comments.length === 0} ariaLabel="Add comment" value={detailComment} onChange={setDetailComment} onKeyDown={async (event) => { if (event.key === "Enter" && event.ctrlKey) { event.preventDefault(); if (!detailComment.trim() && detailCommentFiles.length === 0) return; if (detailCommentFiles.length) { await api.createComment(selectedDetailsTask.id, detailComment.trim(), detailCommentFiles); } else { const comments = [...selectedDetailsTask.comments, { id: createCommentId(), body: detailComment.trim(), createdAt: new Date().toISOString() }]; await api.updateTask(selectedDetailsTask.id, { comments }); } setDetailComment(""); setDetailCommentFiles(Object.freeze([])); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); } }} /><small className="editor-hint">Press Ctrl+Enter to save.</small></label>
+                {attachmentsEnabled ? <><label className="attachment-picker">Attach files<input aria-label="Attach files to comment" type="file" multiple onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length)); setDetailCommentFiles(Object.freeze([...detailCommentFiles, ...acceptedFiles])); notifyAttachedFiles(acceptedFiles); event.currentTarget.value = ""; }} /></label>{detailCommentFiles.map((file, index) => <span className="attachment-draft" key={`${file.name}-${file.lastModified}-${index}`}>{file.name}<button type="button" aria-label={`Remove ${file.name}`} onClick={() => setDetailCommentFiles(Object.freeze(detailCommentFiles.filter((_, itemIndex) => itemIndex !== index)))}>×</button></span>)}</> : null}
+                <button type="button" className="btn-primary" disabled={!detailComment.trim() && detailCommentFiles.length === 0} onClick={async () => { if (detailCommentFiles.length) { await api.createComment(selectedDetailsTask.id, detailComment.trim(), detailCommentFiles); } else { const comments = [...selectedDetailsTask.comments, { id: createCommentId(), body: detailComment.trim(), createdAt: new Date().toISOString() }]; await api.updateTask(selectedDetailsTask.id, { comments }); } setDetailComment(""); setDetailCommentFiles(Object.freeze([])); await queryClient.invalidateQueries({ queryKey: taskQueryKey }); }}>Add comment</button>
+                </div>
               </section>
               </div>
               <aside className="task-details-sidebar">
@@ -2873,7 +2982,7 @@ const AppRouter = () => {
     return <ToolsPage api={createToolsApi()} navigationApi={api} />;
   }
 
-  return <TaskApp api={api} />;
+  return <TaskApp api={api} attachmentsEnabled={authStatus.data.attachmentsEnabled === true} />;
 };
 
 export const createQueryClient = () =>

@@ -45,10 +45,10 @@ const section = (values: Partial<Section> & Pick<Section, "id" | "title">): Sect
     ...values
   });
 
-const renderApp = (api: ApplicationApi) =>
+const renderApp = (api: ApplicationApi, attachmentsEnabled = false) =>
   render(
     <QueryClientProvider client={createQueryClient()}>
-      <BrowserRouter><TaskApp api={api} /></BrowserRouter>
+      <BrowserRouter><TaskApp api={api} attachmentsEnabled={attachmentsEnabled} /></BrowserRouter>
     </QueryClientProvider>
   );
 
@@ -57,6 +57,7 @@ const baseApi = (tasks: ReadonlyArray<TaskNode>): ApplicationApi =>
     getSettings: async () => Object.freeze({ confirmDelete: true, accessMode: "password" as const, username: "admin" }),
     updateSettings: async (settings) => Object.freeze({ confirmDelete: settings.confirmDelete, accessMode: "password" as const, username: "admin" }),
     getAuthStatus: async () => Object.freeze({ accessMode: "password" as const, authenticated: true, user: Object.freeze({ id: "admin", username: "admin", isAdmin: true }) }),
+    createComment: async () => undefined,
     login: async () => undefined,
     logout: async () => undefined,
     updateOwnAccount: async (account) => Object.freeze({ id: "admin", username: account.username, isAdmin: true }),
@@ -170,6 +171,68 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
+  it("does not render an empty Markdown block for an attachment-only comment", async () => {
+    const attachmentComment = Object.freeze({ id: "comment-attachment", body: "", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 })]) });
+    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])));
+    await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
+    const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
+    expect(dialog.querySelector(".comment-markdown")).not.toBeInTheDocument();
+    expect(dialog.querySelector(".comment-attachment a[download]")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Edit" }));
+    expect(within(dialog).getByRole("img", { name: "photo.png" })).toBeVisible();
+    expect(dialog.querySelector(".comment-attachment a[download]")).toBeVisible();
+  });
+
+  it("allows submitting an attachment without comment text", async () => {
+    const createComment = vi.fn(async () => undefined);
+    renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])), createComment }), true);
+    await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
+    const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
+    expect(within(dialog).getByLabelText("Add comment").closest(".card")).toHaveClass("border", "p-3");
+    const file = new File(["notes"], "notes.txt", { type: "text/plain" });
+    const submit = within(dialog).getByRole("button", { name: "Add comment" });
+    expect(submit).toBeDisabled();
+    const fileInput = within(dialog).getByLabelText("Attach files to comment");
+    await userEvent.upload(fileInput, file);
+    const notification = await screen.findByText("Файл «notes.txt» прикреплён");
+    expect(notification).toBeVisible();
+    expect(notification.closest(".Toastify")?.parentElement).toBe(document.body);
+    expect(fileInput).toHaveValue("");
+    expect(createComment).not.toHaveBeenCalled();
+    expect(submit).toBeEnabled();
+    await userEvent.click(submit);
+    await waitFor(() => expect(createComment).toHaveBeenCalledWith("task-1", "", [file]));
+    expect(fileInput).toHaveValue("");
+    expect(within(dialog).queryByText("notes.txt")).not.toBeInTheDocument();
+  });
+
+  it("immediately saves a pasted clipboard image as a comment on an existing task", async () => {
+    const createComment = vi.fn(async () => undefined);
+    renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])), createComment }), true);
+    await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
+    const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
+    const image = new File(["png data"], "pasted.png", { type: "image/png" });
+    fireEvent.paste(document.body, { clipboardData: { items: [{ kind: "file", getAsFile: () => image }], files: [] } });
+    await waitFor(() => expect(createComment).toHaveBeenCalledWith("task-1", "", [image]));
+    expect(within(dialog).queryByText("pasted.png")).not.toBeInTheDocument();
+    expect(await screen.findByText("Файл «pasted.png» прикреплён")).toBeVisible();
+    expect(createComment).toHaveBeenCalledTimes(1);
+  });
+
+  it("pastes clipboard images into the initial comment in the task creation dialog", async () => {
+    const createComment = vi.fn(async () => undefined);
+    renderApp(Object.freeze({ ...baseApi(Object.freeze([])), createComment }), true);
+    await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
+    const dialog = screen.getByRole("dialog", { name: "Add task" });
+    await userEvent.type(within(dialog).getByLabelText("New task title"), "Task with pasted image");
+    const image = new File(["png data"], "pasted.png", { type: "image/png" });
+    fireEvent.paste(within(dialog).getByLabelText("New task title"), { clipboardData: { items: [{ kind: "file", getAsFile: () => image }], files: [] } });
+    expect(within(dialog).getByText("pasted.png")).toBeInTheDocument();
+    expect(await screen.findByText("Файл «pasted.png» прикреплён")).toBeVisible();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add task" }));
+    await waitFor(() => expect(createComment).toHaveBeenCalledWith("created", "", [image]));
+  });
+
   it("reveals optional Add task fields from mobile shortcuts and focuses their inputs", async () => {
     renderApp(baseApi(Object.freeze([])));
     await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
@@ -1288,36 +1351,75 @@ describe("Dates and Labels task views", () => {
     const isoDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-    renderApp(baseApi(Object.freeze([
-      task({ id: "overdue-task", title: "Overdue task", dueDate: isoDate(yesterday) }),
-      task({ id: "today-task", title: "Today task", dueDate: isoDate(today) }),
-      task({ id: "upcoming-task", title: "Upcoming task", dueDate: isoDate(tomorrow) }),
-      task({ id: "undated-task", title: "Undated task" })
-    ])));
+    let storedTasks: ReadonlyArray<TaskNode> = Object.freeze([]);
+    let nextTaskId = 0;
+    const api = Object.freeze({
+      ...baseApi(Object.freeze([])),
+      listTasks: async () => storedTasks,
+      createTask: async (title: string, projectId: string | null, sectionId: string | null, parentId: string | null) => {
+        const created = task({ id: `date-filter-${nextTaskId++}`, title, projectId, sectionId, parentId });
+        storedTasks = Object.freeze([...storedTasks, created]);
+        return created;
+      },
+      updateTask: async (id: string, patch: Partial<Task>) => {
+        const current = storedTasks.find((item) => item.id === id);
+        if (current === undefined) throw new Error(`Unknown task ${id}`);
+        const updated = task({ ...current, ...patch });
+        storedTasks = Object.freeze(storedTasks.map((item) => item.id === id ? updated : item));
+        return updated;
+      }
+    });
+    renderApp(api);
 
-    expect(await screen.findByRole("button", { name: "Overdue task" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Undated task" })).not.toBeInTheDocument();
+    const createTaskInApp = async (title: string, dueDate: string | null) => {
+      await userEvent.click(screen.getByRole("button", { name: "Add task Q" }));
+      const addDialog = screen.getByRole("dialog", { name: "Add task" });
+      await userEvent.type(within(addDialog).getByLabelText("New task title"), title);
+      if (dueDate !== null) {
+        await userEvent.click(within(addDialog).getByRole("button", { name: /Add date/ }));
+        const dateDialog = screen.getByRole("dialog", { name: "Add date" });
+        await userEvent.type(within(dateDialog).getByLabelText("New task date"), dueDate);
+        await userEvent.click(within(dateDialog).getByRole("button", { name: "Set date" }));
+      }
+      await userEvent.click(within(addDialog).getByRole("button", { name: /^Add task$/ }));
+    };
 
-    await userEvent.click(screen.getByRole("button", { name: /^Overdue$/ }));
-    expect(screen.getByRole("button", { name: "Overdue task" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Today task" })).not.toBeInTheDocument();
+    await createTaskInApp("Overdue task", isoDate(yesterday));
+    await createTaskInApp("Today task", isoDate(today));
+    await createTaskInApp("Upcoming task", isoDate(tomorrow));
+    await createTaskInApp("Undated task", null);
 
-    await userEvent.click(screen.getByRole("button", { name: /^Today$/ }));
-    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Overdue task" })).not.toBeInTheDocument();
+    const datesTasks = screen.getByRole("region", { name: "Dates tasks" });
+    const taskButton = (title: string) => within(datesTasks).getByRole("button", { name: new RegExp(`^${title}$`) });
+    const expectVisibleTasks = (...titles: ReadonlyArray<string>) => titles.forEach((title) => expect(taskButton(title)).toBeInTheDocument());
+    const expectHiddenTasks = (...titles: ReadonlyArray<string>) => titles.forEach((title) => expect(within(datesTasks).queryByRole("button", { name: new RegExp(`^${title}$`) })).not.toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: /^Upcoming$/ }));
-    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Today task" })).not.toBeInTheDocument();
+    expect(storedTasks.map((item) => [item.title, item.dueDate])).toEqual([
+      ["Overdue task", isoDate(yesterday)],
+      ["Today task", isoDate(today)],
+      ["Upcoming task", isoDate(tomorrow)],
+      ["Undated task", null]
+    ]);
+    expectVisibleTasks("Overdue task", "Today task", "Upcoming task");
+    expectHiddenTasks("Undated task");
 
-    await userEvent.click(screen.getByRole("button", { name: /^All$/ }));
-    expect(screen.getByRole("button", { name: "Overdue task" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Today task" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Upcoming task" })).toBeInTheDocument();
+    await userEvent.click(within(datesTasks).getByRole("button", { name: /^Overdue$/ }));
+    expectVisibleTasks("Overdue task");
+    expectHiddenTasks("Today task", "Upcoming task", "Undated task");
 
-    await userEvent.click(screen.getByRole("button", { name: "Calendar" }));
+    await userEvent.click(within(datesTasks).getByRole("button", { name: /^Today$/ }));
+    expectVisibleTasks("Today task");
+    expectHiddenTasks("Overdue task", "Upcoming task", "Undated task");
+
+    await userEvent.click(within(datesTasks).getByRole("button", { name: /^Upcoming$/ }));
+    expectVisibleTasks("Upcoming task");
+    expectHiddenTasks("Overdue task", "Today task", "Undated task");
+
+    await userEvent.click(within(datesTasks).getByRole("button", { name: /^All$/ }));
+    expectVisibleTasks("Overdue task", "Today task", "Upcoming task");
+    expectHiddenTasks("Undated task");
+
+    await userEvent.click(within(datesTasks).getByRole("button", { name: "Calendar" }));
     expect(screen.queryByRole("navigation", { name: "Filter dated tasks" })).not.toBeInTheDocument();
   });
 

@@ -18,6 +18,7 @@ export type TaskApi = Readonly<{
   updateSection: (id: SectionId, title: string) => Promise<Section>;
   deleteSection: (id: SectionId) => Promise<void>;
   createTask: (title: string, projectId: ProjectId | null, sectionId: SectionId | null, parentId: string | null) => Promise<Task>;
+  createComment: (taskId: string, body: string, files: ReadonlyArray<File>) => Promise<void>;
   patchTask: (id: string, completed: boolean) => Promise<Task>;
   updateTask: (id: string, patch: Readonly<{ title?: string; description?: string; dueDate?: string | null; labels?: ReadonlyArray<string>; comments?: Task["comments"] }>) => Promise<Task>;
   moveTask: (
@@ -54,6 +55,7 @@ export type AuthStatus = Readonly<{
   accessMode: "anonymous" | "password";
   authenticated: boolean;
   user: ManagedUser | null;
+  attachmentsEnabled?: boolean;
 }>;
 
 export type SettingsUpdate = Readonly<{
@@ -204,6 +206,12 @@ export const createTaskApi = (baseUrl = ""): ApplicationApi =>
       );
 
       return data.task;
+    },
+    createComment: async (taskId, body, files) => {
+      const form = new FormData();
+      form.set("body", body);
+      files.forEach((file) => form.append("files", file, file.name));
+      await readJson(await fetch(`${baseUrl}/tasks/${taskId}/comments`, { method: "POST", body: form }));
     },
     moveTask: async (id, projectId, sectionId, parentId, beforeId = null, afterId = null) => {
       const data = await readJson<{ task: Task }>(

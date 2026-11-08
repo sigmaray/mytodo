@@ -3,24 +3,25 @@ import type { Project, ProjectId, Section, SectionId, Task, TaskId } from "@todo
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { projects as projectsTable, sections as sectionsTable, tasks as tasksTable } from "./schema";
+import { projects as projectsTable, sections as sectionsTable, taskComments as taskCommentsTable, tasks as tasksTable } from "./schema";
 import type { TaskMove, TaskPatch, TaskRepository } from "../repository";
 
 type TaskRow = typeof tasksTable.$inferSelect;
+type TaskCommentRow = typeof taskCommentsTable.$inferSelect;
 type ProjectRow = typeof projectsTable.$inferSelect;
 type SectionRow = typeof sectionsTable.$inferSelect;
 
 const normalizeDate = (value: Date | string): string =>
   typeof value === "string" ? new Date(value).toISOString() : value.toISOString();
 
-const toTask = (row: TaskRow): Task =>
+const toTask = (row: TaskRow, comments: ReadonlyArray<Task["comments"][number]> = Object.freeze([])): Task =>
   Object.freeze({
     id: row.id,
     title: row.title,
     description: row.description,
     dueDate: row.dueDate,
     labels: Object.freeze(row.labels),
-    comments: Object.freeze(row.comments as Task["comments"]),
+    comments: Object.freeze([...comments]),
     completed: row.completed,
     parentId: row.parentId,
     projectId: row.projectId,
@@ -101,6 +102,12 @@ const collectDescendantIds = async (db: ReturnType<typeof drizzle>, id: TaskId, 
 };
 
 const firstTask = (rows: ReadonlyArray<TaskRow>) => (rows[0] === undefined ? null : toTask(rows[0]));
+const toComment = (row: TaskCommentRow): Task["comments"][number] => Object.freeze({
+  id: row.id,
+  body: row.body,
+  createdAt: normalizeDate(row.createdAt),
+  ...(Array.isArray(row.attachments) && row.attachments.length > 0 ? { attachments: Object.freeze(row.attachments as NonNullable<Task["comments"][number]["attachments"]>) } : {})
+});
 const firstProject = (rows: ReadonlyArray<ProjectRow>) => (rows[0] === undefined ? null : toProject(rows[0]));
 const firstSection = (rows: ReadonlyArray<SectionRow>) => (rows[0] === undefined ? null : toSection(rows[0]));
 
@@ -111,8 +118,10 @@ export const createPostgresTaskRepository = (databaseUrl: string, userId = "lega
   return Object.freeze({
     list: async () => {
       const rows = await db.select().from(tasksTable).where(eq(tasksTable.userId, userId)).orderBy(rowOrder);
-
-      return Object.freeze(rows.map(toTask));
+      const taskIds = rows.map((row) => row.id);
+      const commentRows = taskIds.length === 0 ? [] : await db.select().from(taskCommentsTable).where(and(eq(taskCommentsTable.userId, userId), inArray(taskCommentsTable.taskId, taskIds))).orderBy(asc(taskCommentsTable.createdAt), asc(taskCommentsTable.id));
+      const commentsByTask = commentRows.reduce((result, row) => ({ ...result, [row.taskId]: [...(result[row.taskId] ?? []), toComment(row)] }), {} as Record<string, ReadonlyArray<Task["comments"][number]>>);
+      return Object.freeze(rows.map((row) => toTask(row, commentsByTask[row.id] ?? Object.freeze([]))));
     },
     listProjects: async () => {
       const rows = await db.select().from(projectsTable).where(eq(projectsTable.userId, userId)).orderBy(projectOrder);
@@ -350,17 +359,30 @@ export const createPostgresTaskRepository = (databaseUrl: string, userId = "lega
     patch: async (id, patch: TaskPatch) => {
       if (patch.projectId != null && (await db.select({ id: projectsTable.id }).from(projectsTable).where(and(eq(projectsTable.id, patch.projectId), eq(projectsTable.userId, userId))).limit(1)).length === 0) return null;
       if (patch.sectionId != null && (await db.select({ id: sectionsTable.id }).from(sectionsTable).where(and(eq(sectionsTable.id, patch.sectionId), eq(sectionsTable.userId, userId))).limit(1)).length === 0) return null;
+      const { comments, ...taskPatch } = patch;
       const rows = await db
         .update(tasksTable)
         .set({
-          ...patch,
-          labels: patch.labels === undefined ? undefined : [...patch.labels],
+          ...taskPatch,
+          labels: taskPatch.labels === undefined ? undefined : [...taskPatch.labels],
           updatedAt: new Date()
         })
         .where(and(eq(tasksTable.id, id), eq(tasksTable.userId, userId)))
         .returning();
-
-      return firstTask(rows);
+      const taskRow = rows[0];
+      if (taskRow === undefined) return null;
+      if (comments !== undefined) {
+        const existing = await db.select({ id: tasksTable.id }).from(tasksTable).where(and(eq(tasksTable.id, id), eq(tasksTable.userId, userId))).limit(1);
+        if (existing.length === 0) return null;
+        await client.begin(async (transaction) => {
+          await transaction`DELETE FROM task_comments WHERE task_id = ${id} AND user_id = ${userId}`;
+          for (const comment of comments) {
+            await transaction`INSERT INTO task_comments (id, task_id, user_id, body, created_at, attachments) VALUES (${comment.id}, ${id}, ${userId}, ${comment.body}, ${comment.createdAt}, ${JSON.stringify(comment.attachments ?? [])}::jsonb)`;
+          }
+        });
+      }
+      const commentRows = await db.select().from(taskCommentsTable).where(and(eq(taskCommentsTable.taskId, id), eq(taskCommentsTable.userId, userId))).orderBy(asc(taskCommentsTable.createdAt), asc(taskCommentsTable.id));
+      return toTask(taskRow, commentRows.map(toComment));
     },
     move: async (id, move: TaskMove) => {
       const existing = await db.select().from(tasksTable).where(and(eq(tasksTable.id, id), eq(tasksTable.userId, userId))).limit(1);
