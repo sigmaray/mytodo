@@ -9,13 +9,14 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const users = pgTable(
   "users",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey(),
     username: text("username").notNull().unique(),
     passwordHash: text("password_hash"),
     isAdmin: boolean("is_admin").notNull().default(false),
@@ -29,7 +30,7 @@ export const sessions = pgTable(
   "sessions",
   {
     tokenHash: text("token_hash").primaryKey(),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [
@@ -47,7 +48,7 @@ export const projects = pgTable(
   "projects",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
     archived: boolean("archived").notNull().default(false),
@@ -77,7 +78,7 @@ export const sections = pgTable(
   "sections",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     title: text("title").notNull(),
     projectId: text("project_id"),
     lexicalOrder: text("lexical_order").notNull(),
@@ -105,7 +106,7 @@ export const tasks = pgTable(
   "tasks",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
     dueDate: date("due_date", { mode: "string" }),
@@ -161,7 +162,7 @@ export const taskComments = pgTable(
   {
     id: text("id").primaryKey(),
     taskId: text("task_id").notNull(),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id").notNull(),
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     attachments: jsonb("attachments").notNull().default([]),

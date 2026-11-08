@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { Hono } from "hono";
 import postgres from "postgres";
 import { z } from "zod";
+import { defaultAdminUserId } from "./users";
 
 const tableSchema = z.object({
   table: z.string().trim().min(1),
@@ -31,6 +32,8 @@ const migrationFiles = Object.freeze([
   new URL("../drizzle/0006_users.sql", import.meta.url),
   new URL("../drizzle/0007_task_comments.sql", import.meta.url),
   new URL("../drizzle/0008_data_integrity.sql", import.meta.url),
+  new URL("../drizzle/0009_database_constraints_and_indexes.sql", import.meta.url),
+  new URL("../drizzle/0010_uuid_user_ids.sql", import.meta.url),
 ]);
 const protectedTables = Object.freeze(["sessions", "users"]);
 
@@ -115,7 +118,7 @@ const seed = async (sql: postgres.Sql) => {
       (task) =>
         sql`
         INSERT INTO tasks (id, user_id, title, completed, parent_id, lexical_order)
-        VALUES (${task.id}, 'legacy-admin', ${task.title}, false, ${task.parentId}, ${task.lexicalOrder})
+        VALUES (${task.id}, ${defaultAdminUserId}, ${task.title}, false, ${task.parentId}, ${task.lexicalOrder})
         ON CONFLICT (id) DO UPDATE SET
           title = EXCLUDED.title,
           user_id = EXCLUDED.user_id,

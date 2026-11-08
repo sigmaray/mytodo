@@ -1,3 +1,5 @@
+export const defaultAdminUserId = "00000000-0000-4000-8000-000000000001";
+
 export type UserRecord = Readonly<{
   id: string;
   username: string;
@@ -32,7 +34,7 @@ export type UserRepository = Readonly<{
 export const createMemoryUserRepository = (
   initial: ReadonlyArray<UserRecord> = Object.freeze([
     Object.freeze({
-      id: "legacy-admin",
+      id: defaultAdminUserId,
       username: "admin",
       passwordHash: null,
       isAdmin: true,

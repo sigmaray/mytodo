@@ -767,7 +767,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -796,7 +796,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -823,7 +823,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -853,7 +853,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -884,7 +884,11 @@ describe("settings and session authentication", () => {
       .send({ username: "NewAdmin" })
       .expect(200)
       .expect(({ body }) => {
-        expect(body.user).toMatchObject({ id: "legacy-admin", username: "newadmin", isAdmin: true });
+        expect(body.user).toMatchObject({
+          id: "00000000-0000-4000-8000-000000000001",
+          username: "newadmin",
+          isAdmin: true,
+        });
       });
 
     await agent.patch("/auth/account").send({ password: "" }).expect(400);
@@ -904,7 +908,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -923,14 +927,14 @@ describe("settings and session authentication", () => {
     await agent.patch(`/users/${userId}`).send({ isAdmin: true }).expect(200);
     await agent.patch(`/users/${userId}`).send({ isAdmin: false }).expect(200);
     await agent.delete(`/users/${userId}`).expect(200);
-    await agent.delete("/users/legacy-admin").expect(409);
+    await agent.delete("/users/00000000-0000-4000-8000-000000000001").expect(409);
   });
 
   it("accepts any non-empty password when creating users, updating passwords, and logging in", async () => {
     const passwordHash = await hashPassword("administrator-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
@@ -963,7 +967,7 @@ describe("settings and session authentication", () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
       Object.freeze({
-        id: "legacy-admin",
+        id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,

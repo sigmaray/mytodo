@@ -22,6 +22,7 @@ import {
 import type { TaskRepository } from "./repository";
 import { createMemoryTaskRepository } from "./repository";
 import { createToolsRouter } from "./tools";
+import { defaultAdminUserId } from "./users";
 import type { UserRepository } from "./users";
 import { createMemoryUserRepository } from "./users";
 
@@ -206,7 +207,8 @@ export const createApp = (
     const userId =
       token === undefined ? null : await userRepository.getSessionUserId(hashSessionToken(token), new Date());
     const activeUser = userId === null ? null : await userRepository.getById(userId);
-    const effectiveUser = activeUser ?? (requiresLogin ? null : await userRepository.getById("legacy-admin"));
+    const effectiveUser =
+      activeUser ?? (requiresLogin ? null : await userRepository.getById(defaultAdminUserId));
     const authenticated = activeUser !== null;
 
     context.header("Cache-Control", "no-store");

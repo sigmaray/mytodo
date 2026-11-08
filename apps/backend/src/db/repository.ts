@@ -3,6 +3,7 @@ import { generateLexicalOrder } from "@todoist-clone/domain";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { defaultAdminUserId } from "../users";
 import type { TaskMove, TaskPatch, TaskRepository } from "../repository";
 import {
   projects as projectsTable,
@@ -147,7 +148,7 @@ const firstSection = (rows: ReadonlyArray<SectionRow>) => (rows[0] === undefined
 
 export const createPostgresTaskRepository = (
   databaseUrl: string,
-  userId = "legacy-admin",
+  userId = defaultAdminUserId,
   sharedClient?: postgres.Sql,
 ): TaskRepository => {
   const client = sharedClient ?? postgres(databaseUrl, { max: 10 });

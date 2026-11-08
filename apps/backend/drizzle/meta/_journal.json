@@ -71,6 +71,13 @@
       "when": 1794176400000,
       "tag": "0009_database_constraints_and_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794177000000,
+      "tag": "0010_uuid_user_ids",
+      "breakpoints": true
     }
   ]
 }
