@@ -1,5 +1,16 @@
 # Project Memory
 
+## 2026-11-08 — Document comparison with Todoist
+
+- Added `docs/comparison-with-todoist.md` in Russian, comparing the implemented mytodo features with Todoist's current official feature set. Covered self-hosting, account model, hierarchy, dates, labels, views, collaboration, and data management; linked official Todoist documentation.
+- Noted that README's priorities claim is stale relative to the current schema/API and flagged it for synchronization.
+- Verification: checked repository schema/API and frontend routes; `git diff --check` passes. Tests were not run for this documentation-only change.
+
+## 2026-11-08 — Verify user deletion removes persisted data
+
+- Added an E2E regression scenario that creates a managed user, persists a session, hierarchical projects, a project section, nested and Inbox tasks with labels/comments, deletes the account through `/admin/users`, then queries the database to assert zero remaining rows in `users`, `sessions`, `projects`, `sections`, and `tasks`. It also verifies the deleted session is rejected and cleans up on failure.
+- Verification: new E2E passes both in isolation and in the full run; `pnpm test` passes (87 tests). Full `pnpm test:e2e` reports 18 passed and 10 existing UI/E2E failures (including the pre-existing account-navigation test); `git diff --check` passes.
+
 ## 2026-11-08 — Fix production users CLI executable path
 
 - Production user tasks and the README now invoke `./node_modules/.bin/tsx` relative to the API container's `/app/apps/backend` working directory. The prior `../../node_modules` path pointed to the root workspace, where `tsx` is not installed.
