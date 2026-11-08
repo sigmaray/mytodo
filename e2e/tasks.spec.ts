@@ -465,6 +465,7 @@ test("shows truncated descriptions and comment counts in task rows", async ({ pa
 });
 
 test("saves comment attachments on submit and serves them through the authenticated API", async ({ page }, testInfo) => {
+  test.setTimeout(60000);
   const title = `Attachment comment ${testInfo.workerIndex}-${Date.now()}`;
   await page.goto("/");
   await createTask(page)(title);
@@ -486,6 +487,22 @@ test("saves comment attachments on submit and serves them through the authentica
   await expect(attachmentLink).toBeVisible();
   const attachmentPath = await attachmentLink.getAttribute("href");
   expect(attachmentPath).toMatch(/^\/attachments\//);
+  const row = page.locator(".task-row").filter({ has: page.getByRole("button", { name: title, exact: true }) });
+  await expect(row.getByLabel("Task has attachments")).toBeVisible();
+  await dialog.getByRole("button", { name: "Close task details" }).click();
+  await page.getByRole("link", { name: "Attachments", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Attachments" })).toBeVisible();
+  const pastedAttachmentRow = page.locator(".attachment-library-item").filter({ hasText: title }).filter({ hasText: "pasted.txt" });
+  await expect(pastedAttachmentRow.getByRole("link", { name: "pasted.txt" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /notes\.md/ }).first()).toBeVisible();
+  await expect(pastedAttachmentRow.getByRole("link", { name: title, exact: true })).toBeVisible();
+  await expect(pastedAttachmentRow.getByText("17 B", { exact: true })).toBeVisible();
+  await pastedAttachmentRow.getByRole("link", { name: title, exact: true }).click();
+  const reopenedDialog = page.getByRole("dialog", { name: `Task details: ${title}` });
+  await expect(reopenedDialog.getByRole("button", { name: "Remove attachment pasted.txt" })).toBeVisible();
+  await reopenedDialog.getByRole("button", { name: "Remove attachment pasted.txt" }).click();
+  await expect(reopenedDialog.getByRole("link", { name: /pasted\.txt/ })).toHaveCount(0);
+  await expect(reopenedDialog.getByRole("link", { name: /notes\.md/ })).toBeVisible();
   await attachmentLink.locator("..").getByRole("button", { name: "Preview" }).click();
   await expect(dialog.getByLabel("Preview notes.md").locator("pre")).toHaveText("# Notes");
   const backendPort = process.env.E2E_BACKEND_PORT ?? "3100";

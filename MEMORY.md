@@ -1,5 +1,11 @@
 # Project Memory
 
+## 2026-11-08 — Add attachment indicators, removal, and library page
+
+- Task rows now show a paperclip when any comment has attachments. The feature-gated Attachments sidebar page lists files across tasks with image previews, direct file links, task links that open task details, sizes, and upload times (comment creation time).
+- Task detail dialogs show a remove button beside each attachment. Removing a file preserves a comment with text; removing the last file from an attachment-only comment deletes that comment. Backend task patch cleanup removes unreferenced files from storage.
+- Added unit coverage for task indicators, the attachment library, and both deletion cases; extended E2E to verify the library and remove a pasted attachment. Verification: all 98 unit/integration tests pass, full build passes, focused E2E passes, and `git diff --check` passes.
+
 ## 2026-11-08 — Keep comment attachments visible while editing
 
 - The comment edit branch showed only the textarea and actions. It now also renders the comment's existing attachments, including image previews, so they remain accessible while changing the body.

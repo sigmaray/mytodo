@@ -238,6 +238,19 @@ textarea {
 .task-comment-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .task-comment button { border: 1px solid #ddd7d1; border-radius: 6px; padding: 4px 9px; background: white; cursor: pointer; }
 .task-comment button.danger { color: #a52b20; }
+.task-attachment-indicator { display: inline-flex; align-items: center; color: #817872; }
+.comment-attachment-remove { display: inline-flex; align-items: center; gap: 5px; color: #a52b20; }
+.attachments-page { display: grid; gap: 12px; }
+.attachment-library-item { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px; border: 1px solid #e8e3de; border-radius: 10px; background: #fff; }
+.attachment-library-preview { display: grid; min-height: 100px; place-items: center; overflow: hidden; border-radius: 8px; color: #817872; background: #f7f5f3; }
+.attachment-library-preview img { display: block; max-width: 100%; max-height: 180px; object-fit: contain; }
+.attachment-library-details { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.attachment-library-file-link { font-weight: 600; overflow-wrap: anywhere; }
+.attachment-library-task-link { color: #a83b2e; overflow-wrap: anywhere; }
+.attachment-library-details dl { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; color: #706861; font-size: .88rem; }
+.attachment-library-details dl div { display: flex; gap: 5px; }
+.attachment-library-details dt { font-weight: 600; }
+.attachment-library-details dd { margin: 0; }
 .sidebar-create-block { border-radius: 9px; }
 .section-create-block { margin: 12px 0; border-radius: 9px; }
 .tools-panel { max-width: none; display: grid; align-content: start; gap: 20px; padding: 30px; }
@@ -2437,3 +2450,4 @@ body {
 .attachment-draft button { border: 0; background: none; }
 .comment-attachment-preview { max-width: 100%; max-height: 360px; overflow: auto; }
 .comment-attachment-preview pre { max-width: 100%; margin: 0; padding: 0.75rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 7px; background: #f6f5f3; font-size: 0.82rem; }
+@media (max-width: 600px) { .attachment-library-item { grid-template-columns: 1fr; } .attachment-library-preview { min-height: 130px; } }

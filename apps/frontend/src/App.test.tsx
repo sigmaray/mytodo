@@ -183,6 +183,46 @@ describe("TaskApp", () => {
     expect(dialog.querySelector(".comment-attachment a[download]")).toBeVisible();
   });
 
+  it("shows a paperclip on tasks that have attachments", async () => {
+    const attachmentComment = Object.freeze({ id: "comment-attachment", body: "File", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 })]) });
+    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])), true);
+    expect(await screen.findByLabelText("Task has attachments")).toBeVisible();
+  });
+
+  it("lists attachments with previews, task links, size, and upload date", async () => {
+    window.history.replaceState({}, "", "/attachments");
+    const attachmentComment = Object.freeze({ id: "comment-attachment", body: "", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 })]) });
+    const api = Object.freeze({
+      ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) })])),
+      getAuthStatus: async () => Object.freeze({ accessMode: "password" as const, authenticated: true, user: Object.freeze({ id: "admin", username: "admin", isAdmin: true }), attachmentsEnabled: true })
+    });
+    renderApp(api, true);
+    expect(await screen.findByRole("heading", { name: "Attachments" })).toBeVisible();
+    expect(await screen.findByRole("img", { name: "photo.png" })).toBeVisible();
+    expect(document.querySelector('.attachment-library-file-link[href="/attachments/attachment-1"]')).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Plan MVP" })).toHaveAttribute("href", "/?task=task-1");
+    expect(screen.getByText("5 B")).toBeInTheDocument();
+    expect(screen.getByText(new Date("2026-01-01T00:00:00.000Z").toLocaleString())).toBeInTheDocument();
+    expect(within(screen.getByRole("complementary", { name: "Navigation" })).getByRole("link", { name: "Attachments" })).toBeVisible();
+    await userEvent.click(screen.getByRole("link", { name: "Plan MVP" }));
+    expect(await screen.findByRole("dialog", { name: "Task details: Plan MVP" })).toBeVisible();
+  });
+
+  it("removes individual attachments and deletes an empty attachment-only comment", async () => {
+    const comments = Object.freeze([
+      Object.freeze({ id: "comment-only", body: "", createdAt: "2026-01-01T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-only", name: "only.png", mimeType: "image/png", size: 5 })]) }),
+      Object.freeze({ id: "comment-text", body: "Keep this note", createdAt: "2026-01-02T00:00:00.000Z", attachments: Object.freeze([Object.freeze({ id: "attachment-text", name: "note.png", mimeType: "image/png", size: 6 })]) })
+    ]);
+    const updateTask = vi.fn(async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> => task({ id, title: "Plan MVP", comments: patch.comments ?? [] }));
+    renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments })])), updateTask }), true);
+    await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
+    const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Remove attachment only.png" }));
+    await waitFor(() => expect(updateTask).toHaveBeenLastCalledWith("task-1", { comments: [comments[1]] }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Remove attachment note.png" }));
+    await waitFor(() => expect(updateTask).toHaveBeenLastCalledWith("task-1", { comments: [expect.objectContaining({ id: "comment-text", body: "Keep this note", attachments: [] })] }));
+  });
+
   it("allows submitting an attachment without comment text", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])), createComment }), true);
