@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-08 — Fix production users CLI executable path
+
+- Production user tasks and the README now invoke `./node_modules/.bin/tsx` relative to the API container's `/app/apps/backend` working directory. The prior `../../node_modules` path pointed to the root workspace, where `tsx` is not installed.
+- Verification: confirmed the backend-local tsx executable exists in the workspace, dry-ran all primary production user commands, and `git diff --check` passes.
+
 ## 2026-11-08 — Point primary production tasks at .env and docker-compose.yml
 
 - Changed `prod:docker` lifecycle and user-management commands to use `.env` with `docker-compose.yml`; updated descriptions and shared-PostgreSQL README instructions accordingly. `prod:docker:external-infra:*` remains on its existing `.env.production` configuration.

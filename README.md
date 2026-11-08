@@ -140,7 +140,7 @@ Start the full stack and initialize the administrator password:
 ```bash
 docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
 docker compose --env-file .env.production -f docker-compose.with-infra.yml exec todoist-api \
-  ../../node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
+  ./node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
 ```
 
 Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data and Caddy certificates are stored in named Docker volumes. Back up the `postgres-data` volume regularly.

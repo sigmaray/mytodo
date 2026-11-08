@@ -67,7 +67,7 @@ tasks:
   prod:docker:external-infra:users:list:
     desc: List accounts in the shared-infrastructure production database
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts list
+      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts list
 
   prod:docker:external-infra:users:create:
     desc: Create a production account using shared infrastructure (USERNAME=... PASSWORD=... [ADMIN=true])
@@ -77,7 +77,7 @@ tasks:
       ADMIN: '{{.ADMIN | default "false"}}'
     cmds:
       - test -n "{{.USERNAME}}" && test -n "{{.PASSWORD}}"
-      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   prod:docker:external-infra:users:update:
     desc: Update a production account using shared infrastructure (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
@@ -88,7 +88,7 @@ tasks:
       ADMIN: '{{.ADMIN | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   prod:docker:external-infra:users:delete:
     desc: Delete a production account using shared infrastructure (USERNAME=...)
@@ -96,12 +96,12 @@ tasks:
       USERNAME: '{{.USERNAME | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
+      - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   prod:docker:users:list:
     desc: List accounts in the production database
     cmds:
-      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts list
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts list
 
   prod:docker:users:create:
     desc: Create a production account (USERNAME=... PASSWORD=... [ADMIN=true])
@@ -111,7 +111,7 @@ tasks:
       ADMIN: '{{.ADMIN | default "false"}}'
     cmds:
       - test -n "{{.USERNAME}}" && test -n "{{.PASSWORD}}"
-      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   prod:docker:users:update:
     desc: Update a production account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
@@ -122,7 +122,7 @@ tasks:
       ADMIN: '{{.ADMIN | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   prod:docker:users:delete:
     desc: Delete a production account (USERNAME=...)
@@ -130,7 +130,7 @@ tasks:
       USERNAME: '{{.USERNAME | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   test:
     desc: Run unit, integration, UI, and E2E tests
