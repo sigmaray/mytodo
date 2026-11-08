@@ -100,19 +100,18 @@ The Taskfile user commands use the `MYTODO_DB_*` settings, which default to the 
 
 ### Production Docker Compose with shared PostgreSQL
 
-The production stack joins the `infra` Docker network and uses PostgreSQL and Caddy from your shared infrastructure. Before starting it, create a dedicated database using your infrastructure's database provisioning method, then set `MYTODO_DB_HOST`, `MYTODO_DB_PORT`, `MYTODO_DB_USER`, `MYTODO_DB_PASSWORD`, and `MYTODO_DB_NAME` in `.env.production`. Enter the database password as-is; the backend encodes it when building the connection string:
+The production stack joins the `infra` Docker network and uses PostgreSQL and Caddy from your shared infrastructure. Before starting it, create a dedicated database using your infrastructure's database provisioning method, then configure `.env` with `MYTODO_DB_HOST`, `MYTODO_DB_PORT`, `MYTODO_DB_USER`, `MYTODO_DB_PASSWORD`, `MYTODO_DB_NAME`, and `MYTODO_HTTP_PORT`. Enter the database password as-is; the backend encodes it when building the connection string:
 
 ```bash
-cp deploy.env.example .env.production
-# Edit the MYTODO_DB_* settings in .env.production
-docker compose --env-file .env.production up -d --build
+cp deploy.env.example .env
+# Edit the MYTODO_DB_* settings in .env
+task prod:docker
 ```
 
 The API applies Drizzle migrations before starting. Set the initial administrator password once:
 
 ```bash
-docker compose --env-file .env.production exec todoist-api \
-  ../../node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
+task prod:docker:users:update USERNAME=admin PASSWORD='your-strong-password'
 ```
 
 The web container listens on loopback port `18082` by default and joins `infra` so the shared Caddy proxy can reach it. Add a site block for your public hostname to the Caddyfile used by your shared reverse proxy:

@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-08 — Point primary production tasks at .env and docker-compose.yml
+
+- Changed `prod:docker` lifecycle and user-management commands to use `.env` with `docker-compose.yml`; updated descriptions and shared-PostgreSQL README instructions accordingly. `prod:docker:external-infra:*` remains on its existing `.env.production` configuration.
+- Verification: dry-runs resolve the primary task commands and `git diff --check` passes. `.env` is not present in this workspace and must be created from `deploy.env.example` before use.
+
 ## 2026-11-08 — Simplify standalone production Task names
 
 - Renamed the standalone stack tasks by removing `with-infra`: the stack now uses `prod:docker` plus `down`, `ps`, `logs`, and `users:*` variants. Shared-infrastructure task names are unchanged.

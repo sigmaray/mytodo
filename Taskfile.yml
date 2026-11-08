@@ -25,24 +25,24 @@ tasks:
       - docker compose --env-file .env.example -f docker-compose.dev.yml up
 
   prod:docker:
-    desc: Build and start the self-contained production stack
+    desc: Build and start the production app using shared infrastructure
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
+      - docker compose --env-file .env -f docker-compose.yml up -d --build
 
   prod:docker:down:
-    desc: Stop the self-contained production stack (keep database and certificates)
+    desc: Stop the production app using shared infrastructure
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml down
+      - docker compose --env-file .env -f docker-compose.yml down
 
   prod:docker:ps:
-    desc: Show containers in the self-contained production stack
+    desc: Show containers for the production app using shared infrastructure
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml ps
+      - docker compose --env-file .env -f docker-compose.yml ps
 
   prod:docker:logs:
-    desc: Follow logs from the self-contained production stack
+    desc: Follow logs for the production app using shared infrastructure
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml logs -f
+      - docker compose --env-file .env -f docker-compose.yml logs -f
 
   prod:docker:external-infra:
     desc: Build and start production app using the shared infra network and PostgreSQL
@@ -99,22 +99,22 @@ tasks:
       - docker compose --env-file .env.production -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   prod:docker:users:list:
-    desc: List accounts in the self-contained production database
+    desc: List accounts in the production database
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts list
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts list
 
   prod:docker:users:create:
-    desc: Create a production account in the self-contained stack (USERNAME=... PASSWORD=... [ADMIN=true])
+    desc: Create a production account (USERNAME=... PASSWORD=... [ADMIN=true])
     vars:
       USERNAME: '{{.USERNAME | default ""}}'
       PASSWORD: '{{.PASSWORD | default ""}}'
       ADMIN: '{{.ADMIN | default "false"}}'
     cmds:
       - test -n "{{.USERNAME}}" && test -n "{{.PASSWORD}}"
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   prod:docker:users:update:
-    desc: Update a production account in the self-contained stack (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
+    desc: Update a production account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
     vars:
       USERNAME: '{{.USERNAME | default ""}}'
       NAME: '{{.NAME | default ""}}'
@@ -122,15 +122,15 @@ tasks:
       ADMIN: '{{.ADMIN | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   prod:docker:users:delete:
-    desc: Delete a production account in the self-contained stack (USERNAME=...)
+    desc: Delete a production account (USERNAME=...)
     vars:
       USERNAME: '{{.USERNAME | default ""}}'
     cmds:
       - test -n "{{.USERNAME}}"
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
+      - docker compose --env-file .env -f docker-compose.yml exec -T todoist-api ../../node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   test:
     desc: Run unit, integration, UI, and E2E tests
