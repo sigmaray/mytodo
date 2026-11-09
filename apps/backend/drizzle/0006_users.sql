@@ -8,24 +8,24 @@ CREATE TABLE IF NOT EXISTS "users" (
 );
 
 INSERT INTO "users" ("id", "username", "password_hash", "is_admin", "confirm_delete", "inbox_description")
-SELECT 'legacy-admin', lower(COALESCE(NULLIF("username", ''), 'admin')), "password_hash", true, "confirm_delete", "inbox_description"
+SELECT '00000000-0000-4000-8000-000000000001', lower(COALESCE(NULLIF("username", ''), 'admin')), "password_hash", true, "confirm_delete", "inbox_description"
 FROM "app_settings" WHERE "id" = 'app'
-ON CONFLICT ("id") DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "users_username_lower_unique" ON "users" (lower("username"));
 
-INSERT INTO "users" ("id", "username", "is_admin") VALUES ('legacy-admin', 'admin', true)
-ON CONFLICT ("id") DO NOTHING;
+INSERT INTO "users" ("id", "username", "is_admin") VALUES ('00000000-0000-4000-8000-000000000001', 'admin', true)
+ON CONFLICT DO NOTHING;
 
 ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "user_id" text;
 ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "user_id" text;
 ALTER TABLE "tasks" ADD COLUMN IF NOT EXISTS "user_id" text;
 ALTER TABLE "sessions" ADD COLUMN IF NOT EXISTS "user_id" text;
 
-UPDATE "projects" SET "user_id" = 'legacy-admin' WHERE "user_id" IS NULL;
-UPDATE "sections" SET "user_id" = 'legacy-admin' WHERE "user_id" IS NULL;
-UPDATE "tasks" SET "user_id" = 'legacy-admin' WHERE "user_id" IS NULL;
-UPDATE "sessions" SET "user_id" = 'legacy-admin' WHERE "user_id" IS NULL;
+UPDATE "projects" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id" IS NULL;
+UPDATE "sections" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id" IS NULL;
+UPDATE "tasks" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id" IS NULL;
+UPDATE "sessions" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id" IS NULL;
 
 ALTER TABLE "projects" ALTER COLUMN "user_id" SET NOT NULL;
 ALTER TABLE "sections" ALTER COLUMN "user_id" SET NOT NULL;

@@ -108,7 +108,9 @@ cp deploy.env.example .env
 task prod:docker
 ```
 
-The API applies Drizzle migrations before starting. Set the initial administrator password once:
+The API applies Drizzle migrations before starting. Set `MYTODO_ATTACHMENTS_ENABLED=true` to show attachment controls and enable attachment API routes; it defaults to `false`. When enabled, `MYTODO_ATTACHMENTS_DIR` must point to a writable directory, normally `/var/lib/mytodo/attachments`. The API stores files in the persistent `mytodo_attachments` volume. To keep that data on a specific host disk, override the API mount in a Compose override file with a bind mount to `/var/lib/mytodo/attachments`. Back up this storage together with the database. Set the initial administrator password once:
+
+Project archiving is disabled by default. Set `MYTODO_PROJECT_ARCHIVING_ENABLED=true` to show project archive controls and the Archived projects page, and enable the archive API operation.
 
 ```bash
 task prod:docker:users:update USERNAME=admin PASSWORD='your-strong-password'
@@ -132,6 +134,9 @@ To run without a shared infrastructure stack, use `docker-compose.with-infra.yml
 MYTODO_DB_USER=todoist
 MYTODO_DB_PASSWORD=replace-with-a-strong-alphanumeric-password
 MYTODO_DB_NAME=todoist
+MYTODO_ATTACHMENTS_ENABLED=true
+MYTODO_ATTACHMENTS_DIR=/var/lib/mytodo/attachments
+MYTODO_PROJECT_ARCHIVING_ENABLED=false
 MYTODO_DOMAIN=todoist.example.com
 ```
 
@@ -143,7 +148,7 @@ docker compose --env-file .env.production -f docker-compose.with-infra.yml exec 
   ./node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
 ```
 
-Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data and Caddy certificates are stored in named Docker volumes. Back up the `postgres-data` volume regularly.
+Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data, Caddy certificates, and attachments are stored in named Docker volumes. Back up the `postgres-data` and `mytodo_attachments` volumes together.
 
 ### Tests
 
@@ -154,6 +159,8 @@ task test:docker
 task test:docker:app
 pnpm test:e2e
 ```
+
+Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables authenticated test endpoints for clearing all data, clearing an individual allowlisted table (`tasks`, `task_comments`, `sections`, or `projects`), and creating tasks, projects, sections, comments, and attachments. They are unavailable in production, and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` use these endpoints to prepare state so UI tests can focus on the behavior they verify.
 
 ### Database Tasks
 

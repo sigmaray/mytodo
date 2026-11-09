@@ -32,11 +32,15 @@ test("task dialog, inline keyboard editing, navigation, search, and calendar wor
   await expect(addDateDialog.locator('[role="grid"]')).toBeVisible();
   const todayCell = addDateDialog.locator('[aria-current="date"]');
   await expect(todayCell).toBeVisible();
-  await expect.poll(() => todayCell.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 214, 208)");
+  await expect
+    .poll(() => todayCell.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(255, 214, 208)");
   await addDateDialog.getByLabel("New task date").fill("2026-11-18");
   const selectedDay = addDateDialog.locator('[aria-pressed="true"]');
   await expect(selectedDay).toBeVisible();
-  await expect.poll(() => selectedDay.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(214, 54, 43)");
+  await expect
+    .poll(() => selectedDay.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(214, 54, 43)");
   await addDateDialog.getByRole("button", { name: "Set date" }).click();
   await expect(addDialog).toBeVisible();
   await addDialog.getByLabel("New task labels").fill("focus, work");
@@ -106,27 +110,52 @@ test("task dialog, inline keyboard editing, navigation, search, and calendar wor
   await page.getByRole("button", { name: "Add section" }).click();
   await page.getByLabel("Section title").fill(secondSectionName);
   await page.getByLabel("Section title").press("Enter");
-  await page.locator(`section[aria-label="Section ${secondSectionName}"] .section-header`).evaluate((source, targetName) => {
-    const target = document.querySelector<HTMLElement>(`section[aria-label="Section ${CSS.escape(targetName)}"] .section-header`);
-    if (target === null) throw new Error("Section drop target was not found");
-    const transfer = new DataTransfer();
-    const rect = target.getBoundingClientRect();
-    const clientY = rect.top + 1;
-    source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
-    target.dispatchEvent(new DragEvent("dragenter", { bubbles: true, dataTransfer: transfer, clientY }));
-    target.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer: transfer, clientY }));
-    target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer, clientY }));
-    source.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer: transfer }));
-  }, renamedSection);
-  await expect.poll(() => page.locator('section[aria-label^="Section "]').evaluateAll((sections, names: Readonly<{ first: string; second: string }>) => sections.findIndex((section) => section.getAttribute("aria-label") === `Section ${names.second}`) < sections.findIndex((section) => section.getAttribute("aria-label") === `Section ${names.first}`), { first: renamedSection, second: secondSectionName })).toBe(true);
+  await page
+    .locator(`section[aria-label="Section ${secondSectionName}"] .section-header`)
+    .evaluate((source, targetName) => {
+      const target = document.querySelector<HTMLElement>(
+        `section[aria-label="Section ${CSS.escape(targetName)}"] .section-header`,
+      );
+      if (target === null) throw new Error("Section drop target was not found");
+      const transfer = new DataTransfer();
+      const rect = target.getBoundingClientRect();
+      const clientY = rect.top + 1;
+      source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
+      target.dispatchEvent(new DragEvent("dragenter", { bubbles: true, dataTransfer: transfer, clientY }));
+      target.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer: transfer, clientY }));
+      target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer, clientY }));
+      source.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer: transfer }));
+    }, renamedSection);
+  await expect
+    .poll(() =>
+      page
+        .locator('section[aria-label^="Section "]')
+        .evaluateAll(
+          (sections, names: Readonly<{ first: string; second: string }>) =>
+            sections.findIndex(
+              (section) => section.getAttribute("aria-label") === `Section ${names.second}`,
+            ) <
+            sections.findIndex((section) => section.getAttribute("aria-label") === `Section ${names.first}`),
+          { first: renamedSection, second: secondSectionName },
+        ),
+    )
+    .toBe(true);
 
-  await page.evaluate(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "л", code: "KeyK", ctrlKey: true, bubbles: true })));
+  await page.evaluate(() =>
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "л", code: "KeyK", ctrlKey: true, bubbles: true }),
+    ),
+  );
   await page.getByRole("textbox", { name: "Search or type a command" }).fill(renamedProject);
-  await expect(page.locator(".search-palette .search-result").filter({ hasText: renamedProject })).toBeVisible();
+  await expect(
+    page.locator(".search-palette .search-result").filter({ hasText: renamedProject }),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
   await page.keyboard.press("Control+k");
   await page.getByRole("textbox", { name: "Search or type a command" }).fill(renamedSection);
-  await expect(page.locator(".search-palette .search-result").filter({ hasText: renamedSection })).toBeVisible();
+  await expect(
+    page.locator(".search-palette .search-result").filter({ hasText: renamedSection }),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
 
   await page.goto("/dates");
@@ -196,10 +225,22 @@ test("project reorder clears all drag highlight states", async ({ page }) => {
     await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
   }
 
-  const firstRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: first, exact: true }) });
-  const secondRow = page.locator(".project-nav-row").filter({ has: page.getByRole("button", { name: second, exact: true }) });
+  const firstRow = page
+    .locator(".project-nav-row")
+    .filter({ has: page.getByRole("button", { name: first, exact: true }) });
+  const secondRow = page
+    .locator(".project-nav-row")
+    .filter({ has: page.getByRole("button", { name: second, exact: true }) });
   await firstRow.dragTo(secondRow);
-  await expect.poll(() => page.locator(".project-nav-row.project-dragging, .project-nav-row.project-drop-before, .project-nav-row.project-drop-after, .project-nav-row .nav-button.drop-active").count()).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .locator(
+          ".project-nav-row.project-dragging, .project-nav-row.project-drop-before, .project-nav-row.project-drop-after, .project-nav-row .nav-button.drop-active",
+        )
+        .count(),
+    )
+    .toBe(0);
   await expect(page.getByRole("button", { name: first, exact: true })).not.toHaveClass(/drop-active/);
   await expect(page.getByRole("button", { name: second, exact: true })).not.toHaveClass(/drop-active/);
 });

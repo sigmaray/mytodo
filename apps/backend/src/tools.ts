@@ -2,13 +2,14 @@ import { readFile } from "node:fs/promises";
 import { Hono } from "hono";
 import postgres from "postgres";
 import { z } from "zod";
+import { defaultAdminUserId } from "./users";
 
 const tableSchema = z.object({
-  table: z.string().trim().min(1)
+  table: z.string().trim().min(1),
 });
 
 const querySchema = z.object({
-  sql: z.string().trim().min(1)
+  sql: z.string().trim().min(1),
 });
 
 const tableNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -28,7 +29,11 @@ const migrationFiles = Object.freeze([
   new URL("../drizzle/0003_remove_task_priorities.sql", import.meta.url),
   new URL("../drizzle/0004_scope_descriptions.sql", import.meta.url),
   new URL("../drizzle/0005_project_hierarchy.sql", import.meta.url),
-  new URL("../drizzle/0006_users.sql", import.meta.url)
+  new URL("../drizzle/0006_users.sql", import.meta.url),
+  new URL("../drizzle/0007_task_comments.sql", import.meta.url),
+  new URL("../drizzle/0008_data_integrity.sql", import.meta.url),
+  new URL("../drizzle/0009_database_constraints_and_indexes.sql", import.meta.url),
+  new URL("../drizzle/0010_uuid_user_ids.sql", import.meta.url),
 ]);
 const protectedTables = Object.freeze(["sessions", "users"]);
 
@@ -37,14 +42,14 @@ const seedTasks = Object.freeze([
     id: "seed-inbox",
     title: "Review seeded task",
     parentId: null,
-    lexicalOrder: "U"
+    lexicalOrder: "U",
   }),
   Object.freeze({
     id: "seed-child",
     title: "Nested seeded task",
     parentId: "seed-inbox",
-    lexicalOrder: "U"
-  })
+    lexicalOrder: "U",
+  }),
 ]);
 
 const parseJson = async (request: Request) => {
@@ -109,10 +114,11 @@ const migrate = async (sql: postgres.Sql) => {
 const seed = async (sql: postgres.Sql) => {
   await migrate(sql);
   await Promise.all(
-    seedTasks.map((task) =>
-      sql`
+    seedTasks.map(
+      (task) =>
+        sql`
         INSERT INTO tasks (id, user_id, title, completed, parent_id, lexical_order)
-        VALUES (${task.id}, 'legacy-admin', ${task.title}, false, ${task.parentId}, ${task.lexicalOrder})
+        VALUES (${task.id}, ${defaultAdminUserId}, ${task.title}, false, ${task.parentId}, ${task.lexicalOrder})
         ON CONFLICT (id) DO UPDATE SET
           title = EXCLUDED.title,
           user_id = EXCLUDED.user_id,
@@ -120,8 +126,8 @@ const seed = async (sql: postgres.Sql) => {
           parent_id = EXCLUDED.parent_id,
           lexical_order = EXCLUDED.lexical_order,
           updated_at = now()
-      `
-    )
+      `,
+    ),
   );
 
   return Object.freeze({ inserted: seedTasks.length });
@@ -151,10 +157,18 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
     const limitParam = context.req.query("limit") ?? "10";
     const limit = limitParam === "all" ? null : Number(limitParam);
     const tables = await listTables(sql);
-    if (!tableNamePattern.test(table) || !tables.some((item) => item.table_name === table)) return context.json({ error: "Unknown table" }, 404);
-    if (limit !== null && limit !== 10 && limit !== 100) return context.json({ error: "Limit must be 10, 100, or all" }, 400);
-    const columns = await sql<{ column_name: string }[]>`SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ${table}`;
-    const orderColumn = columns.some((column) => column.column_name === "created_at") ? "created_at" : columns.some((column) => column.column_name === "id") ? "id" : null;
+    if (!tableNamePattern.test(table) || !tables.some((item) => item.table_name === table))
+      return context.json({ error: "Unknown table" }, 404);
+    if (limit !== null && limit !== 10 && limit !== 100)
+      return context.json({ error: "Limit must be 10, 100, or all" }, 400);
+    const columns = await sql<
+      { column_name: string }[]
+    >`SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ${table}`;
+    const orderColumn = columns.some((column) => column.column_name === "created_at")
+      ? "created_at"
+      : columns.some((column) => column.column_name === "id")
+        ? "id"
+        : null;
     const ordering = orderColumn === null ? "" : ` ORDER BY ${quoteIdentifier(orderColumn)} DESC`;
     const limitClause = limit === null ? "" : ` LIMIT ${limit}`;
     const rows = await sql.unsafe(`SELECT * FROM ${quoteIdentifier(table)}${ordering}${limitClause}`);
@@ -212,7 +226,7 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
 
     return context.json({
       rows: Array.isArray(rows) ? rows : [],
-      count: Array.isArray(rows) ? rows.length : 0
+      count: Array.isArray(rows) ? rows.length : 0,
     });
   });
 

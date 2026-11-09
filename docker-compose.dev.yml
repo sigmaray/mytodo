@@ -29,6 +29,9 @@ services:
       MYTODO_DB_USER: ${MYTODO_DB_USER:-todoist}
       MYTODO_DB_PASSWORD: ${MYTODO_DB_PASSWORD:-todoist}
       MYTODO_DB_NAME: ${MYTODO_DB_NAME:-todoist}
+      MYTODO_ATTACHMENTS_DIR: /var/lib/mytodo/attachments
+      MYTODO_ATTACHMENTS_ENABLED: "true"
+      MYTODO_PROJECT_ARCHIVING_ENABLED: ${MYTODO_PROJECT_ARCHIVING_ENABLED:-false}
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
       VITE_USE_POLLING: "true"
@@ -42,6 +45,7 @@ services:
       - backend-node-modules:/workspace/apps/backend/node_modules
       - frontend-node-modules:/workspace/apps/frontend/node_modules
       - domain-node-modules:/workspace/packages/domain/node_modules
+      - dev-attachments:/var/lib/mytodo/attachments
     command:
       - bash
       - -lc
@@ -61,3 +65,4 @@ volumes:
   backend-node-modules:
   frontend-node-modules:
   domain-node-modules:
+  dev-attachments:

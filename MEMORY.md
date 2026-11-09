@@ -1,5 +1,111 @@
 # Project Memory
 
+## 2026-11-08 — Уточнить правила читаемости и сопровождения
+
+- В `AGENTS.md` добавлены правила организации frontend по feature-модулям, ограничения на ответственность `App.tsx` и Hono-обработчиков, требования к скриптам lint/format и порог eager JS chunk в 500 KiB с lazy-loading для тяжёлых маршрутов.
+- Исходный код приложения не менялся: эта работа задаёт обязательные правила для будущих изменений.
+- Проверка: `git diff --check`.
+
+## 2026-11-08 — Исправить пять находок технического аудита
+
+- Запрещены циклические перемещения задач в memory/PostgreSQL репозиториях; конкурентные переносы одного пользователя сериализуются advisory lock-ом.
+- Комментарии добавляются атомарно под блокировкой задачи. Удаление проекта и секции транзакционное.
+- Tools → Migrate включает `0007` и `0008`; `0007` стала идемпотентной. `0008` исправляет старые невалидные ссылки и добавляет составные FK и индексы для same-user целостности.
+- Добавлены backend- и PostgreSQL E2E-регрессии. Обновлён аудит `docs/technical-audit-2026-11-08.md` со статусами исправлений.
+- Проверки: `pnpm test` (105 тестов), `pnpm build`, `pnpm test:e2e` (33 теста), `drizzle-kit check` и `git diff --check` прошли. Изменения реализованы без классов; оставлен известный Vite chunk-size advisory.
+
+## 2026-11-08 — Технический аудит проекта
+
+- Создан `docs/technical-audit-2026-11-08.md` с приоритетными дефектами и рисками, оценками качества, планом исправлений и ограничениями аудита.
+- Основные находки: API допускает циклическое перемещение задач; параллельные обновления комментариев могут терять записи; Tools → Migrate не включает миграцию `0007`.
+- Проверки: `pnpm test` (103 теста) и `pnpm build` прошли. E2E и актуальные проверки уязвимостей зависимостей не запускались. Исходный код не менялся.
+
+## 2026-11-08 — Add attachment indicators, removal, and library page
+
+- Task rows now show a paperclip when any comment has attachments. The feature-gated Attachments sidebar page lists files across tasks with image previews, direct file links, task links that open task details, sizes, and upload times (comment creation time).
+- Task detail dialogs show a remove button beside each attachment. Removing a file preserves a comment with text; removing the last file from an attachment-only comment deletes that comment. Backend task patch cleanup removes unreferenced files from storage.
+- Added unit coverage for task indicators, the attachment library, and both deletion cases; extended E2E to verify the library and remove a pasted attachment. Verification: all 98 unit/integration tests pass, full build passes, focused E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Keep comment attachments visible while editing
+
+- The comment edit branch showed only the textarea and actions. It now also renders the comment's existing attachments, including image previews, so they remain accessible while changing the body.
+- Extended the attachment-only comment test to enter edit mode and assert that the image and download link remain visible. Frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Fix 400 when editing comments with attachments
+
+- Investigated task `fdvdfvfd` in the dev PostgreSQL database; its comments include an attachment. PATCH validation rejected unchanged attachment metadata because it compared `JSON.stringify` output, which is sensitive to property order after PostgreSQL JSONB/Zod parsing. Replaced it with explicit value comparisons for attachment ID, name, MIME type, and size, preserving the forged-metadata rejection.
+- Added backend coverage for editing a comment with metadata in PostgreSQL-style key order, rejecting altered size, and deleting the comment. Verification: all unit/integration tests pass (95 total), full build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Save pasted files as comments immediately in task details
+
+- In an existing task's edit dialog, pasted clipboard files now immediately call `api.createComment` with the task ID, current comment draft text, and pasted files. Multiple quick pastes are serialized; success clears the matching text draft, invalidates task data, and shows the attachment toast. On failure the files remain in the composer draft and an error toast appears. Add task still stages pasted files because its task ID does not exist yet.
+- Added component coverage for paste outside the dialog and browser E2E coverage confirming an attachment-only comment is persisted immediately. Full unit/integration tests (94) and frontend build pass; focused E2E passes; `git diff --check` passes.
+
+## 2026-11-08 — Capture pasted attachments when task dialog lacks focus
+
+- The task-details and Add task dialogs handled paste only within their own DOM subtree, so copied files were ignored when focus remained on the trigger or another outside element. Added a document-level capture listener while either dialog is open; it processes clipboard files once, prevents browser paste, updates the relevant draft list, and shows the immediate attachment toast. The listener is enabled only when attachments are enabled.
+- Updated the task-details paste test to dispatch `paste` on `document.body`, outside the dialog. Verification: frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Show upload success toasts for attachments
+
+- Replaced Sonner with React-Toastify after the notification remained invisible in the user's app. The bottom-right container is portaled to `document.body`. When files are selected or pasted into either task dialog, the UI immediately shows `Файл «имя» прикреплён` for five seconds, once per accepted file. This is a draft attachment confirmation, before submission to the backend.
+- Verification: frontend tests pass (59 tests), all unit/integration tests passed (94 total before this follow-up), frontend build passes with the existing large-chunk advisory, and the focused attachment E2E passes including a visible-toast assertion. `git diff --check` passes.
+
+## 2026-11-08 — Verify comment editing and deletion after migration
+
+- Added edit and delete steps to the database-backed comment E2E scenario. This exercises the `task_comments` delete/reinsert path introduced with migration `0007`.
+- Verification: focused E2E passes through creating two comments, editing one, and deleting the other. The test did not reproduce a failure in the current migrated database.
+
+## 2026-11-08 — Capture clipboard files throughout both task dialogs
+
+- Moved paste handling from the comment textareas to `onPasteCapture` on the Add task and task details dialog roots. Clipboard files are now attached regardless of which field is focused, and the browser's default text paste is prevented when file items are found.
+- Verification: frontend tests pass (59 tests), including pasting while task title/description has focus; frontend build and `git diff --check` pass.
+
+## 2026-11-08 — Handle pasted clipboard images in both task dialogs
+
+- Clipboard paste now reads file items from `clipboardData.items` and falls back to `clipboardData.files`, covering browsers that expose copied images only as clipboard items. Wired this into the creation dialog's initial comment and the existing task comment composer; file picker selections also clear the native input after capture.
+- Verification: frontend tests pass (59 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Hide empty comment bodies and clear file picker state
+
+- Render `.comment-markdown` only when the comment body contains non-whitespace text, so attachment-only comments have no empty gray bar. Reset the native file input immediately after reading its files; draft chips remain until submit, then disappear with the cleared draft state.
+- Verification: frontend tests pass (57 tests), frontend build passes, and `git diff --check` passes.
+
+## 2026-11-08 — Style the comment composer as a Bootstrap card
+
+- Wrapped the Add comment input, attachment controls, and submit button in a Bootstrap `.card border rounded p-3 mt-3` container so the composer reads as a separate block.
+- Verification: frontend tests pass (56 tests), including an assertion that the composer uses Bootstrap card/border/padding classes; `git diff --check` passes.
+
+## 2026-11-08 — Left-align rendered comment text
+
+- The broad `.task-comment > div` flex rule had applied right justification to `.comment-markdown` as well as the action buttons. Scoped the right-aligned flex layout to `.task-comment-actions` and explicitly left-aligned the Markdown block.
+- Verification: the focused E2E scenario passes with a computed `text-align: left` assertion; `git diff --check` passes.
+
+## 2026-11-08 — Allow attachment-only comments
+
+- Enabled comment submission with empty text when at least one attachment is selected. Kept submit disabled for an empty draft with no files, and enforced the same rule in multipart comment uploads and task comment patches. Initial task comments can also consist of attachments alone.
+- Verification: `pnpm test` passes (91 tests), `pnpm build` passes, and the focused attachment E2E passes.
+
+## 2026-11-08 — Implement comment attachments and Markdown display
+
+- Added the `MYTODO_ATTACHMENTS_DIR` gate, private local file writes with server-generated UUID names, limits (10 files, 10 MB each, 25 MB total), authenticated downloads and verified raster-image previews, attachment cleanup when comments/tasks/accounts are deleted, and task ownership checks. Migration `0007_task_comments` moves legacy JSONB comments into `task_comments`, which stores per-comment attachment metadata. Added attachment drafts, paste/file selection, initial task comments, image thumbnails, safe inline Markdown and text-file previews, and Compose storage volumes/configuration docs.
+- Verification: `pnpm test` passes (91 tests), `pnpm build` passes, both production Compose configs validate, and `git diff --check` passes. Attachment upload/preview/download and existing multi-comment E2E scenarios pass after migration. A full E2E run before the migration/proxy fixes had 17 passed and 13 failed (mostly existing UI/data-state timeouts); it was not rerun in full after the focused fixes.
+
+## 2026-11-08 — Specify attachment storage and feature gate
+
+- Updated `docs/comments-and-attachments-plan.md`: attachments are enabled only when `MYTODO_ATTACHMENTS_DIR` is set; without it, attachment UI/API operations are unavailable while plain comments remain usable. Specified `/var/lib/mytodo/attachments` in the backend container, the `mytodo_attachments` persistent volume (or administrator-selected host bind mount), DB metadata containing relative generated keys, and backup/configuration requirements.
+- Verification: documentation-only change; tests were not run.
+
+## 2026-11-08 — Strengthen Dates filter regression coverage
+
+- Reworked the frontend Dates filter test to create four tasks through the Add task UI against a stateful immutable mock API: overdue, today, upcoming, and undated. It asserts stored dates and exact visibility for All/Overdue/Today/Upcoming, plus that the subtabs disappear in Calendar mode.
+- Verification: `pnpm test` passes (88 tests), `pnpm build` passes with the existing chunk-size advisory, and `git diff --check` passes. The focused E2E Dates test was attempted but the accumulated default E2E database left task loading unresolved and the test timed out; no E2E changes were retained.
+
+## 2026-11-08 — Plan adding tasks from calendar days
+
+- Used `aiignore/prompts/next/09.2026-11-08.improve-calendar.md` as the request source and created `docs/calendar-day-task-creation-plan.md` in Russian. The plan recommends opening the existing task creation form from a calendar cell with that local date preselected, with an explicit add button, while preserving task opening and drag-and-drop.
+- Verification: documentation-only change; tests were not run.
+
 ## 2026-11-08 — Add date filters to the Dates list view
 
 - Implemented `All`, `Overdue`, `Today`, and `Upcoming` filter tabs on `/dates` while List is selected. Filters compare task dates with the user's local calendar date; Calendar mode remains unchanged. Added an empty state for a filter with no matches and a responsive segmented-control style.
@@ -830,3 +936,125 @@ Verification:
 - Added a fixed, bottom-right mobile quick-add button with a plus icon; it opens the task form using the current project or section placement.
 - Added mobile E2E assertions for button visibility and viewport placement.
 - Verification: frontend tests pass (46 tests), frontend production build passes, and `git diff --check` passes. E2E could not start because the configured Playwright webServer exited during startup.
+
+## 2026-11-08 — Make attachment upload notifications visible
+
+- Replaced Sonner with React-Toastify, imported its stylesheet, and portaled its bottom-right `ToastContainer` to `document.body` above the task dialog. Attachment confirmation notices appear immediately on paste or file selection, and stay visible for five seconds.
+- Added frontend and E2E assertions that the toast is visible at attachment time. Frontend tests/build and the focused attachment E2E pass.
+
+## 2026-11-08 — Keep Attachments page after opening a task
+
+- Fixed task links in the Attachments library to open task details without navigating away from `/attachments`; closing the dialog now leaves the attachment list in place.
+- Added frontend regression coverage for the route before and after opening and closing the task dialog.
+- Verification: `pnpm test` (98 tests), `pnpm build`, focused attachment E2E (1 passed), and `git diff --check` pass.
+
+## 2026-11-08 — Serve the Attachments SPA route in development
+
+- Vite previously proxied `GET /attachments` to the API, so reloading the Attachments page returned an API 404. The proxy now bypasses HTML navigation requests and serves the SPA, while attachment API/file requests remain proxied.
+- Added an E2E reload assertion on the Attachments page. Verification: all 98 unit/integration tests pass, production build passes, focused attachment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Add an explicit attachments feature flag
+
+- Added `MYTODO_ATTACHMENTS_ENABLED` (defaults to `false`) as the explicit gate for attachment UI and API. Enabling it requires a writable `MYTODO_ATTACHMENTS_DIR`; startup reports a clear error if the directory is missing or invalid. Dev Compose and E2E explicitly enable attachments, while production examples document opt-in behavior.
+- Hid existing attachment previews and links in task dialogs when disabled; added frontend and backend regression coverage.
+- Verification: all 100 unit/integration tests pass, production build passes, attachment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Focus comment text when editing
+
+- Set autofocus on the comment editor shown after clicking Edit. Added a frontend assertion that the editor owns focus and an E2E assertion for the same interaction.
+- Verification: all 100 unit/integration tests pass, production build passes, focused comment E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Make project archiving opt-in
+
+- Added `MYTODO_PROJECT_ARCHIVING_ENABLED`, defaulting to false in the backend and Compose. The feature status is published to the frontend; archive controls and the archived-project page are hidden when disabled, while existing archived projects remain visible. The archive API returns 503 when disabled.
+- Added backend and frontend regression tests, an enabled-feature E2E check, and documented the environment setting.
+- Verification: all 102 unit/integration tests pass, production build passes, focused E2E passes, and `git diff --check` passes. The unrelated full mobile sidebar E2E scenario failed while reopening navigation after its Dates route step.
+
+## 2026-11-08 — Remove Initial comment from Add task
+
+- Removed the Initial comment textarea from task creation and removed its draft state. New tasks still upload selected or pasted files as an attachment-only comment.
+- Added a component assertion that the field is absent and retained the paste-upload regression check; the Playwright task creation helper also asserts the field is absent.
+- Verification: all 102 unit/integration tests pass, production build passes, task creation E2E passes, and `git diff --check` passes.
+
+## 2026-11-08 — Add an API for Playwright E2E setup
+
+- Added an authenticated `/api/playwright/reset` endpoint gated by `MYTODO_ENABLE_PLAYWRIGHT_API`; backend startup rejects enabling it in production or without a database URL. Playwright enables it only in its development server config, and the fixture resets the isolated test database before each case.
+- Added functional API helpers in `e2e/api.ts` for projects, sections, tasks, task updates, archiving, and reset. Replaced repeated UI setup for projects/tasks while keeping dedicated UI creation coverage. Documented this setup in README.
+- Fixed the mobile comment form width selector and made E2E checks robust for multiline Markdown comments and the form's actual layout.
+- Verification: `pnpm test` (103 tests), `pnpm build`, and full `pnpm test:e2e` (31 tests) pass; `git diff --check` passes.
+
+## 2026-11-08 — Expand the Playwright data API and reduce setup navigation
+
+- Added authenticated, dev-only endpoints for allowlisted table cleanup (`tasks`, `task_comments`, `sections`, `projects`) and entity creation (task, project, section, comment, attachment). Attachment setup writes a generated file key and metadata; table cleanup removes owned attachment files. Added an E2E scenario covering creation and selective cleanup.
+- The Playwright fixture now authenticates and resets through API requests before opening the SPA. Added batch setup helpers that create multiple tasks/projects before a single page reload, and batched mobile drag fixture setup.
+- Documented endpoint capabilities. Verification: `pnpm test` (103 tests), `pnpm build`, full `pnpm test:e2e` (32 tests), E2E TypeScript check, and `git diff --check` pass.
+# 2026-11-08 — Split frontend screens and add code quality tools
+
+- Extracted Tools, Settings, Admin Users, Archived Projects, and Login screens from `App.tsx` into lazy-loaded page modules. Moved repeated query keys, date helpers, and quick-add keyboard behavior into shared modules; extracted comment Markdown and attachment preview UI into a component.
+- Added Biome scripts and configuration for the new shared/page modules. Added a Vite vendor chunk so production JS chunks remain below the 500 KiB warning threshold.
+- Verification: `pnpm lint`, `pnpm format:check`, `pnpm test` (104 tests), and `pnpm build` pass. `pnpm test:e2e` started and passed its first three scenarios, but its runner did not complete in the available process window; a retry was blocked by occupied configured web-server URLs.
+
+## 2026-11-08 — Continue frontend and attachment modularization
+
+- Extracted the sidebar and search palette, task creation dialog, task comment panel, and shared form controls from `App.tsx`. Moved project-tree and query-cache helpers to shared modules.
+- Removed the duplicate, unused project creation and mobile project-drag state/handlers that remained in `TaskApp` after the sidebar extraction.
+- Expanded Biome lint and formatting checks to all application, domain, and E2E TypeScript/JavaScript. Formatted the checked files and removed stale imports/variables exposed by the wider lint run.
+- Added `attachmentStorage` for upload validation, private file writes/reads/deletes, and image MIME detection; app routes now retain HTTP and repository orchestration. Added storage tests for saving/removal, validation limits, and content-based MIME detection.
+- Verification: `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test` (107 tests), and `pnpm test:e2e` (33 tests) pass.
+
+## 2026-11-08 — Укрепить целостность и индексы БД
+
+- Добавлена миграция `0009_database_constraints_and_indexes.sql`: `due_date` преобразуется в SQL `date` (некорректные legacy-значения становятся `NULL`), attachments ограничены JSON-массивом, существующие задачи нормализуются по проекту секции, а trigger запрещает несогласованные project/section связи. Добавлены индексы для FK-удалений, очистки сессий и сортировки соседних задач.
+- Drizzle-схема теперь отражает FK пользователей, case-insensitive unique username, тип даты, JSON check и новые индексы. API и оба репозитория отклоняют размещение задачи в секции другого проекта; добавлен регрессионный тест.
+- Проверки: `pnpm test` (108 тестов), `pnpm build`, `pnpm lint`, `pnpm format:check`, `drizzle-kit check`, полный `pnpm test:e2e` (33 теста) и `git diff --check` прошли.
+
+## 2026-11-08 — Перенести генерацию ID комментариев на backend
+
+- PATCH комментариев принимает необязательный ID только для сохранённых записей; неизвестные клиентские ID игнорируются, новые ID и `createdAt` выдаёт сервер. При редактировании ID и время создания существующего комментария сохраняются. Валидатор отклоняет дубли существующих ID.
+- Frontend больше не генерирует ID/время новых комментариев. DB-репозиторий сверяет комментарии под блокировкой задачи; добавлены API и UI регрессии.
+- Проверки: `pnpm test` (109 тестов), `pnpm build`, `pnpm lint`, `pnpm format:check`, полный `pnpm test:e2e` (33 теста) и `git diff --check` прошли.
+
+## 2026-11-08 — Перевести ID пользователей на UUID
+
+- Добавлена `0010_uuid_user_ids.sql`: `users.id` и связанные `user_id` становятся native PostgreSQL `uuid`; `legacy-admin` и все его ссылки заменяются фиксированным UUID. Внешние ключи пересоздаются, task placement trigger временно снимается и ставится обратно. Не-UUID ID пользователей останавливают миграцию с явной ошибкой.
+- Runtime и in-memory default admin, DB repository и seed используют UUID; `tools.ts` применяет миграции `0009` и `0010`. Drizzle-схема обновлена. Миграция успешно применена к `todoist_e2e`, проверено, что все перечисленные колонки имеют тип `uuid` и sentinel удалён.
+- Проверки: `pnpm test` (109), `pnpm build`, lint, format, `drizzle-kit check`, запуск backend и `git diff --check` прошли. Полный E2E не стартовал из-за ошибки запуска `config.webServer`.
+
+## 2026-11-08 — Запустить E2E после UUID-миграции
+
+- Полный E2E сначала нашёл, что Tools → Migrate повторно применяет исторические SQL: `0006` ссылалась на `legacy-admin`, а `0009` не была идемпотентна для `date`/constraint/trigger. `0006` переведена на UUID default admin и conflict-safe вставку; `0009` теперь проверяет тип даты/наличие constraint и заменяет trigger безопасно.
+- Целевой сценарий повторной миграции прошёл. Полный `pnpm test:e2e` прошёл: 33/33 теста. `drizzle-kit check` и `git diff --check` прошли.
+
+## 2026-11-09 — Усечь длинные названия проектов и позиционировать меню
+
+- Ограничена ширина строк проектов в боковой панели, кнопки названий используют ellipsis, горизонтальное переполнение панели скрыто. Меню проекта открывается вверх, если снизу недостаточно места; список ограничен высотой и может прокручиваться внутри себя.
+- Добавлены UI- и E2E-регрессии для обрезки длинного названия и открытия меню у нижнего края окна.
+- Проверки: `pnpm --filter @todoist-clone/frontend test -- App.test.tsx` (64), `pnpm build`, `pnpm test:e2e --grep "truncates long project names"`, `pnpm lint`, `pnpm format:check` и `git diff --check` прошли.
+
+## 2026-11-09 — Inline-переименование проекта
+
+- На странице проекта рядом с заголовком добавлена кнопка редактирования. Поле ввода сохраняет название через существующую project mutation; Enter сохраняет, Escape и Cancel отменяют.
+- Добавлены UI и Playwright регрессии на переименование заголовка и синхронизацию имени в sidebar.
+- Проверки: `pnpm --filter @todoist-clone/frontend test -- App.test.tsx` (65), `pnpm build`, `pnpm lint`, `pnpm format:check`, `git diff --check` и целевой `pnpm test:e2e --grep "renames the current project inline"` прошли.
+
+## 2026-11-09 — Подровнять кнопку редактирования названия проекта
+
+- Кнопка рядом с заголовком уменьшена и выровнена по высоте строки. У заголовка переопределен нижний отступ для ровной общей линии и сохранен прежний интервал до содержимого страницы.
+- Проверки: `pnpm build`, `pnpm lint`, `pnpm format:check` и `git diff --check` прошли.
+
+## 2026-11-09 — Добавление задач сверху и снизу секций
+
+- Для секций Inbox и проекта оставлена кнопка добавления перед первой задачей и добавлена кнопка под списком. Верхнее добавление создаёт задачу и перемещает её перед прежней первой задачей; нижнее использует штатное добавление в конец.
+- Добавлены UI-проверка передаваемых позиций и E2E-проверки реального порядка для обеих страниц.
+- Проверки: `pnpm --filter @todoist-clone/frontend test -- App.test.tsx` (66), `pnpm build`, `pnpm lint`, `pnpm format:check`, `git diff --check` и целевые два E2E-сценария прошли.
+
+## 2026-11-09 — Кнопки для задач без секции
+
+- Те же кнопки добавления добавлены к корневому списку Inbox и корневому списку проекта. Верхняя перемещает новую задачу перед первой; нижняя сохраняет создание в конец.
+- Добавлены E2E-сценарии для Inbox и проекта, проверяющие итоговый порядок задач.
+- Проверки: `pnpm --filter @todoist-clone/frontend test -- App.test.tsx` (66), `pnpm build`, `pnpm lint`, `pnpm format:check`, `git diff --check` и оба целевых E2E-сценария прошли.
+
+## 2026-11-09 — Унифицировать стиль кнопок добавления задач
+
+- Верхние и нижние Add task теперь используют одинаковый класс оформления и одинаковый левый отступ. В секциях верхняя кнопка расположена непосредственно перед списком, а действия редактирования/удаления остаются в строке заголовка.
+- Проверки: сборка, lint, форматирование, diff check, 66 UI-тестов и 4 E2E сценария для секций и корневых списков прошли.

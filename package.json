@@ -7,10 +7,14 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:e2e": "playwright test",
+    "lint": "biome lint apps packages e2e playwright.config.ts",
+    "format": "biome format --write apps packages e2e playwright.config.ts",
+    "format:check": "biome format apps packages e2e playwright.config.ts",
     "dev:backend": "pnpm --filter @todoist-clone/backend dev",
     "dev:frontend": "pnpm --filter @todoist-clone/frontend dev"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.6.6",
     "@playwright/test": "^1.56.1",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",

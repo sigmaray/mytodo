@@ -155,7 +155,8 @@ textarea {
 .project-menu summary { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; color: #6b625d; cursor: pointer; list-style: none; }
 .project-menu summary::-webkit-details-marker { display: none; }
 .project-menu[open] summary, .project-menu summary:hover { background: #fff2ef; color: #b83225; }
-.project-menu-items { position: absolute; z-index: 10; right: 0; top: 100%; display: grid; min-width: 150px; padding: 5px; border: 1px solid #e3ded9; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #30251f24; }
+.project-menu-items { position: absolute; z-index: 10; right: 0; top: calc(100% + 4px); display: grid; min-width: 150px; max-height: min(70vh, 260px); overflow-y: auto; overscroll-behavior: contain; padding: 5px; border: 1px solid #e3ded9; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #30251f24; }
+.project-menu.opens-up .project-menu-items { top: auto; bottom: calc(100% + 4px); }
 .project-menu-items button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; border-radius: 5px; padding: 8px; background: transparent; text-align: left; cursor: pointer; }
 .project-menu-items button:hover { background: #fff2ef; }
 .project-menu-items .danger { color: #a52b20; }
@@ -235,9 +236,22 @@ textarea {
 .archived-task-due-date { display: inline-flex; align-items: center; gap: 4px; }
 .task-comment { display: grid; gap: 6px; padding: 10px; border: 1px solid #ece8e4; border-radius: 8px; background: #fff; }
 .task-comment > p { margin: 0; white-space: pre-wrap; }
-.task-comment > div { display: flex; justify-content: flex-end; gap: 6px; }
+.task-comment-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .task-comment button { border: 1px solid #ddd7d1; border-radius: 6px; padding: 4px 9px; background: white; cursor: pointer; }
 .task-comment button.danger { color: #a52b20; }
+.task-attachment-indicator { display: inline-flex; align-items: center; color: #817872; }
+.comment-attachment-remove { display: inline-flex; align-items: center; gap: 5px; color: #a52b20; }
+.attachments-page { display: grid; gap: 12px; }
+.attachment-library-item { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px; border: 1px solid #e8e3de; border-radius: 10px; background: #fff; }
+.attachment-library-preview { display: grid; min-height: 100px; place-items: center; overflow: hidden; border-radius: 8px; color: #817872; background: #f7f5f3; }
+.attachment-library-preview img { display: block; max-width: 100%; max-height: 180px; object-fit: contain; }
+.attachment-library-details { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.attachment-library-file-link { font-weight: 600; overflow-wrap: anywhere; }
+.attachment-library-task-link { color: #a83b2e; overflow-wrap: anywhere; }
+.attachment-library-details dl { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; color: #706861; font-size: .88rem; }
+.attachment-library-details dl div { display: flex; gap: 5px; }
+.attachment-library-details dt { font-weight: 600; }
+.attachment-library-details dd { margin: 0; }
 .sidebar-create-block { border-radius: 9px; }
 .section-create-block { margin: 12px 0; border-radius: 9px; }
 .tools-panel { max-width: none; display: grid; align-content: start; gap: 20px; padding: 30px; }
@@ -385,6 +399,16 @@ h1 {
   font-size: 2.25rem;
   line-height: 1.1;
 }
+
+.header .project-title-heading { display: flex; align-items: center; gap: 5px; min-width: 0; margin-bottom: 17px; }
+.header .project-title-heading h1 { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.project-title-edit-trigger { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 8px; color: #756b65; background: transparent; cursor: pointer; }
+.project-title-edit-trigger:hover, .project-title-edit-trigger:focus-visible { color: #b83225; background: #fff2ef; }
+.project-title-edit-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.project-title-edit-form input { min-width: min(260px, 100%); max-width: 100%; padding: 6px 9px; border: 1px solid #cfc8c2; border-radius: 7px; font: inherit; font-size: 1.5rem; }
+.project-title-edit-form button { min-height: 36px; padding: 6px 12px; border: 1px solid #ded8d3; border-radius: 7px; background: #fff; cursor: pointer; }
+.project-title-edit-form button[type="submit"] { border-color: #c84233; color: #fff; background: #c84233; }
+.project-title-edit-form button:disabled { opacity: .55; cursor: not-allowed; }
 
 .task-form {
   margin-bottom: 22px;
@@ -939,7 +963,9 @@ body {
   gap: 3px;
   height: 100vh;
   min-height: 100vh;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
   padding: 10px 8px 14px;
   border: 0;
@@ -1010,6 +1036,8 @@ body {
 .project-nav-row {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 1px;
+  min-width: 0;
+  width: 100%;
 }
 
 .project-nav-row .nav-button {
@@ -1025,7 +1053,7 @@ body {
 
 .project-menu { justify-self: end; }
 .project-nav-row { position: relative; display: flex; align-items: center; }
-.project-nav-row > .nav-button { flex: 1 1 auto; }
+.project-nav-row > .nav-button { flex: 1 1 0%; min-width: 0; }
 .project-nav-row > .project-menu { flex: 0 0 34px; z-index: 1; }
 .project-nav-row.project-dragging { opacity: .48; transform: translateY(1px) scale(.992); }
 .project-nav-row.project-drop-before::before, .project-nav-row.project-drop-after::before,
@@ -2024,8 +2052,8 @@ body {
   .sidebar.card > .add-project-trigger { flex: 0 0 auto; width: auto; min-height: 42px; white-space: nowrap; }
   .sidebar.card .sidebar-group { display: contents; }
   .sidebar.card .sidebar-group > h2 { display: none; }
-  .sidebar.card .project-nav-row { flex: 0 0 auto; }
-  .sidebar.card .project-nav-row > .nav-button { width: auto; min-height: 42px; white-space: nowrap; }
+  .sidebar.card .project-nav-row { flex: 0 0 auto; width: auto; max-width: min(220px, 65vw); }
+  .sidebar.card .project-nav-row > .nav-button { flex: 0 1 auto; width: auto; min-width: 0; max-width: min(180px, 54vw); min-height: 42px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sidebar.card .project-menu { display: none; }
   .sidebar.card .sidebar-create-block { display: none; }
   .sidebar.card > .compact-form { display: none; }
@@ -2109,7 +2137,7 @@ body {
   .details-subtask { min-width: 0; overflow-wrap: anywhere; }
   .task-comment { min-width: 0; }
   .task-comment > p { overflow-wrap: anywhere; }
-  .task-comments > .btn-primary { width: 100%; }
+  .task-comments .card > .btn-primary { width: 100%; }
   .task-details-modal input,
   .task-details-modal textarea,
   .task-details-modal select { min-height: 44px; font-size: 16px; }
@@ -2425,3 +2453,16 @@ body {
     touch-action: none;
   }
 }
+.comment-markdown { width: 100%; text-align: left; }
+.comment-markdown p { margin: 0.25rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-markdown h4 { margin: 0.5rem 0 0.25rem; font-size: 1rem; font-weight: 650; }
+.comment-markdown code { padding: 0.1rem 0.25rem; border-radius: 4px; background: #f1efec; }
+.comment-markdown-list-item { margin: 0.15rem 0 0.15rem 0.6rem; }
+.comment-attachment { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; margin-top: 0.5rem; }
+.comment-attachment-image { display: block; max-width: min(100%, 360px); max-height: 280px; object-fit: contain; border: 1px solid #e5e0db; border-radius: 8px; }
+.attachment-picker input { display: block; margin-top: 0.35rem; max-width: 100%; }
+.attachment-draft { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.15rem 0.35rem 0.35rem 0; padding: 0.2rem 0.45rem; border-radius: 6px; background: #f2efec; font-size: 0.85rem; }
+.attachment-draft button { border: 0; background: none; }
+.comment-attachment-preview { max-width: 100%; max-height: 360px; overflow: auto; }
+.comment-attachment-preview pre { max-width: 100%; margin: 0; padding: 0.75rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 7px; background: #f6f5f3; font-size: 0.82rem; }
+@media (max-width: 600px) { .attachment-library-item { grid-template-columns: 1fr; } .attachment-library-preview { min-height: 130px; } }

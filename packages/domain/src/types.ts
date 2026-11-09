@@ -8,7 +8,7 @@ export type Task = Readonly<{
   description: string;
   dueDate: string | null;
   labels: ReadonlyArray<string>;
-  comments: ReadonlyArray<Readonly<{ id: string; body: string; createdAt: string }>>;
+  comments: ReadonlyArray<Comment>;
   completed: boolean;
   parentId: TaskId | null;
   projectId: ProjectId | null;
@@ -18,9 +18,18 @@ export type Task = Readonly<{
   updatedAt: string;
 }>;
 
-export type TaskNode = Task & Readonly<{
-  children: ReadonlyArray<TaskNode>;
+export type Attachment = Readonly<{ id: string; name: string; mimeType: string; size: number }>;
+export type Comment = Readonly<{
+  id: string;
+  body: string;
+  createdAt: string;
+  attachments?: ReadonlyArray<Attachment>;
 }>;
+
+export type TaskNode = Task &
+  Readonly<{
+    children: ReadonlyArray<TaskNode>;
+  }>;
 
 export type Project = Readonly<{
   id: ProjectId;
