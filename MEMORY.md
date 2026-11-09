@@ -1,5 +1,11 @@
 # Project Memory
 
+## 2026-11-09 — Исправить production default для пути вложений
+
+- Production Compose-файлы передавали пустое значение `MYTODO_ATTACHMENTS_DIR`, если переменная отсутствовала в env-файле, из-за чего API завершался при включённых вложениях. Теперь оба файла по умолчанию передают `/var/lib/mytodo/attachments`, соответствующий контейнерному mount point.
+- В `deploy.env.example` пояснено, что этот путь менять не требуется.
+- Проверки: Compose config для обоих production файлов и `git diff --check`.
+
 ## 2026-11-09 — Хранить вложения в каталоге проекта в Docker Compose
 
 - Во всех Compose-конфигурациях, где API монтирует хранилище вложений (`docker-compose.yml`, `docker-compose.with-infra.yml`, `docker-compose.dev.yml`), именованный volume заменён bind mount-ом в `./v-attachments` по умолчанию. Путь переопределяется через `MYTODO_ATTACHMENTS_VOLUME`.
