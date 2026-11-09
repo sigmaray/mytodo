@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { createE2eApi } from "./api";
 
 const localIsoDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -101,26 +102,11 @@ test("Dates list tabs show only tasks in their date range", async ({ page }, tes
   const createdTaskIds: string[] = [];
 
   try {
-    await page.goto("/");
+    const api = createE2eApi(page.request);
     for (const taskCase of taskCases) {
-      await page.getByRole("button", { name: "Add task Q" }).click();
-      const addDialog = page.getByRole("dialog", { name: "Add task" });
-      await addDialog.getByLabel("New task title").fill(taskCase.title);
-      if (taskCase.dueDate !== null) {
-        await addDialog.getByRole("button", { name: /Add date/ }).click();
-        const dateDialog = page.getByRole("dialog", { name: "Add date" });
-        await dateDialog.getByLabel("New task date").fill(taskCase.dueDate);
-        await dateDialog.getByRole("button", { name: "Set date" }).click();
-      }
-      const responsePromise = page.waitForResponse(
-        (response) => response.url().endsWith("/tasks") && response.request().method() === "POST",
-      );
-      await addDialog.getByRole("button", { name: "Add task", exact: true }).click();
-      const response = await responsePromise;
-      expect(response.ok()).toBe(true);
-      const created = (await response.json()) as Readonly<{ task: Readonly<{ id: string }> }>;
-      createdTaskIds.push(created.task.id);
-      await expect(page.getByRole("button", { name: taskCase.title, exact: true })).toBeVisible();
+      const created = await api.createTask(taskCase.title);
+      createdTaskIds.push(created.id);
+      if (taskCase.dueDate !== null) await api.updateTask(created.id, { dueDate: taskCase.dueDate });
     }
 
     const persistedResponse = await request.get("/tasks");

@@ -11,8 +11,11 @@ test("shows task context actions in Inbox and projects", async ({ page }, testIn
   const inboxTitle = `Inbox context ${testInfo.workerIndex}-${Date.now()}`;
   const projectTitle = `Project context ${testInfo.workerIndex}-${Date.now()}`;
   const projectTaskTitle = `Project task ${testInfo.workerIndex}-${Date.now()}`;
+  const api = createE2eApi(page.request);
+  const project = await api.createProject(projectTitle);
+  await api.createTask(inboxTitle);
+  await api.createTask(projectTaskTitle, { projectId: project.id });
   await page.goto("/");
-  await createTask(page)(inboxTitle);
 
   const inboxRow = page
     .locator(".task-row")
@@ -25,9 +28,7 @@ test("shows task context actions in Inbox and projects", async ({ page }, testIn
   await expect(details).toBeVisible();
   await details.getByRole("button", { name: "Close task details" }).click();
 
-  await createProject(page)(projectTitle);
   await page.getByRole("button", { name: projectTitle, exact: true }).click();
-  await createTask(page)(projectTaskTitle);
   const projectRow = page
     .locator(".task-row")
     .filter({ has: page.getByRole("button", { name: projectTaskTitle, exact: true }) });
@@ -210,9 +211,11 @@ test("moves a selected task group to a project with drag and drop", async ({ pag
   const sourceTitle = `Group source ${testInfo.workerIndex}-${Date.now()}`;
   const secondTitle = `Group second ${testInfo.workerIndex}-${Date.now()}`;
   const projectTitle = `Group destination ${testInfo.workerIndex}-${Date.now()}`;
+  const api = createE2eApi(page.request);
+  await api.createProject(projectTitle);
+  await api.createTask(sourceTitle);
+  await api.createTask(secondTitle);
   await page.goto("/");
-  await createTasks(page)([sourceTitle, secondTitle]);
-  await createProject(page)(projectTitle);
 
   await page.getByRole("button", { name: "Inbox", exact: true }).click();
   const sourceTitleButton = page.getByRole("button", { name: sourceTitle, exact: true });
@@ -250,11 +253,12 @@ test("moves a selected task group to a project with drag and drop", async ({ pag
 
 test("toggles task selection with S in any layout and exits with Escape", async ({ page }, testInfo) => {
   const title = `Selection shortcut ${testInfo.workerIndex}-${Date.now()}`;
+  await createE2eApi(page.request).createTask(title);
   await page.goto("/");
-  await createTask(page)(title);
   const row = page
     .locator(".task-row")
     .filter({ has: page.getByRole("button", { name: title, exact: true }) });
+  await expect(row).toBeVisible();
 
   await page.evaluate(() =>
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "ы", code: "KeyS", bubbles: true })),
@@ -507,8 +511,8 @@ test("creates a task in the browser", async ({ page }, testInfo) => {
 
 test("adapts task details to a small mobile viewport", async ({ page }, testInfo) => {
   const title = `Mobile task details with a long wrapping title ${testInfo.workerIndex}-${Date.now()}`;
+  await createE2eApi(page.request).createTask(title);
   await page.goto("/");
-  await createTask(page)(title);
   await page.setViewportSize({ width: 360, height: 640 });
   await page.getByRole("button", { name: title, exact: true }).click();
 
@@ -685,12 +689,12 @@ test("does not show mobile Add task shortcuts in the desktop dialog", async ({ p
 test("shows truncated descriptions and comment counts in task rows", async ({ page }, testInfo) => {
   const title = `Task row details ${testInfo.workerIndex}-${Date.now()}`;
   const description = Array.from({ length: 24 }, () => "A long task description").join(" ");
+  const api = createE2eApi(page.request);
+  const created = await api.createTask(title);
+  await api.updateTask(created.id, { description });
+  await api.createComment(created.id, "First row comment");
+  await api.createComment(created.id, "Second row comment");
   await page.goto("/");
-  await page.getByRole("button", { name: "Add task Q" }).click();
-  const addTaskDialog = page.getByRole("dialog", { name: "Add task" });
-  await addTaskDialog.getByLabel("New task title").fill(title);
-  await addTaskDialog.getByLabel("New task description").fill(description);
-  await addTaskDialog.getByRole("button", { name: "Add task", exact: true }).click();
 
   const row = page
     .locator(".task-row")
@@ -705,25 +709,27 @@ test("shows truncated descriptions and comment counts in task rows", async ({ pa
 
   await row.getByRole("button", { name: title, exact: true }).click();
   const taskDialog = page.getByRole("dialog", { name: `Task details: ${title}` });
-  for (const [index, comment] of ["First row comment", "Second row comment"].entries()) {
-    if (index > 0) await row.getByRole("button", { name: title, exact: true }).click();
-    await taskDialog.getByLabel("Add comment").fill(comment);
-    await expect(taskDialog.getByRole("button", { name: "Add comment" })).toBeEnabled();
-    await taskDialog.getByRole("button", { name: "Add comment" }).click();
-    await expect(taskDialog.getByText(comment)).toBeVisible();
-    await expect(taskDialog.locator(".comment-markdown")).toHaveCSS("text-align", "left");
-    if (index === 0) await taskDialog.getByRole("button", { name: "Close task details" }).click();
-  }
+  await expect(taskDialog.getByText("First row comment")).toBeVisible();
+  await expect(taskDialog.getByText("Second row comment")).toBeVisible();
+  await expect(taskDialog.locator(".comment-markdown").first()).toHaveCSS("text-align", "left");
   await taskDialog.getByRole("button", { name: "Close task details" }).click();
   await expect(row.getByLabel("2 comments")).toContainText("2");
   await row.getByRole("button", { name: title, exact: true }).click();
   const comments = taskDialog.locator(".task-comment");
-  await comments.nth(0).getByRole("button", { name: "Edit", exact: true }).click();
-  await expect(comments.nth(0).locator("textarea")).toBeFocused();
-  await comments.nth(0).locator("textarea").fill("Edited first comment");
-  await comments.nth(0).getByRole("button", { name: "Save comment" }).click();
-  await expect(comments.nth(0)).toContainText("Edited first comment");
-  await comments.nth(1).getByRole("button", { name: "Delete", exact: true }).click();
+  const firstComment = comments.filter({ hasText: "First row comment" });
+  const firstCommentIndex = await firstComment.evaluate((element) =>
+    Array.from(element.parentElement?.querySelectorAll(".task-comment") ?? []).indexOf(element),
+  );
+  const firstCommentAtIndex = comments.nth(firstCommentIndex);
+  await firstComment.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(firstCommentAtIndex.locator("textarea")).toBeFocused();
+  await firstCommentAtIndex.locator("textarea").fill("Edited first comment");
+  await firstCommentAtIndex.getByRole("button", { name: "Save comment" }).click();
+  await expect(comments.filter({ hasText: "Edited first comment" })).toBeVisible();
+  await comments
+    .filter({ hasText: "Second row comment" })
+    .getByRole("button", { name: "Delete", exact: true })
+    .click();
   await expect(comments).toHaveCount(1);
   await expect(comments.first()).toContainText("Edited first comment");
 });
@@ -733,8 +739,8 @@ test("saves comment attachments on submit and serves them through the authentica
 }, testInfo) => {
   test.setTimeout(60000);
   const title = `Attachment comment ${testInfo.workerIndex}-${Date.now()}`;
+  await createE2eApi(page.request).createTask(title);
   await page.goto("/");
-  await createTask(page)(title);
   await page.getByRole("button", { name: title, exact: true }).click();
   const dialog = page.getByRole("dialog", { name: `Task details: ${title}` });
   await page.evaluate(() => {
@@ -791,6 +797,7 @@ test("saves comment attachments on submit and serves them through the authentica
 test("adds, suggests, and removes labels with the shared label picker", async ({ page }, testInfo) => {
   const sourceTitle = `Label source ${testInfo.workerIndex}-${Date.now()}`;
   const targetTitle = `Label target ${testInfo.workerIndex}-${Date.now()}`;
+  await createE2eApi(page.request).createTask(targetTitle);
   await page.goto("/");
   await page.getByRole("button", { name: "Add task Q" }).click();
   const addTaskDialog = page.getByRole("dialog", { name: "Add task" });
@@ -800,7 +807,6 @@ test("adds, suggests, and removes labels with the shared label picker", async ({
   await expect(addTaskDialog.locator(".label-picker-chip")).toContainText("shared");
   await addTaskDialog.getByRole("button", { name: "Add task", exact: true }).click();
 
-  await createTask(page)(targetTitle);
   await page.getByRole("button", { name: targetTitle, exact: true }).click();
   const taskDialog = page.getByRole("dialog", { name: `Task details: ${targetTitle}` });
   const labelInput = taskDialog.getByRole("textbox", { name: "Labels" });

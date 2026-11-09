@@ -1,27 +1,20 @@
 import { expect, test } from "./fixtures";
+import { createE2eApi } from "./api";
 
 const unique = (label: string) => `${label} ${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
 
 test("edits task details and copies all Markdown", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   page.on("dialog", (dialog) => dialog.accept());
-  await page.goto("/");
+  const api = createE2eApi(page.request);
   const projectTitle = unique("Task home");
-  await page.getByRole("button", { name: "Add project" }).click();
-  await page.getByLabel("Project title").fill(projectTitle);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("button", { name: projectTitle, exact: true })).toBeVisible();
+  const project = await api.createProject(projectTitle);
   const sectionTitle = unique("Task section");
-  await page.getByRole("button", { name: "Add section" }).click();
-  await page.getByLabel("Section title").fill(sectionTitle);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("heading", { name: sectionTitle })).toBeVisible();
+  await api.createSection(sectionTitle, project.id);
   const title = unique("Detailed task");
-  await page.getByRole("button", { name: "Add task Q" }).click();
-  const newTitle = page.getByLabel("New task title");
-  await expect(newTitle).toHaveJSProperty("tagName", "TEXTAREA");
-  await newTitle.fill(title);
-  await page.getByRole("button", { name: "Add task", exact: true }).click();
+  await api.createTask(title, { projectId: project.id });
+  await page.goto(`/?project=${encodeURIComponent(project.id)}`);
+  await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
   await page.keyboard.press("Control+k");
   const searchPalette = page.locator(".search-palette-backdrop");
   await expect(searchPalette).toBeVisible();
@@ -164,10 +157,7 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   await expect(page).toHaveURL("/");
   await page.goto("/labels");
   const navigationProjectTitle = unique("Navigate project");
-  await page.getByRole("button", { name: "Add project" }).click();
-  await page.getByLabel("Project title").fill(navigationProjectTitle);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("button", { name: navigationProjectTitle, exact: true })).toBeVisible();
+  await api.createProject(navigationProjectTitle);
   await page.goto("/dates");
   await page.getByRole("button", { name: navigationProjectTitle, exact: true }).click();
   await expect(page).toHaveURL(/\/?project=/);

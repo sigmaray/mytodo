@@ -11,8 +11,6 @@ export const test = base.extend({
     const resetResponse = await page.request.post(new URL("/api/playwright/reset", baseURL).toString());
     const resetBody = await resetResponse.text();
     expect(resetResponse.ok(), `E2E data reset failed (${resetResponse.status()}): ${resetBody}`).toBe(true);
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Add task Q" })).toBeVisible();
     await use(page);
   },
 });
