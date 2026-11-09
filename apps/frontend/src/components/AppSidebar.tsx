@@ -107,6 +107,7 @@ export const AppSidebar = ({
   const [editProjectId, setEditProjectId] = useState<ProjectId | null>(null);
   const [editProjectTitle, setEditProjectTitle] = useState("");
   const [openProjectMenuId, setOpenProjectMenuId] = useState<ProjectId | null>(null);
+  const [openProjectMenuDirection, setOpenProjectMenuDirection] = useState<"up" | "down">("down");
   const draggedProjectRef = useRef<ProjectId | null>(null);
   const mobileProjectDropRef = useRef<Readonly<{
     id: ProjectId;
@@ -565,11 +566,26 @@ export const AppSidebar = ({
                 >
                   {project.title}
                 </button>
-                <details className="project-menu" open={openProjectMenuId === project.id}>
+                <details
+                  className={clsx(
+                    "project-menu",
+                    openProjectMenuId === project.id && openProjectMenuDirection === "up" && "opens-up",
+                  )}
+                  open={openProjectMenuId === project.id}
+                >
                   <summary
                     aria-label={`Project menu ${project.title}`}
                     onClick={(event) => {
                       event.preventDefault();
+                      if (openProjectMenuId !== project.id) {
+                        const trigger = event.currentTarget.getBoundingClientRect();
+                        const spaceBelow = window.innerHeight - trigger.bottom;
+                        const spaceAbove = trigger.top;
+                        const estimatedMenuHeight = projectArchivingEnabled ? 220 : 184;
+                        setOpenProjectMenuDirection(
+                          spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow ? "up" : "down",
+                        );
+                      }
                       setOpenProjectMenuId((current) => (current === project.id ? null : project.id));
                     }}
                   >

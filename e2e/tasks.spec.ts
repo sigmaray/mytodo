@@ -1201,6 +1201,46 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   await expect(page.getByRole("button", { name: `${projectTitle} edited`, exact: true })).not.toBeVisible();
 });
 
+test("truncates long project names and keeps the project menu inside the viewport", async ({
+  page,
+}, testInfo) => {
+  const longTitle = `A very long project name that should be truncated in the sidebar ${testInfo.workerIndex}-${Date.now()}`;
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/");
+  await createProjects(page)([
+    ...Array.from(
+      { length: 24 },
+      (_, index) => `Sidebar project ${index} ${testInfo.workerIndex}-${Date.now()}`,
+    ),
+    longTitle,
+  ]);
+
+  const sidebar = page.getByRole("complementary", { name: "Navigation" });
+  const projectButton = sidebar.getByRole("button", { name: longTitle, exact: true });
+  const projectRow = projectButton.locator("..");
+  const dimensions = await projectButton.evaluate((element) => ({
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth,
+    textOverflow: getComputedStyle(element).textOverflow,
+    whiteSpace: getComputedStyle(element).whiteSpace,
+  }));
+  expect(dimensions.scrollWidth).toBeGreaterThan(dimensions.clientWidth);
+  expect(dimensions.textOverflow).toBe("ellipsis");
+  expect(dimensions.whiteSpace).toBe("nowrap");
+
+  await sidebar.evaluate((element) => {
+    const sidebarElement = element as HTMLElement;
+    sidebarElement.scrollTop = sidebarElement.scrollHeight;
+  });
+  const projectMenu = projectRow.locator("details.project-menu");
+  await projectMenu.locator("summary").click();
+  await expect(projectMenu).toHaveClass(/opens-up/);
+  const menuBounds = await projectMenu.locator(".project-menu-items").boundingBox();
+  expect(menuBounds).not.toBeNull();
+  expect(menuBounds!.y).toBeGreaterThanOrEqual(0);
+  expect(menuBounds!.y + menuBounds!.height).toBeLessThanOrEqual(720);
+});
+
 test("creates subprojects and drags projects into and out of a parent", async ({ page }, testInfo) => {
   const suffix = `${Date.now()}-${testInfo.workerIndex}`;
   const root = `Root ${suffix}`;

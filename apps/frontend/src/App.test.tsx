@@ -1187,6 +1187,31 @@ describe("TaskApp", () => {
     await waitFor(() => expect(menu).not.toHaveAttribute("open"));
   });
 
+  it("opens the project menu upward when there is not enough room below", async () => {
+    renderApp(
+      Object.freeze({
+        ...baseApi(Object.freeze([])),
+        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
+      }),
+    );
+    const summary = await screen.findByLabelText("Project menu Roadmap");
+    vi.spyOn(summary, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 720,
+      top: 720,
+      bottom: 754,
+      left: 0,
+      right: 34,
+      width: 34,
+      height: 34,
+      toJSON: () => ({}),
+    });
+
+    await userEvent.click(summary);
+
+    expect(summary.parentElement).toHaveClass("opens-up");
+  });
+
   it("hides project archiving controls by default and keeps archived projects visible", async () => {
     renderApp(
       Object.freeze({
