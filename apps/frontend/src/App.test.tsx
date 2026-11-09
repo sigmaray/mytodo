@@ -1732,6 +1732,54 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteSection).toHaveBeenCalledWith("section-1"));
   });
 
+  it("adds section tasks at the top or bottom from the matching button", async () => {
+    const createTask = vi.fn(
+      async (
+        title: string,
+        projectId: string | null,
+        sectionId: string | null,
+        parentId: string | null,
+      ): Promise<Task> => task({ id: title, title, projectId, sectionId, parentId }),
+    );
+    const moveTask = vi.fn(
+      async (
+        id: string,
+        projectId: string | null,
+        sectionId: string | null,
+        parentId: string | null,
+      ): Promise<Task> => task({ id, title: "Created task", projectId, sectionId, parentId }),
+    );
+    renderApp(
+      Object.freeze({
+        ...baseApi(
+          Object.freeze([task({ id: "existing-task", title: "Existing task", sectionId: "section-1" })]),
+        ),
+        listSections: async () => Object.freeze([section({ id: "section-1", title: "Later" })]),
+        createTask,
+        moveTask,
+      }),
+    );
+
+    await screen.findByText("Existing task");
+    expect(screen.getByRole("button", { name: "Add task to bottom of section Later" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Add task to section Later" }));
+    await userEvent.type(screen.getByLabelText("New task title"), "First task");
+    await userEvent.click(
+      within(screen.getByRole("dialog", { name: "Add task" })).getByRole("button", { name: "Add task" }),
+    );
+    await waitFor(() =>
+      expect(moveTask).toHaveBeenCalledWith("First task", null, "section-1", null, "existing-task", null),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Add task to bottom of section Later" }));
+    await userEvent.type(screen.getByLabelText("New task title"), "Last task");
+    await userEvent.click(
+      within(screen.getByRole("dialog", { name: "Add task" })).getByRole("button", { name: "Add task" }),
+    );
+    await waitFor(() => expect(createTask).toHaveBeenCalledWith("Last task", null, "section-1", null));
+    expect(moveTask).toHaveBeenCalledTimes(1);
+  });
+
   it("previews markdown for the current task list", async () => {
     renderApp(baseApi(Object.freeze([task({ id: "1", title: "Plan MVP", completed: true })])));
 

@@ -690,6 +690,7 @@ export const TaskApp = ({
   const [showAddTaskDate, setShowAddTaskDate] = useState(false);
   const [showAddTaskLabels, setShowAddTaskLabels] = useState(false);
   const [addTaskPlacement, setAddTaskPlacement] = useState(inboxPlacement);
+  const [addTaskBeforeId, setAddTaskBeforeId] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState("");
   const [addingSection, setAddingSection] = useState(false);
   const [editSectionId, setEditSectionId] = useState<SectionId | null>(null);
@@ -1604,6 +1605,9 @@ export const TaskApp = ({
     (section) => section.projectId === targetProjectId && targetProjectId !== null,
   );
   const inboxRootTasks = allTasks.filter((task) => task.projectId === null && task.sectionId === null);
+  const projectRootTasks = allTasks.filter(
+    (task) => task.projectId === targetProjectId && task.sectionId === null,
+  );
   const currentScopeDescription =
     targetProjectId === null
       ? (inboxDescriptionQuery.data ?? "")
@@ -1860,8 +1864,9 @@ export const TaskApp = ({
     ),
   );
   const markdown = currentMarkdown(taskTargetLabel, inboxRootTasks, allSections, allTasks, targetProjectId);
-  const openAddTaskDialog = (placement: string) => {
+  const openAddTaskDialog = (placement: string, beforeId: string | null = null) => {
     setAddTaskPlacement(placement);
+    setAddTaskBeforeId(beforeId);
     setAddTaskTitle("");
     setAddTaskDescription("");
     setAddTaskFiles(Object.freeze([]));
@@ -2627,14 +2632,25 @@ export const TaskApp = ({
                     type="button"
                     className="scope-add-task-button"
                     aria-label="Add task to Inbox"
-                    onClick={() => openAddTaskDialog(inboxPlacement)}
+                    onClick={() => openAddTaskDialog(inboxPlacement, inboxRootTasks[0]?.id ?? null)}
                   >
                     <Plus size={16} aria-hidden="true" />
                     Add task
                   </button>
                 </div>
                 {inboxRootTasks.length > 0 ? (
-                  renderTaskNodes(inboxRootTasks, taskActions)
+                  <>
+                    {renderTaskNodes(inboxRootTasks, taskActions)}
+                    <button
+                      type="button"
+                      className="scope-add-task-button"
+                      aria-label="Add task to bottom of Inbox"
+                      onClick={() => openAddTaskDialog(inboxPlacement)}
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                      Add task
+                    </button>
+                  </>
                 ) : (
                   <p className="empty">No inbox tasks yet.</p>
                 )}
@@ -2757,14 +2773,6 @@ export const TaskApp = ({
                           <div className="section-actions">
                             <button
                               type="button"
-                              aria-label={`Add task to section ${section.title}`}
-                              onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
-                            >
-                              <Plus size={14} aria-hidden="true" />
-                              Add task
-                            </button>
-                            <button
-                              type="button"
                               aria-label={`Edit section ${section.title}`}
                               onClick={() => startSectionEdit(section)}
                             >
@@ -2784,8 +2792,32 @@ export const TaskApp = ({
                         </>
                       )}
                     </div>
+                    {editSectionId !== section.id ? (
+                      <button
+                        type="button"
+                        className="scope-add-task-button"
+                        aria-label={`Add task to section ${section.title}`}
+                        onClick={() =>
+                          openAddTaskDialog(sectionPlacement(section.id), sectionTasks[0]?.id ?? null)
+                        }
+                      >
+                        <Plus size={16} aria-hidden="true" />
+                        Add task
+                      </button>
+                    ) : null}
                     {sectionTasks.length > 0 ? (
-                      renderTaskNodes(sectionTasks, taskActions)
+                      <>
+                        {renderTaskNodes(sectionTasks, taskActions)}
+                        <button
+                          type="button"
+                          className="scope-add-task-button"
+                          aria-label={`Add task to bottom of section ${section.title}`}
+                          onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
+                        >
+                          <Plus size={14} aria-hidden="true" />
+                          Add task
+                        </button>
+                      </>
                     ) : (
                       <p className="empty">Drop inbox tasks here.</p>
                     )}
@@ -2812,18 +2844,27 @@ export const TaskApp = ({
                     type="button"
                     className="scope-add-task-button"
                     aria-label={`Add task to ${taskTargetLabel}`}
-                    onClick={() => openAddTaskDialog(projectPlacement(targetProjectId))}
+                    onClick={() =>
+                      openAddTaskDialog(projectPlacement(targetProjectId), projectRootTasks[0]?.id ?? null)
+                    }
                   >
                     <Plus size={16} aria-hidden="true" />
                     Add task
                   </button>
                 </div>
-                {allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null)
-                  .length > 0 ? (
-                  renderTaskNodes(
-                    allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null),
-                    taskActions,
-                  )
+                {projectRootTasks.length > 0 ? (
+                  <>
+                    {renderTaskNodes(projectRootTasks, taskActions)}
+                    <button
+                      type="button"
+                      className="scope-add-task-button"
+                      aria-label={`Add task to bottom of ${taskTargetLabel}`}
+                      onClick={() => openAddTaskDialog(projectPlacement(targetProjectId))}
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                      Add task
+                    </button>
+                  </>
                 ) : (
                   <p className="empty">No project tasks yet.</p>
                 )}
@@ -2944,14 +2985,6 @@ export const TaskApp = ({
                           <div className="section-actions">
                             <button
                               type="button"
-                              aria-label={`Add task to section ${section.title}`}
-                              onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
-                            >
-                              <Plus size={14} aria-hidden="true" />
-                              Add task
-                            </button>
-                            <button
-                              type="button"
                               aria-label={`Edit section ${section.title}`}
                               onClick={() => startSectionEdit(section)}
                             >
@@ -2971,8 +3004,32 @@ export const TaskApp = ({
                         </>
                       )}
                     </div>
+                    {editSectionId !== section.id ? (
+                      <button
+                        type="button"
+                        className="scope-add-task-button"
+                        aria-label={`Add task to section ${section.title}`}
+                        onClick={() =>
+                          openAddTaskDialog(sectionPlacement(section.id), sectionTasks[0]?.id ?? null)
+                        }
+                      >
+                        <Plus size={16} aria-hidden="true" />
+                        Add task
+                      </button>
+                    ) : null}
                     {sectionTasks.length > 0 ? (
-                      renderTaskNodes(sectionTasks, taskActions)
+                      <>
+                        {renderTaskNodes(sectionTasks, taskActions)}
+                        <button
+                          type="button"
+                          className="scope-add-task-button"
+                          aria-label={`Add task to bottom of section ${section.title}`}
+                          onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
+                        >
+                          <Plus size={14} aria-hidden="true" />
+                          Add task
+                        </button>
+                      </>
                     ) : (
                       <p className="empty">Drop project tasks here.</p>
                     )}
@@ -3278,6 +3335,15 @@ export const TaskApp = ({
             if (!taskTitle) return;
             const placement = parsePlacement(addTaskPlacement, allSections);
             const created = await api.createTask(taskTitle, placement.projectId, placement.sectionId, null);
+            if (addTaskBeforeId !== null)
+              await api.moveTask(
+                created.id,
+                placement.projectId,
+                placement.sectionId,
+                null,
+                addTaskBeforeId,
+                null,
+              );
             if (addTaskFiles.length) {
               try {
                 await api.createComment(created.id, "", addTaskFiles);
@@ -3296,6 +3362,7 @@ export const TaskApp = ({
               await api.updateTask(created.id, patch);
             await queryClient.invalidateQueries({ queryKey: taskQueryKey });
             setAddTaskOpen(false);
+            setAddTaskBeforeId(null);
           }}
         />
         {selectedDetailsTask !== null ? (

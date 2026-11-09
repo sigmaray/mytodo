@@ -1241,6 +1241,87 @@ test("truncates long project names and keeps the project menu inside the viewpor
   expect(menuBounds!.y + menuBounds!.height).toBeLessThanOrEqual(720);
 });
 
+for (const scopeName of ["Inbox", "project"] as const) {
+  test(`adds tasks at the top and bottom of a section in ${scopeName}`, async ({ page }, testInfo) => {
+    const suffix = `${scopeName}-${testInfo.workerIndex}-${Date.now()}`;
+    const project =
+      scopeName === "project"
+        ? await createE2eApi(page.request).createProject(`Section parent ${suffix}`)
+        : null;
+    const sectionTitle = `Section ${suffix}`;
+    const firstTitle = `First ${suffix}`;
+    const secondTitle = `Second ${suffix}`;
+    const topTitle = `Top ${suffix}`;
+    const bottomTitle = `Bottom ${suffix}`;
+    const api = createE2eApi(page.request);
+    const section = await api.createSection(sectionTitle, project?.id ?? null);
+    await api.createTask(firstTitle, { projectId: project?.id, sectionId: section.id });
+    await api.createTask(secondTitle, { projectId: project?.id, sectionId: section.id });
+    await page.goto(project === null ? "/" : `/?project=${encodeURIComponent(project.id)}`);
+
+    const sectionRegion = page.locator(`[aria-label="Section ${sectionTitle}"]`);
+    await expect(sectionRegion.locator(".task-title")).toHaveText([firstTitle, secondTitle]);
+    await sectionRegion.getByRole("button", { name: `Add task to section ${sectionTitle}` }).click();
+    const topDialog = page.getByRole("dialog", { name: "Add task" });
+    await topDialog.getByLabel("New task title").fill(topTitle);
+    await topDialog.getByRole("button", { name: "Add task", exact: true }).click();
+    await expect(sectionRegion.locator(".task-title")).toHaveText([topTitle, firstTitle, secondTitle]);
+
+    await sectionRegion
+      .getByRole("button", { name: `Add task to bottom of section ${sectionTitle}` })
+      .click();
+    const bottomDialog = page.getByRole("dialog", { name: "Add task" });
+    await bottomDialog.getByLabel("New task title").fill(bottomTitle);
+    await bottomDialog.getByRole("button", { name: "Add task", exact: true }).click();
+    await expect(sectionRegion.locator(".task-title")).toHaveText([
+      topTitle,
+      firstTitle,
+      secondTitle,
+      bottomTitle,
+    ]);
+  });
+}
+
+for (const scopeName of ["Inbox", "project"] as const) {
+  test(`adds unsectioned tasks at the top and bottom of ${scopeName}`, async ({ page }, testInfo) => {
+    const suffix = `root-${scopeName}-${testInfo.workerIndex}-${Date.now()}`;
+    const project =
+      scopeName === "project" ? await createE2eApi(page.request).createProject(`Root ${suffix}`) : null;
+    const firstTitle = `First ${suffix}`;
+    const secondTitle = `Second ${suffix}`;
+    const topTitle = `Top ${suffix}`;
+    const bottomTitle = `Bottom ${suffix}`;
+    const api = createE2eApi(page.request);
+    await api.createTask(firstTitle, { projectId: project?.id });
+    await api.createTask(secondTitle, { projectId: project?.id });
+    await page.goto(project === null ? "/" : `/?project=${encodeURIComponent(project.id)}`);
+
+    const taskRegion = page.locator(
+      project === null ? '[aria-label="Inbox tasks"]' : '[aria-label$=" tasks"]',
+    );
+    await expect(taskRegion.locator(".task-title")).toHaveText([firstTitle, secondTitle]);
+    const topButtonName = project === null ? "Add task to Inbox" : `Add task to ${project.title}`;
+    await taskRegion.getByRole("button", { name: topButtonName }).click();
+    const topDialog = page.getByRole("dialog", { name: "Add task" });
+    await topDialog.getByLabel("New task title").fill(topTitle);
+    await topDialog.getByRole("button", { name: "Add task", exact: true }).click();
+    await expect(taskRegion.locator(".task-title")).toHaveText([topTitle, firstTitle, secondTitle]);
+
+    const bottomButtonName =
+      project === null ? "Add task to bottom of Inbox" : `Add task to bottom of ${project.title}`;
+    await taskRegion.getByRole("button", { name: bottomButtonName }).click();
+    const bottomDialog = page.getByRole("dialog", { name: "Add task" });
+    await bottomDialog.getByLabel("New task title").fill(bottomTitle);
+    await bottomDialog.getByRole("button", { name: "Add task", exact: true }).click();
+    await expect(taskRegion.locator(".task-title")).toHaveText([
+      topTitle,
+      firstTitle,
+      secondTitle,
+      bottomTitle,
+    ]);
+  });
+}
+
 test("renames the current project inline from its heading", async ({ page }, testInfo) => {
   const projectTitle = `Inline rename ${testInfo.workerIndex}-${Date.now()}`;
   const renamedTitle = `${projectTitle} updated`;
