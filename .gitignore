@@ -11,3 +11,4 @@ playwright-report/
 .pnpm-cache/
 .pnpm-data/
 dumps/
+v-attachments/

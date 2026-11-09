@@ -38,7 +38,11 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - mytodo_attachments:/var/lib/mytodo/attachments
+      - type: bind
+        source: ${MYTODO_ATTACHMENTS_VOLUME:-./v-attachments}
+        target: /var/lib/mytodo/attachments
+        bind:
+          create_host_path: true
     networks:
       - app-internal
 
@@ -81,4 +85,3 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
-  mytodo_attachments:

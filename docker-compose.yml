@@ -19,7 +19,11 @@ services:
       MYTODO_ATTACHMENTS_ENABLED: ${MYTODO_ATTACHMENTS_ENABLED:-false}
       MYTODO_PROJECT_ARCHIVING_ENABLED: ${MYTODO_PROJECT_ARCHIVING_ENABLED:-false}
     volumes:
-      - mytodo_attachments:/var/lib/mytodo/attachments
+      - type: bind
+        source: ${MYTODO_ATTACHMENTS_VOLUME:-./v-attachments}
+        target: /var/lib/mytodo/attachments
+        bind:
+          create_host_path: true
     networks:
       - app-internal
       - infra
@@ -52,6 +56,3 @@ networks:
   infra:
     external: true
     name: infra
-
-volumes:
-  mytodo_attachments:

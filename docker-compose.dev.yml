@@ -45,7 +45,11 @@ services:
       - backend-node-modules:/workspace/apps/backend/node_modules
       - frontend-node-modules:/workspace/apps/frontend/node_modules
       - domain-node-modules:/workspace/packages/domain/node_modules
-      - dev-attachments:/var/lib/mytodo/attachments
+      - type: bind
+        source: ${MYTODO_ATTACHMENTS_VOLUME:-./v-attachments}
+        target: /var/lib/mytodo/attachments
+        bind:
+          create_host_path: true
     command:
       - bash
       - -lc
@@ -65,4 +69,3 @@ volumes:
   backend-node-modules:
   frontend-node-modules:
   domain-node-modules:
-  dev-attachments:
