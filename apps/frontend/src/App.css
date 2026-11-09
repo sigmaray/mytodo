@@ -400,6 +400,16 @@ h1 {
   line-height: 1.1;
 }
 
+.header .project-title-heading { display: flex; align-items: center; gap: 5px; min-width: 0; margin-bottom: 17px; }
+.header .project-title-heading h1 { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.project-title-edit-trigger { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 8px; color: #756b65; background: transparent; cursor: pointer; }
+.project-title-edit-trigger:hover, .project-title-edit-trigger:focus-visible { color: #b83225; background: #fff2ef; }
+.project-title-edit-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.project-title-edit-form input { min-width: min(260px, 100%); max-width: 100%; padding: 6px 9px; border: 1px solid #cfc8c2; border-radius: 7px; font: inherit; font-size: 1.5rem; }
+.project-title-edit-form button { min-height: 36px; padding: 6px 12px; border: 1px solid #ded8d3; border-radius: 7px; background: #fff; cursor: pointer; }
+.project-title-edit-form button[type="submit"] { border-color: #c84233; color: #fff; background: #c84233; }
+.project-title-edit-form button:disabled { opacity: .55; cursor: not-allowed; }
+
 .task-form {
   margin-bottom: 22px;
 }

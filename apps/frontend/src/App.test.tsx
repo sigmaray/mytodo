@@ -1138,6 +1138,33 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteProject).toHaveBeenCalledWith("project-1"));
   });
 
+  it("renames the selected project inline from its heading", async () => {
+    const updateProject = vi.fn(
+      async (id: string, patch: Readonly<{ title?: string; description?: string }>): Promise<Project> =>
+        project({ id, title: patch.title ?? "Roadmap", description: patch.description ?? "" }),
+    );
+    window.history.replaceState({}, "", "/?project=project-1");
+    renderApp(
+      Object.freeze({
+        ...baseApi(Object.freeze([])),
+        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
+        updateProject,
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Roadmap" });
+    await userEvent.click(screen.getByRole("button", { name: "Edit project name" }));
+    const input = screen.getByRole("textbox", { name: "Project title" });
+    await userEvent.clear(input);
+    await userEvent.type(input, "Launch plan");
+    await userEvent.keyboard("{Enter}");
+
+    await waitFor(() =>
+      expect(updateProject).toHaveBeenCalledWith("project-1", { id: "project-1", title: "Launch plan" }),
+    );
+    expect(await screen.findByRole("heading", { name: "Launch plan" })).toBeInTheDocument();
+  });
+
   it("saves, edits, and removes the Inbox description", async () => {
     let description = "";
     renderApp(

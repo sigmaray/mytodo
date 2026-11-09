@@ -1241,6 +1241,20 @@ test("truncates long project names and keeps the project menu inside the viewpor
   expect(menuBounds!.y + menuBounds!.height).toBeLessThanOrEqual(720);
 });
 
+test("renames the current project inline from its heading", async ({ page }, testInfo) => {
+  const projectTitle = `Inline rename ${testInfo.workerIndex}-${Date.now()}`;
+  const renamedTitle = `${projectTitle} updated`;
+  await page.goto("/");
+  await createProject(page)(projectTitle);
+
+  await page.getByRole("button", { name: "Edit project name" }).click();
+  await page.getByRole("textbox", { name: "Project title" }).fill(renamedTitle);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+
+  await expect(page.getByRole("heading", { name: renamedTitle, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: renamedTitle, exact: true })).toBeVisible();
+});
+
 test("creates subprojects and drags projects into and out of a parent", async ({ page }, testInfo) => {
   const suffix = `${Date.now()}-${testInfo.workerIndex}`;
   const root = `Root ${suffix}`;

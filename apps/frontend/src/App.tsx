@@ -708,6 +708,8 @@ export const TaskApp = ({
   const [targetProjectId, setTargetProjectId] = useState<ProjectId | null>(() =>
     new URLSearchParams(window.location.search).get("project"),
   );
+  const [editingProjectTitle, setEditingProjectTitle] = useState(false);
+  const [projectTitleDraft, setProjectTitleDraft] = useState("");
   const [targetSectionId, setTargetSectionId] = useState<SectionId | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -1829,6 +1831,20 @@ export const TaskApp = ({
             : targetProjectId === null
               ? "Inbox"
               : taskTargetLabel;
+  const selectedProject =
+    targetProjectId === null ? null : (allProjects.find((item) => item.id === targetProjectId) ?? null);
+  const saveProjectTitle = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const title = projectTitleDraft.trim();
+    if (selectedProject === null || title.length === 0) return;
+    try {
+      await updateProjectMutation.mutateAsync({ id: selectedProject.id, title });
+      setEditingProjectTitle(false);
+      setProjectTitleDraft("");
+    } catch {
+      toast.error("Could not update project name");
+    }
+  };
   const taskAttachments = Object.freeze(
     flatTasks.flatMap((task) =>
       task.comments.flatMap((comment) =>
@@ -2107,7 +2123,65 @@ export const TaskApp = ({
         <section className="workspace card shadow-sm" aria-label="Task manager">
           <header className="header">
             <p className="eyebrow">Self-hosted MVP</p>
-            <h1>{viewTitle}</h1>
+            {pageMode === "tasks" && selectedProject !== null ? (
+              editingProjectTitle ? (
+                <form
+                  className="project-title-edit-form"
+                  onSubmit={(event) => void saveProjectTitle(event)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setEditingProjectTitle(false);
+                      setProjectTitleDraft("");
+                    }
+                  }}
+                >
+                  <label className="visually-hidden" htmlFor="project-title-inline-edit">
+                    Project title
+                  </label>
+                  <input
+                    id="project-title-inline-edit"
+                    autoFocus
+                    value={projectTitleDraft}
+                    onChange={(event) => setProjectTitleDraft(event.target.value)}
+                    aria-label="Project title"
+                  />
+                  <button
+                    type="submit"
+                    disabled={projectTitleDraft.trim().length === 0 || updateProjectMutation.isPending}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingProjectTitle(false);
+                      setProjectTitleDraft("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <div className="project-title-heading">
+                  <h1>{selectedProject.title}</h1>
+                  <button
+                    type="button"
+                    className="project-title-edit-trigger"
+                    aria-label="Edit project name"
+                    title="Edit project name"
+                    onClick={() => {
+                      setProjectTitleDraft(selectedProject.title);
+                      setEditingProjectTitle(true);
+                    }}
+                  >
+                    <Edit3 size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              )
+            ) : (
+              <h1>{viewTitle}</h1>
+            )}
             {pageMode === "tasks" ? (
               <div className="task-header-actions">
                 {!selectionMode ? (
