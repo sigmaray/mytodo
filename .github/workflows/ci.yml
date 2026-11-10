@@ -1,0 +1,186 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit and integration tests
+        run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: todoist
+          POSTGRES_PASSWORD: todoist
+          POSTGRES_DB: todoist_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U todoist -d todoist_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgres://todoist:todoist@127.0.0.1:5432/todoist_e2e
+      PLAYWRIGHT_OUTPUT_DIR: test-results
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+  docker-infra:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate external PostgreSQL Compose config
+        run: cp deploy.env.example .env && docker compose --env-file .env -f docker-compose.yml config -q
+
+      - name: Write bundled production environment
+        run: |
+          cat > .env <<'EOF'
+          MYTODO_DB_USER=todoist
+          MYTODO_DB_PASSWORD=ci-only-password
+          MYTODO_DB_NAME=todoist_ci
+          MYTODO_DOMAIN=todoist.example.test
+          MYTODO_POSTGRES_VOLUME=/tmp/mytodo-ci-postgres
+          MYTODO_ATTACHMENTS_ENABLED=false
+          MYTODO_ATTACHMENTS_DIR=/var/lib/mytodo/attachments
+          MYTODO_ATTACHMENTS_VOLUME=/tmp/mytodo-ci-attachments
+          MYTODO_PROJECT_ARCHIVING_ENABLED=false
+          EOF
+
+      - name: Verify bundled Compose reads .env values
+        run: |
+          docker compose --env-file .env -f docker-compose.with-infra.yml config --format json \
+            | jq -e '
+              .services.postgres.environment.POSTGRES_USER == "todoist" and
+              .services.postgres.environment.POSTGRES_PASSWORD == "ci-only-password" and
+              .services.postgres.environment.POSTGRES_DB == "todoist_ci" and
+              .services["todoist-api"].environment.MYTODO_DB_HOST == "postgres" and
+              .services["todoist-api"].environment.MYTODO_DB_NAME == "todoist_ci" and
+              .services.caddy.environment.MYTODO_DOMAIN == "todoist.example.test" and
+              ([.services.postgres.volumes[] | select(.target == "/var/lib/postgresql/data")][0].source == "/tmp/mytodo-ci-postgres") and
+              ([.services["todoist-api"].volumes[] | select(.target == "/var/lib/mytodo/attachments")][0].source == "/tmp/mytodo-ci-attachments")
+            ' >/dev/null
+
+      - name: Prepare writable database bind mount
+        run: mkdir -p /tmp/mytodo-ci-postgres /tmp/mytodo-ci-attachments && chmod 777 /tmp/mytodo-ci-postgres /tmp/mytodo-ci-attachments
+
+      - name: Start production stack with bundled PostgreSQL
+        run: task prod:docker:with-infra:up
+
+      - name: Check API health endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api node -e 'fetch("http://127.0.0.1:3000/auth/status").then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API health check failed"
+          docker compose --env-file .env -f docker-compose.with-infra.yml logs
+          exit 1
+
+      - name: Stop test environment
+        if: always()
+        run: task prod:docker:with-infra:down
