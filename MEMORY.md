@@ -1,5 +1,58 @@
 # Project Memory
 
+## 2026-11-10 — Хранить self-contained PostgreSQL в локальном каталоге
+
+- В `docker-compose.with-infra.yml` PostgreSQL теперь монтирует `${MYTODO_POSTGRES_VOLUME:-./v-postgres}` в data directory; `v-postgres/` исключён из Git.
+- README описывает переменную, резервное копирование и перенос данных из прежнего named volume. Проверки Compose config и `git diff --check` выполняются в этой сессии.
+
+## 2026-11-10 — Перевести Task validation messages на английский
+
+- Все user-facing сообщения о недостающих аргументах и env-настройках в `users:create/update/delete` теперь на английском языке.
+- Проверки: поиск русских сообщений, dry-run и `git diff --check`.
+
+## 2026-11-10 — Проверять аргументы users Task-команд
+
+- Для `users:create/update/delete` во всех трёх режимах запуска добавлены понятные сообщения при отсутствии обязательных `USERNAME`/`PASSWORD`; update требует хотя бы одно поле изменения.
+- Production-варианты предварительно проверяют требуемые DB/domain значения в `.env` или `.env.production`, чтобы не выдавать сырой Compose error. Проверки: task list, dry-run всех create/update/delete режимов и `git diff --check`.
+
+## 2026-11-10 — Добавить команды удаления базы данных
+
+- Добавлены `db:drop`, `dev:docker:db:drop`, `prod:docker:db:drop` и `prod:docker:with-infra:db:drop`, вместе с `dev:docker:db:create`. Команды `drop` удаляют базу целиком через `dropdb --force`; обычный запуск приложения их не вызывает.
+- README поясняет разницу между удалением БД и таблиц. Проверки: Task dry-run и `git diff --check`.
+
+## 2026-11-10 — Добавить Docker dev migration task
+
+- Добавлена `dev:docker:db:migrate`: запускает и ждёт dev PostgreSQL, затем применяет pending Drizzle migrations в `dev` контейнере. README различает host и Docker migration tasks.
+- Проверки: dry-run Taskfile и `git diff --check`.
+
+## 2026-11-10 — Добавить up и управление пользователями в production Taskfile
+
+- Добавлена `prod:docker:up`; старая `prod:docker` сохранена как alias. Для self-contained production добавлены `users:list/create/update/delete` через Compose service `todoist-api`.
+- README содержит команды запуска и примеры управления аккаунтами. Проверки: dry-run всех новых задач и `git diff --check`.
+
+## 2026-11-10 — Добавить up/down для self-contained production
+
+- Добавлены `prod:docker:with-infra:up` и `prod:docker:with-infra:down`; прежняя `prod:docker:with-infra` оставлена alias для `up`.
+- README обновлён с новым способом запуска и остановки. Проверки Taskfile/dry-run и `git diff --check` выполняются в этой сессии.
+
+## 2026-11-10 — Разделить production запуск и подготовку БД
+
+- Убраны любые `db:create`, `db:drop-tables` и `db:migrate` из обычных запусков; запуск приложения теперь не сбрасывает данные.
+- Добавлены отдельные production команды `prod:docker:db:*` для внешней PostgreSQL и `prod:docker:with-infra:db:*` для встроенной PostgreSQL, включая `setup` без удаления данных и отдельный явно destructive `drop-tables`. Добавлен Task-запуск self-contained production стека.
+- README описывает раздельную подготовку БД. Проверки: `task --list`, dry-run обычных запусков и production DB-команд, `git diff --check`; команды БД не выполнялись.
+
+## 2026-11-10 — Сбрасывать схему БД при запуске через Taskfile
+
+- В `dev:docker`, `backend`, `frontend` и `prod:docker` перед запуском приложения добавлены `db:create`, `db:drop-tables` и `db:migrate`; для Docker dev сначала ожидается готовность PostgreSQL.
+- README и описания задач предупреждают, что запуск удаляет все таблицы и данные выбранной базы перед миграциями.
+- Проверки Taskfile/dry-run и `git diff --check` выполняются в этой сессии; команды приложения и БД фактически не запускались.
+
+## 2026-11-10 — Согласовать Taskfile и README
+
+- Удалённые production `external-infra` задачи подтверждены как ненужные; README очищен от устаревших `test:docker*` и объясняет актуальные команды тестов.
+- Уточнены инструкции запуска dev-среды и управления пользователями; добавлены примеры дампа/восстановления и предупреждение, что Docker test task удаляет свои контейнеры и volumes.
+- Проверки: `task --list`, dry-run `test`, Docker test, dump и restore задач, `git diff --check`; код приложения не менялся.
+
 ## 2026-11-09 — Исправить production default для пути вложений
 
 - Production Compose-файлы передавали пустое значение `MYTODO_ATTACHMENTS_DIR`, если переменная отсутствовала в env-файле, из-за чего API завершался при включённых вложениях. Теперь оба файла по умолчанию передают `/var/lib/mytodo/attachments`, соответствующий контейнерному mount point.

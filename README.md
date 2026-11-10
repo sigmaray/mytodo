@@ -29,7 +29,7 @@ e2e               Playwright tests
 - Node.js 22+
 - pnpm 11+
 - PostgreSQL 14+
-- Task, optional but recommended: https://taskfile.dev
+- Task: https://taskfile.dev (used by the commands below)
 
 ### Setup
 
@@ -46,21 +46,21 @@ postgres://todoist:todoist@localhost:5432/todoist
 
 ### Development
 
-To run the entire application locally, including PostgreSQL, with Docker:
+To run the application and PostgreSQL locally with Docker Compose:
 
 ```bash
 task dev:docker
 ```
 
-The app is then available at `http://localhost:5173` and the API at `http://localhost:3000`.
+The app is then available at `http://localhost:5173` and the API at `http://localhost:3000`. This command stays in the foreground; press Ctrl+C to stop it.
+
+Application launch commands do not drop or reset database data. The development Docker stack runs migrations as part of its startup; for standalone local backend/frontend development, run `task db:migrate` when the schema needs updating.
 
 ```bash
-task backend
-task frontend
 task dev:docker
 ```
 
-Or with pnpm directly:
+For a local setup with PostgreSQL already running, start the backend and frontend in separate terminals:
 
 ```bash
 pnpm dev:backend
@@ -96,7 +96,16 @@ task dev:docker:users:delete USERNAME=sam
 task dev:docker:users:list
 ```
 
-The Taskfile user commands use the `MYTODO_DB_*` settings, which default to the local development database.
+The `dev:docker:users:*` commands use the `MYTODO_DB_*` settings, which default to the local development database at `127.0.0.1:5432`. Run them while the development database is available.
+
+To save or restore a custom-format development database dump:
+
+```bash
+task dev:docker:db:dump
+task dev:docker:db:restore DUMP_FILE=dumps/todoist-2026-01-01_120000.dump
+```
+
+The dump command creates a timestamped file under `dumps/` by default. Restore replaces matching database objects; choose a dump carefully.
 
 ### Production Docker Compose with shared PostgreSQL
 
@@ -105,8 +114,11 @@ The production stack joins the `infra` Docker network and uses PostgreSQL and Ca
 ```bash
 cp deploy.env.example .env
 # Edit the MYTODO_DB_* settings in .env
-task prod:docker
+task prod:docker:db:setup
+task prod:docker:up
 ```
+
+`prod:docker:db:setup` creates the database if it is missing and applies pending migrations. The database account needs permission to create a database when it does not exist. The normal `task prod:docker` command preserves existing data. Use `task prod:docker:db:drop-tables` only when you intentionally want to erase all tables and data.
 
 The API applies Drizzle migrations before starting. Set `MYTODO_ATTACHMENTS_ENABLED=true` to show attachment controls and enable attachment API routes; it defaults to `false`. When enabled, `MYTODO_ATTACHMENTS_DIR` must point to a writable directory inside the API container, normally `/var/lib/mytodo/attachments`. Compose bind-mounts the host directory from `MYTODO_ATTACHMENTS_VOLUME` there. The default is `./v-attachments` in the project directory; set `MYTODO_ATTACHMENTS_VOLUME` to another host directory to override it. On Linux, make sure the host directory is writable by the API's `node` user (UID 1000). Back up this directory together with the database. If upgrading from a previous version that used the named `mytodo_attachments` volume, copy its files into the configured host directory before starting the new Compose configuration; keep the old volume until the new installation is verified. Set the initial administrator password once:
 
@@ -137,29 +149,43 @@ MYTODO_DB_NAME=todoist
 MYTODO_ATTACHMENTS_ENABLED=true
 MYTODO_ATTACHMENTS_DIR=/var/lib/mytodo/attachments
 MYTODO_ATTACHMENTS_VOLUME=./v-attachments
+MYTODO_POSTGRES_VOLUME=./v-postgres
 MYTODO_PROJECT_ARCHIVING_ENABLED=false
 MYTODO_DOMAIN=todoist.example.com
 ```
 
+`MYTODO_POSTGRES_VOLUME` is the host directory mounted for PostgreSQL data. It defaults to `./v-postgres` and can be set to another path in `.env.production`.
+
 Start the full stack and initialize the administrator password:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
-docker compose --env-file .env.production -f docker-compose.with-infra.yml exec todoist-api \
-  ./node_modules/.bin/tsx src/users-cli.ts update admin --password='your-strong-password'
+task prod:docker:with-infra:db:setup
+task prod:docker:with-infra:up
+task prod:docker:with-infra:users:update USERNAME=admin PASSWORD='your-strong-password'
 ```
 
-Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data and Caddy certificates are stored in named Docker volumes; attachments are stored in the host directory configured by `MYTODO_ATTACHMENTS_VOLUME` (default `./v-attachments`). Back up `postgres-data` and that attachments directory together.
+The database setup task starts the bundled PostgreSQL if needed and applies pending migrations. The normal launch command preserves existing database data. Stop the stack with `task prod:docker:with-infra:down`. Use `task prod:docker:with-infra:db:drop-tables` only when you intentionally want to erase all tables and data. `task prod:docker:with-infra` remains an alias for `up`.
+
+Manage accounts in this deployment with:
+
+```bash
+task prod:docker:with-infra:users:list
+task prod:docker:with-infra:users:create USERNAME=sam PASSWORD='password'
+task prod:docker:with-infra:users:update USERNAME=sam NAME=samuel PASSWORD='new-password' ADMIN=false
+task prod:docker:with-infra:users:delete USERNAME=sam
+```
+
+Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data is stored in the host directory configured by `MYTODO_POSTGRES_VOLUME` (default `./v-postgres`); Caddy certificates use named Docker volumes; attachments are stored in the host directory configured by `MYTODO_ATTACHMENTS_VOLUME` (default `./v-attachments`). Back up both host directories and the Caddy volumes. If upgrading an installation that used the previous named `postgres-data` volume, copy its contents into the configured host directory before starting this Compose configuration so the existing database is retained.
 
 ### Tests
 
 ```bash
-task test
 task test:unit
-task test:docker
-task test:docker:app
-pnpm test:e2e
+task test
+task dev:docker:test
 ```
+
+`task test:unit` runs the domain, backend, and frontend unit/integration tests. `task test` runs those tests followed by Playwright E2E. `task dev:docker:test` runs the Docker test stack and removes its containers and volumes when finished. To run only E2E tests against your configured local test environment, use `pnpm test:e2e`.
 
 Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables authenticated test endpoints for clearing all data, clearing an individual allowlisted table (`tasks`, `task_comments`, `sections`, or `projects`), and creating tasks, projects, sections, comments, and attachments. They are unavailable in production, and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` use these endpoints to prepare state so UI tests can focus on the behavior they verify.
 
@@ -179,7 +205,21 @@ Create the database:
 
 ```bash
 task db:create
+task dev:docker:db:create
 ```
+
+`db:create` uses the host connection in `MYTODO_DB_*`; `dev:docker:db:create` creates or checks the database in the development Compose PostgreSQL.
+
+Drop the entire database:
+
+```bash
+task db:drop
+task dev:docker:db:drop
+task prod:docker:db:drop
+task prod:docker:with-infra:db:drop
+```
+
+These commands permanently delete the selected database and all its data. Use the production variants only when you intentionally want to erase the production database.
 
 Drop all tables in the database:
 
@@ -191,4 +231,9 @@ Run Drizzle migrations:
 
 ```bash
 task db:migrate
+task dev:docker:db:migrate
 ```
+
+Use `db:migrate` for a PostgreSQL instance reachable from the host using `MYTODO_DB_*`; use `dev:docker:db:migrate` for the PostgreSQL service in the development Compose stack.
+
+`db:drop-tables` permanently removes every table and its data while keeping the database itself. `db:drop` removes the database entirely. Neither is part of routine startup. Production database tasks are scoped by deployment mode: `task prod:docker:db:*` uses shared external PostgreSQL, while `task prod:docker:with-infra:db:*` uses the bundled PostgreSQL. Each mode has separate `create`, `drop`, `drop-tables`, and `migrate` tasks, plus a `setup` task that creates the database if needed and applies migrations without dropping data.
