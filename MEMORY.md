@@ -1190,3 +1190,8 @@ Verification:
 
 - Включён Bash xtrace с пометками `[lxd-host]` и `[lxd-guest]` в LXD setup скрипте, чтобы команды создания контейнера, установки зависимостей, клонирования и запуска стека были видны по мере выполнения.
 - Проверки: `bash -n`, `task --dry prod:lxd:up`, lint, format:check, build и diff check прошли.
+
+## 2026-11-10 — Начальный пароль администратора в LXD
+
+- `prod:lxd:up` по умолчанию задаёт существующему пользователю `admin` пароль `admin`, включает admin flag, выводит credentials и предупреждает сменить пароль немедленно. `LXD_CREATE_DEFAULT_ADMIN=false` отключает настройку; временный LXD test task отключает её явно.
+- README описывает поведение и переменную отключения. Проверки: shell syntax, dry runs для LXD up/test task, lint, format:check, build и diff check прошли.

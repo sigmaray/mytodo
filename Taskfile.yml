@@ -420,7 +420,7 @@ tasks:
   test:prod:lxd:test:
     desc: Test the production Docker stack inside a temporary LXD container
     cmds:
-      - LXD_REMOVE_CONTAINER=true bash scripts/setup-production-in-lxd.sh
+      - LXD_CREATE_DEFAULT_ADMIN=false LXD_REMOVE_CONTAINER=true bash scripts/setup-production-in-lxd.sh
 
   prod:lxd:up:
     desc: Create an LXD container and leave the production stack running for browser access

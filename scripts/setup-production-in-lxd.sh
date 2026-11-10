@@ -97,6 +97,12 @@ git clone --depth 1 https://github.com/sigmaray/mytodo.git /opt/mytodo
 install -d /var/lib/mytodo-lxd-test/postgres /var/lib/mytodo-lxd-test/attachments
 
 browser_mode=${LXD_BROWSER_MODE:-true}
+create_default_admin=${LXD_CREATE_DEFAULT_ADMIN:-true}
+if [[ "${create_default_admin}" != true && "${create_default_admin}" != false ]]; then
+  printf 'LXD_CREATE_DEFAULT_ADMIN must be true or false, got: %s\n' "${create_default_admin}" >&2
+  exit 1
+fi
+
 if [[ "${browser_mode}" == true ]]; then
   container_ip=$(ip -4 -o addr show dev eth0 | awk '{split($4, address, "/"); print address[1]; exit}')
   if [[ -z "${container_ip}" ]]; then
@@ -177,6 +183,15 @@ for service in postgres todoist-api todoist-web caddy; do
 done
 
 printf 'Production stack checks passed: PostgreSQL ready, API status valid, frontend served through Caddy, all four services running.\n'
+if [[ "${create_default_admin}" == true ]]; then
+  printf '\nSetting up the default administrator account.\n'
+  task prod:docker:with-infra:users:update USERNAME=admin PASSWORD=admin ADMIN=true
+  printf '\nDefault administrator credentials: username=admin password=admin\n'
+  printf 'Change the admin password as soon as possible.\n'
+else
+  printf '\nDefault administrator setup skipped (LXD_CREATE_DEFAULT_ADMIN=false).\n'
+fi
+
 if [[ "${browser_mode}" == true ]]; then
   printf '\nOpen the project in a browser: %s/\n' "${app_url}"
   printf 'The project is served from LXD container %s.\n' "${LXD_CONTAINER_NAME:-mytodo-prod-browser}"
@@ -191,6 +206,7 @@ lxc file push "${WORK_DIR}/guest-test.sh" "${CONTAINER_NAME}/root/mytodo-guest-t
 lxc exec "${CONTAINER_NAME}" -- test -s /root/mytodo-guest-test.sh
 lxc exec "${CONTAINER_NAME}" -- env \
   "LXD_BROWSER_MODE=${LXD_BROWSER_MODE:-true}" \
+  "LXD_CREATE_DEFAULT_ADMIN=${LXD_CREATE_DEFAULT_ADMIN:-true}" \
   "LXD_CONTAINER_NAME=${CONTAINER_NAME}" \
   bash /root/mytodo-guest-test.sh
 
