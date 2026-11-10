@@ -267,35 +267,35 @@ tasks:
   prod:docker:with-infra:up:
     desc: Build and start production with its own PostgreSQL and Caddy
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --build
+      - docker compose --env-file .env -f docker-compose.with-infra.yml up -d --build
 
   prod:docker:with-infra:down:
     desc: Stop production with its own PostgreSQL and Caddy
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml down
+      - docker compose --env-file .env -f docker-compose.with-infra.yml down
 
   prod:docker:with-infra:db:create:
     desc: Start the bundled PostgreSQL and create its configured database if missing
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml up -d --wait postgres
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T postgres sh -ec 'if psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1" >/dev/null 2>&1; then exit 0; fi; createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
+      - docker compose --env-file .env -f docker-compose.with-infra.yml up -d --wait postgres
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T postgres sh -ec 'if psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1" >/dev/null 2>&1; then exit 0; fi; createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 
   prod:docker:with-infra:db:drop:
     desc: Drop the bundled production database (destructive)
-    dotenv: [.env.production]
+    dotenv: [.env]
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T postgres dropdb --force --if-exists -U "{{.MYTODO_DB_USER | default "todoist"}}" "{{.MYTODO_DB_NAME | default "todoist"}}"
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T postgres dropdb --force --if-exists -U "{{.MYTODO_DB_USER | default "todoist"}}" "{{.MYTODO_DB_NAME | default "todoist"}}"
 
   prod:docker:with-infra:db:drop-tables:
     desc: Drop all tables in the bundled production database (destructive)
-    dotenv: [.env.production]
+    dotenv: [.env]
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T postgres psql -U "{{.MYTODO_DB_USER | default "todoist"}}" -d "{{.MYTODO_DB_NAME | default "todoist"}}" -v ON_ERROR_STOP=1 -c 'DO $$ DECLARE item RECORD; BEGIN FOR item IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP EXECUTE format(''DROP TABLE IF EXISTS %I CASCADE'', item.tablename); END LOOP; END $$;'
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T postgres psql -U "{{.MYTODO_DB_USER | default "todoist"}}" -d "{{.MYTODO_DB_NAME | default "todoist"}}" -v ON_ERROR_STOP=1 -c 'DO $$ DECLARE item RECORD; BEGIN FOR item IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP EXECUTE format(''DROP TABLE IF EXISTS %I CASCADE'', item.tablename); END LOOP; END $$;'
 
   prod:docker:with-infra:db:migrate:
     desc: Run Drizzle migrations against the bundled production database
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml run --rm --no-deps todoist-api ./node_modules/.bin/drizzle-kit migrate --config drizzle.config.ts
+      - docker compose --env-file .env -f docker-compose.with-infra.yml run --rm --no-deps todoist-api ./node_modules/.bin/drizzle-kit migrate --config drizzle.config.ts
 
   prod:docker:with-infra:db:setup:
     desc: Start the bundled PostgreSQL and run migrations
@@ -306,14 +306,14 @@ tasks:
   prod:docker:with-infra:users:list:
     desc: List accounts in the self-contained production database
     cmds:
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts list
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts list
 
   prod:docker:with-infra:users:check-env:
     internal: true
-    dotenv: [.env.production]
+    dotenv: [.env]
     cmds:
-      - test -n "${MYTODO_DB_PASSWORD:-}" || { echo 'Missing required environment variable MYTODO_DB_PASSWORD in .env.production.' >&2; exit 1; }
-      - test -n "${MYTODO_DOMAIN:-}" || { echo 'Missing required environment variable MYTODO_DOMAIN in .env.production.' >&2; exit 1; }
+      - test -n "${MYTODO_DB_PASSWORD:-}" || { echo 'Missing required environment variable MYTODO_DB_PASSWORD in .env.' >&2; exit 1; }
+      - test -n "${MYTODO_DOMAIN:-}" || { echo 'Missing required environment variable MYTODO_DOMAIN in .env.' >&2; exit 1; }
 
   prod:docker:with-infra:users:create:
     desc: Create a self-contained production account (USERNAME=... PASSWORD=... [ADMIN=true])
@@ -333,7 +333,7 @@ tasks:
           echo 'Missing required variable PASSWORD. Example: task prod:docker:with-infra:users:create USERNAME=sam PASSWORD=secret' >&2
           exit 1
         }
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   prod:docker:with-infra:users:update:
     desc: Update a self-contained production account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
@@ -354,7 +354,7 @@ tasks:
           echo 'Provide at least one field to update: NAME, PASSWORD, or ADMIN.' >&2
           exit 1
         }
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts update "{{.USERNAME}}" {{if .NAME}}--name="{{.NAME}}"{{end}} {{if .PASSWORD}}--password="{{.PASSWORD}}"{{end}} {{if .ADMIN}}--admin={{.ADMIN}}{{end}}
 
   prod:docker:with-infra:users:delete:
     desc: Delete a self-contained production account (USERNAME=...)
@@ -367,7 +367,7 @@ tasks:
           echo 'Missing required variable USERNAME. Example: task prod:docker:with-infra:users:delete USERNAME=sam' >&2
           exit 1
         }
-      - docker compose --env-file .env.production -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
+      - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   # -----------------------
   # For launching locally without Docker

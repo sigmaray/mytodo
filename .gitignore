@@ -1,7 +1,7 @@
 aiignore/
 gitignore/
 .env
-.env.production
+.env.*
 .todoist-admin-password
 node_modules/
 dist/
@@ -12,3 +12,4 @@ playwright-report/
 .pnpm-data/
 dumps/
 v-attachments/
+v-postgres/

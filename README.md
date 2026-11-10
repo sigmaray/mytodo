@@ -140,7 +140,7 @@ Point the hostname to the server and reload the existing reverse-proxy Compose s
 
 ### Self-contained production Docker Compose
 
-To run without a shared infrastructure stack, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env.production` with a strong alphanumeric database password and a public hostname whose DNS points to this server:
+To run without a shared infrastructure stack, use `docker-compose.with-infra.yml`. It includes its own PostgreSQL database and Caddy HTTPS proxy. Create `.env` with a strong alphanumeric database password and a public hostname whose DNS points to this server. You can start from `.env.example` and edit it for production:
 
 ```dotenv
 MYTODO_DB_USER=todoist
@@ -149,12 +149,11 @@ MYTODO_DB_NAME=todoist
 MYTODO_ATTACHMENTS_ENABLED=true
 MYTODO_ATTACHMENTS_DIR=/var/lib/mytodo/attachments
 MYTODO_ATTACHMENTS_VOLUME=./v-attachments
-MYTODO_POSTGRES_VOLUME=./v-postgres
 MYTODO_PROJECT_ARCHIVING_ENABLED=false
 MYTODO_DOMAIN=todoist.example.com
 ```
 
-`MYTODO_POSTGRES_VOLUME` is the host directory mounted for PostgreSQL data. It defaults to `./v-postgres` and can be set to another path in `.env.production`.
+Add `MYTODO_POSTGRES_VOLUME=./v-postgres` to `.env` to override the default PostgreSQL data directory. The default is `./v-postgres`.
 
 Start the full stack and initialize the administrator password:
 

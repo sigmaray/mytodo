@@ -1,5 +1,20 @@
 # Project Memory
 
+## 2026-11-10 — Унифицировать production env-файл
+
+- Compose, Taskfile, CI, deployment example, README, `.gitignore` и текстовые записи Memory переведены на единый `.env`; прежние ссылки на отдельный production env-файл удалены.
+- CI формирует `.env` из нужного example перед проверкой каждого production Compose файла и перед запуском production Task-команд. Проверки: поиск ссылок, YAML/Compose validation, Task parse/dry-run и `git diff --check`.
+
+## 2026-11-10 — Запускать production smoke stack в CI через Task
+
+- Docker smoke job теперь поднимает и останавливает self-contained production stack командами `task prod:docker:with-infra:up` и `task prod:docker:with-infra:down`; для этих задач готовится `.env`.
+- Health check опрашивает API после запуска. Проверки: YAML parsing, Compose config и `git diff --check`; Docker stack не запускался локально.
+
+## 2026-11-10 — Добавить CI workflow GitHub Actions
+
+- Создан `.github/workflows/ci.yml` с lint/format, unit tests, build, Playwright E2E на PostgreSQL 16 и Docker production smoke job с bundled PostgreSQL; добавлена загрузка Playwright artifacts при сбое.
+- Проверки: YAML parsing, `docker compose config -q` для двух production конфигураций и `git diff --check`. Локальные тестовые наборы не запускались.
+
 ## 2026-11-10 — Хранить self-contained PostgreSQL в локальном каталоге
 
 - В `docker-compose.with-infra.yml` PostgreSQL теперь монтирует `${MYTODO_POSTGRES_VOLUME:-./v-postgres}` в data directory; `v-postgres/` исключён из Git.
@@ -13,7 +28,7 @@
 ## 2026-11-10 — Проверять аргументы users Task-команд
 
 - Для `users:create/update/delete` во всех трёх режимах запуска добавлены понятные сообщения при отсутствии обязательных `USERNAME`/`PASSWORD`; update требует хотя бы одно поле изменения.
-- Production-варианты предварительно проверяют требуемые DB/domain значения в `.env` или `.env.production`, чтобы не выдавать сырой Compose error. Проверки: task list, dry-run всех create/update/delete режимов и `git diff --check`.
+- Production-варианты предварительно проверяют требуемые DB/domain значения в `.env` или `.env`, чтобы не выдавать сырой Compose error. Проверки: task list, dry-run всех create/update/delete режимов и `git diff --check`.
 
 ## 2026-11-10 — Добавить команды удаления базы данных
 
@@ -195,7 +210,7 @@
 
 ## 2026-11-08 — Point primary production tasks at .env and docker-compose.yml
 
-- Changed `prod:docker` lifecycle and user-management commands to use `.env` with `docker-compose.yml`; updated descriptions and shared-PostgreSQL README instructions accordingly. `prod:docker:external-infra:*` remains on its existing `.env.production` configuration.
+- Changed `prod:docker` lifecycle and user-management commands to use `.env` with `docker-compose.yml`; updated descriptions and shared-PostgreSQL README instructions accordingly. `prod:docker:external-infra:*` remains on its existing `.env` configuration.
 - Verification: dry-runs resolve the primary task commands and `git diff --check` passes. `.env` is not present in this workspace and must be created from `deploy.env.example` before use.
 
 ## 2026-11-08 — Simplify standalone production Task names
@@ -221,7 +236,7 @@
 
 ## 2026-11-08 — Prefix project configuration variables with MYTODO_
 
-- Renamed variables in `.env.example`, the local `.env.production`, and deployment examples to `MYTODO_*`; updated Compose interpolation, Caddy domain substitution, Taskfile database variables, and README examples accordingly. Standard container-level variables such as `DATABASE_URL`, `PORT`, and `POSTGRES_USER` remain mapped inside services.
+- Renamed variables in `.env.example`, the local `.env`, and deployment examples to `MYTODO_*`; updated Compose interpolation, Caddy domain substitution, Taskfile database variables, and README examples accordingly. Standard container-level variables such as `DATABASE_URL`, `PORT`, and `POSTGRES_USER` remain mapped inside services.
 - Verification: dev, test, shared-infra, and standalone Compose configs validate; Task database migration dry-run resolves `MYTODO_DATABASE_URL`; no unprefixed project config keys remain in env files; `git diff --check` passes.
 
 ## 2026-11-08 — Adjust mytodo logo mark typography
@@ -246,7 +261,7 @@
 
 ## 2026-11-08 — Add Task commands for shared-infrastructure production stack
 
-- Added `prod:docker:external-infra` with `down`, `ps`, and `logs` variants targeting `docker-compose.yml` and `.env.production`.
+- Added `prod:docker:external-infra` with `down`, `ps`, and `logs` variants targeting `docker-compose.yml` and `.env`.
 - Verification: Task lists the new commands, each dry-run resolves, and `git diff --check` passes.
 
 ## 2026-11-08 — Clarify standalone production Task names
@@ -256,7 +271,7 @@
 
 ## 2026-11-08 — Add Task commands for the standalone production stack
 
-- Added `prod:docker`, `prod:docker:down`, `prod:docker:ps`, and `prod:docker:logs`, all targeting `.env.production` and `docker-compose.with-infra.yml`. The down command preserves named volumes.
+- Added `prod:docker`, `prod:docker:down`, `prod:docker:ps`, and `prod:docker:logs`, all targeting `.env` and `docker-compose.with-infra.yml`. The down command preserves named volumes.
 - Verification: Task lists all four commands, dry-runs each command successfully, and `git diff --check` passes.
 
 ## 2026-11-08 — Add self-contained production Compose stack
