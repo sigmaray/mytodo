@@ -138,6 +138,7 @@ export const createApp = (
   options: Readonly<{
     databaseUrl?: string;
     mode?: string;
+    secureCookies?: boolean;
     userRepository?: UserRepository;
     attachmentsDir?: string;
     attachmentsEnabled?: boolean;
@@ -147,7 +148,7 @@ export const createApp = (
 ) => {
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
-  const secureCookies = options.mode === "production";
+  const secureCookies = options.secureCookies ?? options.mode === "production";
   const attachmentStorage = createAttachmentStorage(options.attachmentsDir ?? null);
   const attachmentsEnabled = (options.attachmentsEnabled ?? true) && attachmentStorage.enabled;
   const attachmentStorageAvailable = attachmentsEnabled;

@@ -417,10 +417,33 @@ tasks:
     cmds:
       - pnpm test
 
-  test:prod:lxd:
+  test:prod:lxd:test:
     desc: Test the production Docker stack inside a temporary LXD container
     cmds:
-      - bash scripts/test-production-in-lxd.sh
+      - LXD_REMOVE_CONTAINER=true bash scripts/setup-production-in-lxd.sh
+
+  prod:lxd:up:
+    desc: Create an LXD container and leave the production stack running for browser access
+    vars:
+      LXD_CONTAINER_NAME: '{{.LXD_CONTAINER_NAME | default "mytodo-prod-browser"}}'
+    cmds:
+      - LXD_REMOVE_CONTAINER=false LXD_CONTAINER_NAME="{{.LXD_CONTAINER_NAME}}" bash scripts/setup-production-in-lxd.sh
+
+  prod:lxd:down:
+    desc: Stop and remove the LXD production browser test container
+    vars:
+      LXD_CONTAINER_NAME: '{{.LXD_CONTAINER_NAME | default "mytodo-prod-browser"}}'
+    cmds:
+      - |
+        if lxc info "{{.LXD_CONTAINER_NAME}}" >/dev/null 2>&1; then
+          if test "$(lxc list "{{.LXD_CONTAINER_NAME}}" --format csv -c s)" = RUNNING; then
+            lxc exec "{{.LXD_CONTAINER_NAME}}" -- bash -lc 'cd /opt/mytodo && task prod:docker:with-infra:down' || echo 'Compose shutdown failed; removing the LXD container anyway.' >&2
+          fi
+          lxc delete --force "{{.LXD_CONTAINER_NAME}}"
+        else
+          echo 'LXD container not found: {{.LXD_CONTAINER_NAME}}' >&2
+          exit 1
+        fi
 
   ci:act:
     desc: Run the GitHub Actions workflow locally with act (requires Docker)

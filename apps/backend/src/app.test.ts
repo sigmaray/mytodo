@@ -729,6 +729,41 @@ describe("PATCH /sections/:id/order", () => {
 });
 
 describe("settings and session authentication", () => {
+  it("keeps production session cookies secure unless explicitly disabled for local HTTP", async () => {
+    const passwordHash = await hashPassword("a-long-test-password");
+    const userRepository = createMemoryUserRepository([
+      Object.freeze({
+        id: "production-admin",
+        username: "admin",
+        passwordHash,
+        isAdmin: true,
+        confirmDelete: true,
+        inboxDescription: "",
+      }),
+    ]);
+    const secureServer = await createTestServer(
+      createApp(createMemoryTaskRepository(), { mode: "production", userRepository }),
+    );
+    const secureLogin = await request(secureServer)
+      .post("/auth/login")
+      .send({ username: "admin", password: "a-long-test-password" })
+      .expect(200);
+    expect(secureLogin.headers["set-cookie"][0]).toMatch(/; Secure/i);
+
+    const httpServer = await createTestServer(
+      createApp(createMemoryTaskRepository(), {
+        mode: "production",
+        secureCookies: false,
+        userRepository,
+      }),
+    );
+    const httpLogin = await request(httpServer)
+      .post("/auth/login")
+      .send({ username: "admin", password: "a-long-test-password" })
+      .expect(200);
+    expect(httpLogin.headers["set-cookie"][0]).not.toMatch(/; Secure/i);
+  });
+
   it("keeps the Playwright reset API unavailable unless explicitly enabled outside production", async () => {
     const agent = await createTestAgent();
     await agent.post("/api/playwright/reset").expect(404);

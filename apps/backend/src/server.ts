@@ -10,6 +10,7 @@ import { createPostgresUserRepository } from "./db/users-repository";
 const port = Number(process.env.PORT ?? 3000);
 const databaseUrl = getDatabaseUrl();
 const mode = process.env.NODE_ENV ?? "development";
+const secureCookies = process.env.MYTODO_COOKIE_SECURE?.trim().toLowerCase() !== "false";
 const attachmentsEnabled = process.env.MYTODO_ATTACHMENTS_ENABLED?.trim().toLowerCase() === "true";
 const projectArchivingEnabled = process.env.MYTODO_PROJECT_ARCHIVING_ENABLED?.trim().toLowerCase() === "true";
 const playwrightApiEnabled = process.env.MYTODO_ENABLE_PLAYWRIGHT_API?.trim().toLowerCase() === "true";
@@ -33,6 +34,7 @@ serve({
   fetch: createApp(taskRepositoryFor, {
     databaseUrl,
     mode,
+    secureCookies: mode === "production" ? secureCookies : undefined,
     attachmentsEnabled,
     projectArchivingEnabled,
     playwrightApiEnabled,

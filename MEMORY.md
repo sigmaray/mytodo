@@ -1,8 +1,18 @@
 # Project Memory
 
+## 2026-11-10 — Оставлять production LXD stack доступным в браузере
+
+- Добавлены `task prod:lxd:up` и `task prod:lxd:down`. Up переиспользует LXD provisioner, оставляет контейнер/stack включёнными и печатает browser URL на адресе контейнера; down штатно останавливает Compose и удаляет контейнер. Setup script переименован в `scripts/setup-production-in-lxd.sh`; его defaults: `LXD_REMOVE_CONTAINER=false`, `LXD_BROWSER_MODE=true`. Временная проверка доступна через `task test:prod:lxd:test`, которая явно включает удаление контейнера.
+- Архивирование отфильтровывает отсутствующие tracked paths, чтобы локальные rename/delete изменения не ломали передачу исходников. Документация обновлена. Проверки: Bash syntax, dry-run tasks, archive creation, `pnpm lint`, `pnpm format:check`, `pnpm build`, `git diff --check`. Ранее ephemeral LXD запуск production stack прошёл; persistent browser mode отдельно не запускался.
+
+## 2026-11-10 — Исправить передачу bootstrap-скрипта в LXD
+
+- Архив проекта и гостевой bootstrap-скрипт передаются в `/root` контейнера, затем проверяются на наличие до запуска. Это избегает запуска отсутствующего файла из `/tmp` и делает ошибку передачи явной.
+- Проверки: Bash syntax, `task --dry` LXD tasks, `git diff --check`, lint/format/build.
+
 ## 2026-11-10 — Добавить LXD тест production Docker stack
 
-- Добавлены `scripts/test-production-in-lxd.sh` и `task test:prod:lxd`: скрипт переносит исходники без локальных секретов и данных в новый Ubuntu 24.04 LXD container, устанавливает Docker/Compose и Task, запускает production stack через Task, проверяет PostgreSQL, API, frontend через Caddy и удаляет container через EXIT trap. README описывает требования и overrides.
+- Добавлены `scripts/setup-production-in-lxd.sh` и `task test:prod:lxd:test`: скрипт переносит исходники без локальных секретов и данных в новый Ubuntu 24.04 LXD container, устанавливает Docker/Compose и Task, запускает production stack через Task, проверяет PostgreSQL, API, frontend через Caddy и удаляет container через EXIT trap при включённом `LXD_REMOVE_CONTAINER`. README описывает требования и overrides.
 - Полный запуск в LXD прошёл: все проверки успешны; Compose штатно остановлен, временный LXD container удалён. Проверки: `bash -n`, Task dry-run, `pnpm lint`, `pnpm format:check`, `pnpm build`, `git diff --check`.
 
 ## 2026-11-10 — Распараллелить CI и проверить через act
@@ -1164,3 +1174,19 @@ Verification:
 - Убрана лишняя загрузка главной страницы из общего Playwright fixture: каждый UI-сценарий открывает нужный маршрут сам, API-only сценарии не запускают UI.
 - Проекты, задачи, описания и комментарии для сценариев, которые тестируют другие функции, подготавливаются через `createE2eApi`; UI взаимодействия для проверяемого поведения сохранены.
 - Полный набор из 39 E2E проходит примерно за 1.1 минуты (предыдущий полный прогон — 1.3 минуты); `pnpm lint`, `pnpm format:check` и `git diff --check` проходят.
+
+## 2026-11-10 — Вход в LXD по HTTP
+
+- Исправлена причина невозможности входа в браузерном режиме LXD: production session cookie по умолчанию имеет `Secure`, который браузер игнорирует на HTTP. Добавлен `MYTODO_COOKIE_SECURE` с безопасным production default; LXD HTTP browser mode отключает флаг только внутри временного локального контейнера.
+- Добавлен backend-тест для secure default и явного HTTP override. README документирует ограничение для доверенной локальной сети.
+- Проверки: backend (34), lint, format:check, build и diff check прошли.
+
+## 2026-11-10 — Подготовка LXD-контейнера из GitHub
+
+- LXD bootstrap устанавливает `git` и `bash-completion`, генерирует Bash completion для Task и клонирует `https://github.com/sigmaray/mytodo` в `/opt/mytodo` вместо передачи архива рабочей копии с хоста. README обновлён.
+- Проверки: `bash -n scripts/setup-production-in-lxd.sh`, генерация `task --completion bash`, lint, format:check, build и diff check прошли. Полный LXD запуск не выполнялся.
+
+## 2026-11-10 — Показывать прогресс команд LXD
+
+- Включён Bash xtrace с пометками `[lxd-host]` и `[lxd-guest]` в LXD setup скрипте, чтобы команды создания контейнера, установки зависимостей, клонирования и запуска стека были видны по мере выполнения.
+- Проверки: `bash -n`, `task --dry prod:lxd:up`, lint, format:check, build и diff check прошли.

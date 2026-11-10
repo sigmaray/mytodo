@@ -29,6 +29,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      MYTODO_COOKIE_SECURE: ${MYTODO_COOKIE_SECURE:-true}
       PORT: 3000
       MYTODO_DB_HOST: postgres
       MYTODO_DB_PORT: 5432
