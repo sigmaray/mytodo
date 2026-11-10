@@ -182,9 +182,10 @@ Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 m
 task test:unit
 task test
 task dev:docker:test
+task test:prod:lxd
 ```
 
-`task test:unit` runs the domain, backend, and frontend unit/integration tests. `task test` runs those tests followed by Playwright E2E. `task dev:docker:test` runs the Docker test stack and removes its containers and volumes when finished. To run only E2E tests against your configured local test environment, use `pnpm test:e2e`.
+`task test:unit` runs the domain, backend, and frontend unit/integration tests. `task test` runs those tests followed by Playwright E2E. `task dev:docker:test` runs the Docker test stack and removes its containers and volumes when finished. `task test:prod:lxd` creates a temporary Ubuntu LXD container, installs Docker and Task, tests the self-contained production stack, and deletes the container on exit. It requires an initialized LXD daemon with nesting support and internet access; it does not copy the host `.env`. Set `LXD_IMAGE` or `LXD_CONTAINER_NAME` to override the image or generated container name. To run only E2E tests against your configured local test environment, use `pnpm test:e2e`.
 
 Playwright runs the backend with `MYTODO_ENABLE_PLAYWRIGHT_API=true`. This enables authenticated test endpoints for clearing all data, clearing an individual allowlisted table (`tasks`, `task_comments`, `sections`, or `projects`), and creating tasks, projects, sections, comments, and attachments. They are unavailable in production, and startup fails if the flag is enabled there. E2E helpers in `e2e/api.ts` use these endpoints to prepare state so UI tests can focus on the behavior they verify.
 

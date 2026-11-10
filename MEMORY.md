@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-10 — Добавить LXD тест production Docker stack
+
+- Добавлены `scripts/test-production-in-lxd.sh` и `task test:prod:lxd`: скрипт переносит исходники без локальных секретов и данных в новый Ubuntu 24.04 LXD container, устанавливает Docker/Compose и Task, запускает production stack через Task, проверяет PostgreSQL, API, frontend через Caddy и удаляет container через EXIT trap. README описывает требования и overrides.
+- Полный запуск в LXD прошёл: все проверки успешны; Compose штатно остановлен, временный LXD container удалён. Проверки: `bash -n`, Task dry-run, `pnpm lint`, `pnpm format:check`, `pnpm build`, `git diff --check`.
+
 ## 2026-11-10 — Распараллелить CI и проверить через act
 
 - Убраны межjob зависимости в `.github/workflows/ci.yml`; lint, tests, build, E2E и production Docker smoke идут независимо. `task ci:act` запускает пять jobs параллельно и использует локальный offline cache actions.

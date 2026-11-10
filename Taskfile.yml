@@ -417,6 +417,11 @@ tasks:
     cmds:
       - pnpm test
 
+  test:prod:lxd:
+    desc: Test the production Docker stack inside a temporary LXD container
+    cmds:
+      - bash scripts/test-production-in-lxd.sh
+
   ci:act:
     desc: Run the GitHub Actions workflow locally with act (requires Docker)
     cmds:
