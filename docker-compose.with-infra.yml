@@ -68,9 +68,9 @@ services:
     environment:
       MYTODO_DOMAIN: ${MYTODO_DOMAIN:?Set MYTODO_DOMAIN in .env}
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "${MYTODO_HTTP_PORT:-80}:80"
+      - "${MYTODO_HTTPS_PORT:-443}:443"
+      - "${MYTODO_HTTPS_PORT:-443}:443/udp"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

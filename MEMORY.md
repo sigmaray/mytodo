@@ -1,5 +1,20 @@
 # Project Memory
 
+## 2026-11-10 — Распараллелить CI и проверить через act
+
+- Убраны межjob зависимости в `.github/workflows/ci.yml`; lint, tests, build, E2E и production Docker smoke идут независимо. `task ci:act` запускает пять jobs параллельно и использует локальный offline cache actions.
+- Docker smoke получает отдельное имя Compose проекта и host ports 18080/18443; production defaults остаются 80/443, новые port overrides описаны в README. Проверка через act завершилась успешно: lint/format, build, 112 unit/integration tests, 39 E2E tests и production API health smoke; stack очищен.
+
+## 2026-11-10 — Добавить Task-команду для локального act
+
+- Добавлена `task ci:act` для запуска полного workflow через act с Docker runner image; команда использует `act` из PATH или `/tmp/act`.
+- Попытка запуска через act была остановлена по просьбе пользователя после успешного lint job; остальные job не выполнялись. Проверки: `task --dry ci:act` и `git diff --check`.
+
+## 2026-11-10 — Явно задать CI production env в `.env`
+
+- В `docker-infra` workflow теперь записывает все interpolated PostgreSQL, domain, attachments и volume значения в `.env`; Compose получает файл через `--env-file .env`.
+- Добавлена проверка через `docker compose config --format json | jq`, что переменные и оба bind mount пришли в нужные сервисы. Проверки: YAML parse, Compose JSON assertions и `git diff --check`.
+
 ## 2026-11-10 — Унифицировать production env-файл
 
 - Compose, Taskfile, CI, deployment example, README, `.gitignore` и текстовые записи Memory переведены на единый `.env`; прежние ссылки на отдельный production env-файл удалены.

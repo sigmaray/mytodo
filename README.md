@@ -174,7 +174,7 @@ task prod:docker:with-infra:users:update USERNAME=sam NAME=samuel PASSWORD='new-
 task prod:docker:with-infra:users:delete USERNAME=sam
 ```
 
-Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet. PostgreSQL data is stored in the host directory configured by `MYTODO_POSTGRES_VOLUME` (default `./v-postgres`); Caddy certificates use named Docker volumes; attachments are stored in the host directory configured by `MYTODO_ATTACHMENTS_VOLUME` (default `./v-attachments`). Back up both host directories and the Caddy volumes. If upgrading an installation that used the previous named `postgres-data` volume, copy its contents into the configured host directory before starting this Compose configuration so the existing database is retained.
+Caddy obtains and renews the HTTPS certificate automatically. Ports 80 and 443 must be reachable from the internet; set `MYTODO_HTTP_PORT` or `MYTODO_HTTPS_PORT` to use different host ports (defaults: 80 and 443). PostgreSQL data is stored in the host directory configured by `MYTODO_POSTGRES_VOLUME` (default `./v-postgres`); Caddy certificates use named Docker volumes; attachments are stored in the host directory configured by `MYTODO_ATTACHMENTS_VOLUME` (default `./v-attachments`). Back up both host directories and the Caddy volumes. If upgrading an installation that used the previous named `postgres-data` volume, copy its contents into the configured host directory before starting this Compose configuration so the existing database is retained.
 
 ### Tests
 

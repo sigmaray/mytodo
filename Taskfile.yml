@@ -416,3 +416,16 @@ tasks:
     desc: Run domain, backend, and frontend unit, integration, and UI tests
     cmds:
       - pnpm test
+
+  ci:act:
+    desc: Run the GitHub Actions workflow locally with act (requires Docker)
+    cmds:
+      - |
+        if command -v act >/dev/null 2>&1; then
+          act push -W .github/workflows/ci.yml --action-offline-mode --container-architecture linux/amd64 --concurrent-jobs 5 -P ubuntu-latest=catthehacker/ubuntu:act-latest
+        elif test -x /tmp/act; then
+          /tmp/act push -W .github/workflows/ci.yml --action-offline-mode --container-architecture linux/amd64 --concurrent-jobs 5 -P ubuntu-latest=catthehacker/ubuntu:act-latest
+        else
+          echo 'act is not installed. Install act and Docker, then run task ci:act.' >&2
+          exit 1
+        fi
