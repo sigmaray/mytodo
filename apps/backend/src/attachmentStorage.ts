@@ -107,3 +107,5 @@ export const createAttachmentStorage = (directory: string | null) => {
     read,
   });
 };
+
+export type AttachmentStorage = ReturnType<typeof createAttachmentStorage>;

@@ -5,18 +5,13 @@ import {
   Archive,
   CalendarDays,
   Code2,
-  Copy,
   Download,
-  Edit3,
-  GripVertical,
   Inbox,
   Menu,
-  MoreHorizontal,
   Paperclip,
   Plus,
   Settings,
   Tag,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -24,7 +19,7 @@ import type { ReactElement, UIEvent } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { ApplicationApi } from "../api";
-import { projectDepth, projectTreeOrder } from "../projectTree";
+import { projectTreeOrder } from "../projectTree";
 import {
   authStatusQueryKey,
   projectQueryKey,
@@ -34,6 +29,7 @@ import {
 } from "../queryKeys";
 import { flattenTaskNodes } from "../taskTreeUtils";
 import { SearchPalette } from "./SearchPalette";
+import { SidebarProjects } from "./SidebarProjects";
 import { useSidebarProjectManagement } from "./useSidebarProjectManagement";
 
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
@@ -126,40 +122,7 @@ export const AppSidebar = ({
   const allSections = sectionsQuery.data ?? Object.freeze([]);
   const closeSidebar = () => setMobileSidebarOpen(false);
 
-  const {
-    draggingProjectId,
-    activeProjectDrop,
-    addingProject,
-    newProjectParentId,
-    projectTitle,
-    editProjectId,
-    editProjectTitle,
-    openProjectMenuId,
-    openProjectMenuDirection,
-    setDraggingProjectId,
-    setActiveProjectDrop,
-    setAddingProject,
-    setNewProjectParentId,
-    setProjectTitle,
-    setEditProjectId,
-    setEditProjectTitle,
-    setOpenProjectMenuId,
-    setOpenProjectMenuDirection,
-    draggedProjectRef,
-    projectCreateInputRef,
-    goToProject,
-    beginProjectDrag,
-    moveProjectDrag,
-    finishProjectDrag,
-    cancelProjectDrag,
-    markProjectDrop,
-    dropProject,
-    createProject,
-    editProject,
-    duplicateProject,
-    archiveProject,
-    deleteProject,
-  } = useSidebarProjectManagement({
+  const projectManagement = useSidebarProjectManagement({
     api,
     activeProjects,
     selectedProjectId,
@@ -168,6 +131,8 @@ export const AppSidebar = ({
     onProjectSelect,
     closeSidebar,
   });
+
+  const { addingProject, projectCreateInputRef, openProjectMenuId, setOpenProjectMenuId } = projectManagement;
 
   useEffect(() => {
     if (addingProject) projectCreateInputRef.current?.focus();
@@ -330,237 +295,20 @@ export const AppSidebar = ({
               "archived-projects",
             )
           : null}
-        <div className="sidebar-group">
-          <h2>My Projects</h2>
-          {navigationProjects.map((project) =>
-            editProjectId === project.id ? (
-              <form
-                key={project.id}
-                className="project-edit-form"
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    setEditProjectId(null);
-                    setEditProjectTitle("");
-                  }
-                }}
-                onSubmit={(event) => void editProject(project, event)}
-              >
-                <label htmlFor={`project-edit-${project.id}`}>Project title</label>
-                <input
-                  id={`project-edit-${project.id}`}
-                  autoFocus
-                  value={editProjectTitle}
-                  onChange={(event) => setEditProjectTitle(event.target.value)}
-                />
-                <button type="submit">Save project</button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditProjectId(null);
-                    setEditProjectTitle("");
-                  }}
-                >
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <div
-                key={project.id}
-                data-project-id={project.id}
-                data-mobile-drop-project={project.id}
-                style={{ paddingInlineStart: `${Math.min(projectDepth(activeProjects, project), 8) * 18}px` }}
-                className={clsx(
-                  "project-nav-row",
-                  draggingProjectId === project.id && "project-dragging",
-                  activeProjectDrop?.id === project.id && `project-drop-${activeProjectDrop.position}`,
-                )}
-                draggable
-                onDragStart={(event) => {
-                  draggedProjectRef.current = project.id;
-                  setDraggingProjectId(project.id);
-                  setActiveProjectDrop(null);
-                  event.dataTransfer.setData("application/x-project-id", project.id);
-                  event.dataTransfer.effectAllowed = "move";
-                }}
-                onDragEnd={cancelProjectDrag}
-                onDragOver={markProjectDrop(project)}
-                onDragLeave={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget as Node | null))
-                    setActiveProjectDrop(null);
-                }}
-                onDrop={dropProject(project)}
-              >
-                <button
-                  type="button"
-                  className="mobile-project-drag-handle"
-                  aria-label={`Drag project ${project.title}`}
-                  onPointerDown={beginProjectDrag(project)}
-                  onPointerMove={moveProjectDrag}
-                  onPointerUp={finishProjectDrag}
-                  onPointerCancel={cancelProjectDrag}
-                >
-                  <GripVertical size={16} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  className={clsx(
-                    "nav-button",
-                    activePage === "tasks" && selectedProjectId === project.id && "active",
-                    isProjectDropActive?.(project.id) && "drop-active",
-                  )}
-                  title={project.title}
-                  onClick={() => goToProject(project.id)}
-                  onDragEnter={onProjectDragEnter?.(project.id)}
-                  onDragOver={onProjectDragOver?.(project.id)}
-                  onDragLeave={onProjectDragLeave?.(project.id)}
-                  onDrop={onProjectDrop?.(project.id)}
-                >
-                  {project.title}
-                </button>
-                <details
-                  className={clsx(
-                    "project-menu",
-                    openProjectMenuId === project.id && openProjectMenuDirection === "up" && "opens-up",
-                  )}
-                  open={openProjectMenuId === project.id}
-                >
-                  <summary
-                    aria-label={`Project menu ${project.title}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      if (openProjectMenuId !== project.id) {
-                        const trigger = event.currentTarget.getBoundingClientRect();
-                        const spaceBelow = window.innerHeight - trigger.bottom;
-                        const spaceAbove = trigger.top;
-                        const estimatedMenuHeight = projectArchivingEnabled ? 220 : 184;
-                        setOpenProjectMenuDirection(
-                          spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow ? "up" : "down",
-                        );
-                      }
-                      setOpenProjectMenuId((current) => (current === project.id ? null : project.id));
-                    }}
-                  >
-                    <MoreHorizontal size={17} aria-hidden="true" />
-                  </summary>
-                  <div className="project-menu-items">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpenProjectMenuId(null);
-                        setNewProjectParentId(project.id);
-                        setProjectTitle("");
-                        setAddingProject(true);
-                      }}
-                    >
-                      ＋ Add subproject
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpenProjectMenuId(null);
-                        setEditProjectId(project.id);
-                        setEditProjectTitle(project.title);
-                      }}
-                    >
-                      <Edit3 size={14} aria-hidden="true" /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpenProjectMenuId(null);
-                        void duplicateProject(project);
-                      }}
-                    >
-                      <Copy size={14} aria-hidden="true" /> Duplicate
-                    </button>
-                    {projectArchivingEnabled ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpenProjectMenuId(null);
-                          void archiveProject(project);
-                        }}
-                      >
-                        <Archive size={14} aria-hidden="true" /> Archive
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => {
-                        setOpenProjectMenuId(null);
-                        void deleteProject(project);
-                      }}
-                    >
-                      <Trash2 size={14} aria-hidden="true" /> Delete
-                    </button>
-                  </div>
-                </details>
-              </div>
-            ),
-          )}
-        </div>
-        {api !== null ? (
-          <div className="sidebar-create-block">
-            {addingProject ? (
-              <form
-                className="inline-create-form"
-                onSubmit={(event) => void createProject(event)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    setAddingProject(false);
-                    setProjectTitle("");
-                    setNewProjectParentId(null);
-                  }
-                }}
-              >
-                {newProjectParentId !== null ? (
-                  <p>
-                    Subproject of {activeProjects.find((project) => project.id === newProjectParentId)?.title}
-                  </p>
-                ) : null}
-                <label htmlFor="project-title">Title</label>
-                <input
-                  ref={projectCreateInputRef}
-                  id="project-title"
-                  aria-label="Project title"
-                  value={projectTitle}
-                  onChange={(event) => setProjectTitle(event.target.value)}
-                />
-                <div>
-                  <button type="submit" className="btn-primary">
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddingProject(false);
-                      setProjectTitle("");
-                      setNewProjectParentId(null);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <button
-                type="button"
-                className="add-project-trigger"
-                onClick={() => {
-                  setNewProjectParentId(null);
-                  setProjectTitle("");
-                  setAddingProject(true);
-                }}
-              >
-                <Plus size={16} aria-hidden="true" />
-                Add project
-              </button>
-            )}
-          </div>
-        ) : null}
+        <SidebarProjects
+          api={api}
+          navigationProjects={navigationProjects}
+          activeProjects={activeProjects}
+          selectedProjectId={selectedProjectId}
+          activePage={activePage}
+          projectArchivingEnabled={projectArchivingEnabled}
+          isProjectDropActive={isProjectDropActive}
+          onProjectDragEnter={onProjectDragEnter}
+          onProjectDragOver={onProjectDragOver}
+          onProjectDragLeave={onProjectDragLeave}
+          onProjectDrop={onProjectDrop}
+          management={projectManagement}
+        />
       </aside>
     </>
   );
