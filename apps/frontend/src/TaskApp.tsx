@@ -8,15 +8,14 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { FloatingFocusManager, FloatingOverlay, useFloating } from "@floating-ui/react";
+import { useFloating } from "@floating-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { Project, ProjectId, Section, SectionId, Task, TaskId, TaskNode } from "@todoist-clone/domain";
 import { computeDropPlacement, computeIndentPlacement, computeOutdentPlacement } from "@todoist-clone/domain";
-import clsx from "clsx";
-import { ClipboardCopy, Download, Edit3, Eye, ListChecks, MoveRight, Plus, Trash2, X } from "lucide-react";
+import { Download, Edit3, ListChecks, MoveRight, Plus, Trash2 } from "lucide-react";
 import type {
   DragEvent,
   FormEvent,
@@ -24,7 +23,7 @@ import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import "./vendor/bootstrap.min.css";
@@ -32,18 +31,18 @@ import type { ApplicationApi } from "./api";
 import { AddTaskDialog } from "./components/AddTaskDialog";
 import { AppSidebar } from "./components/AppSidebar";
 import { AttachmentLibrary } from "./components/AttachmentLibrary";
-import { CalendarPanel } from "./components/CalendarPanel";
 import { ExportPage } from "./components/ExportPage";
+import { TaskAppBoard } from "./components/TaskAppBoard";
+import { TaskAppFilteredPage } from "./components/TaskAppFilteredPage";
+import { TaskAppOverlays } from "./components/TaskAppOverlays";
 import { TaskDetailsDialog } from "./components/TaskDetailsDialog";
 import {
   AutoGrowTextarea,
   buildCalendarDays,
   calendarMonthLabel,
-  calendarWeekdays,
   normalizeLabels,
   shiftCalendarMonth,
 } from "./components/TaskFormFields";
-import { type ActiveDragTarget, renderTaskNodes } from "./components/TaskTreeView";
 import { toLocalIsoDate } from "./dateUtils";
 import { appendById, removeById, replaceById } from "./queryData";
 import {
@@ -72,6 +71,7 @@ import {
   taskPlacement,
 } from "./taskAppUtils";
 import { flattenTaskNodes } from "./taskTreeUtils";
+import { type DropZoneId, useTaskAppState } from "./useTaskAppState";
 
 const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
   const itemFiles = Array.from(clipboardData.items)
@@ -83,16 +83,6 @@ const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
 
 const notifyAttachedFiles = (files: ReadonlyArray<File>) =>
   files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
-
-type MobileDragItem = Readonly<{ id: string }>;
-
-type DropZoneId = "inbox" | `project:${ProjectId}` | `section:${SectionId}`;
-
-type TaskContextMenuState = Readonly<{
-  task: TaskNode;
-  left: number;
-  top: number;
-}>;
 
 type MoveInput = Readonly<{
   taskId: TaskId;
@@ -110,86 +100,145 @@ export const TaskApp = ({
 }: Readonly<{ api: ApplicationApi; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean }>) => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const [dateView, setDateView] = useState<"list" | "calendar">("list");
-  const [dateListFilter, setDateListFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [activeCalendarDate, setActiveCalendarDate] = useState<string | null>(null);
-  const calendarDraggedTaskRef = useRef<TaskId | null>(null);
-  const [addTaskOpen, setAddTaskOpen] = useState(false);
-  const [addTaskTitle, setAddTaskTitle] = useState("");
-  const [addTaskDescription, setAddTaskDescription] = useState("");
-  const [addTaskFiles, setAddTaskFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
-  const [addTaskDate, setAddTaskDate] = useState("");
-  const [addTaskDatePickerOpen, setAddTaskDatePickerOpen] = useState(false);
-  const [addTaskDateBeforePicker, setAddTaskDateBeforePicker] = useState("");
-  const [addTaskLabels, setAddTaskLabels] = useState<ReadonlyArray<string>>(Object.freeze([]));
-  const [addTaskLabelInput, setAddTaskLabelInput] = useState("");
-  const [showAddTaskDescription, setShowAddTaskDescription] = useState(false);
-  const [showAddTaskDate, setShowAddTaskDate] = useState(false);
-  const [showAddTaskLabels, setShowAddTaskLabels] = useState(false);
-  const [addTaskPlacement, setAddTaskPlacement] = useState(inboxPlacement);
-  const [addTaskBeforeId, setAddTaskBeforeId] = useState<string | null>(null);
-  const [sectionTitle, setSectionTitle] = useState("");
-  const [addingSection, setAddingSection] = useState(false);
-  const [editSectionId, setEditSectionId] = useState<SectionId | null>(null);
-  const [editSectionTitle, setEditSectionTitle] = useState("");
-  const [subtaskTitle, setSubtaskTitle] = useState("");
-  const [subtaskParentId, setSubtaskParentId] = useState<string | null>(null);
-  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
-  const [activeDragTarget, setActiveDragTarget] = useState<ActiveDragTarget | null>(null);
-  const [activeDropZone, setActiveDropZone] = useState<DropZoneId | null>(null);
-  const mobileDragRef = useRef<MobileDragItem | null>(null);
-  const [activeSectionDrop, setActiveSectionDrop] = useState<Readonly<{
-    id: SectionId;
-    position: "before" | "after";
-  }> | null>(null);
-  const [draggingSectionId, setDraggingSectionId] = useState<SectionId | null>(null);
-  const [targetProjectId, setTargetProjectId] = useState<ProjectId | null>(() =>
-    new URLSearchParams(window.location.search).get("project"),
-  );
-  const [editingProjectTitle, setEditingProjectTitle] = useState(false);
-  const [projectTitleDraft, setProjectTitleDraft] = useState("");
-  const [targetSectionId, setTargetSectionId] = useState<SectionId | null>(null);
-  const [editTaskId, setEditTaskId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editPlacement, setEditPlacement] = useState(inboxPlacement);
-  const [markdownModal, setMarkdownModal] = useState<Readonly<{
-    title: string;
-    markdown: string;
-    format?: "markdown" | "advanced-markdown" | "json";
-  }> | null>(null);
-  const [scopeExportOpen, setScopeExportOpen] = useState(false);
-  const [detailsTaskId, setDetailsTaskId] = useState<TaskId | null>(null);
-  const [taskContextMenu, setTaskContextMenu] = useState<TaskContextMenuState | null>(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedRootTaskIds, setSelectedRootTaskIds] = useState<ReadonlyArray<TaskId>>(Object.freeze([]));
-  const [selectedMoveOpen, setSelectedMoveOpen] = useState(false);
-  const [selectedMovePlacement, setSelectedMovePlacement] = useState(inboxPlacement);
-  const [detailTitle, setDetailTitle] = useState("");
-  const [detailDescription, setDetailDescription] = useState("");
-  const [detailDueDate, setDetailDueDate] = useState("");
-  const [detailLabelInput, setDetailLabelInput] = useState("");
-  const [detailSaveStatus, setDetailSaveStatus] = useState("");
-  const [detailProjectId, setDetailProjectId] = useState<ProjectId | null>(null);
-  const [detailSectionId, setDetailSectionId] = useState<SectionId | null>(null);
-  const [editingDetailField, setEditingDetailField] = useState<"title" | "description" | null>(null);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [showMobileLabels, setShowMobileLabels] = useState(false);
-  const [showMobileComments, setShowMobileComments] = useState(false);
-  const [showMobileDate, setShowMobileDate] = useState(false);
-  const [showMobileSubtasks, setShowMobileSubtasks] = useState(false);
-  const subtasksSectionRef = useRef<HTMLElement>(null);
-  const sectionCreateInputRef = useRef<HTMLInputElement>(null);
-  const [detailComment, setDetailComment] = useState("");
-  const [detailCommentFiles, setDetailCommentFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
-  const pastedCommentSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
-  const [detailSubtask, setDetailSubtask] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editingCommentBody, setEditingCommentBody] = useState("");
-  const [openProjectMenuId, setOpenProjectMenuId] = useState<ProjectId | null>(null);
-  const [editingScopeDescription, setEditingScopeDescription] = useState(false);
-  const [scopeDescriptionDraft, setScopeDescriptionDraft] = useState("");
-  const [copyStatus, setCopyStatus] = useState("");
+  const {
+    dateView,
+    setDateView,
+    dateListFilter,
+    setDateListFilter,
+    calendarMonth,
+    setCalendarMonth,
+    activeCalendarDate,
+    setActiveCalendarDate,
+    addTaskOpen,
+    setAddTaskOpen,
+    addTaskTitle,
+    setAddTaskTitle,
+    addTaskDescription,
+    setAddTaskDescription,
+    addTaskFiles,
+    setAddTaskFiles,
+    addTaskDate,
+    setAddTaskDate,
+    addTaskDatePickerOpen,
+    setAddTaskDatePickerOpen,
+    addTaskDateBeforePicker,
+    setAddTaskDateBeforePicker,
+    addTaskLabels,
+    setAddTaskLabels,
+    addTaskLabelInput,
+    setAddTaskLabelInput,
+    showAddTaskDescription,
+    setShowAddTaskDescription,
+    showAddTaskDate,
+    setShowAddTaskDate,
+    showAddTaskLabels,
+    setShowAddTaskLabels,
+    addTaskPlacement,
+    setAddTaskPlacement,
+    addTaskBeforeId,
+    setAddTaskBeforeId,
+    sectionTitle,
+    setSectionTitle,
+    addingSection,
+    setAddingSection,
+    editSectionId,
+    setEditSectionId,
+    editSectionTitle,
+    setEditSectionTitle,
+    subtaskTitle,
+    setSubtaskTitle,
+    subtaskParentId,
+    setSubtaskParentId,
+    draggingTaskId,
+    setDraggingTaskId,
+    activeDragTarget,
+    setActiveDragTarget,
+    activeDropZone,
+    setActiveDropZone,
+    activeSectionDrop,
+    setActiveSectionDrop,
+    draggingSectionId,
+    setDraggingSectionId,
+    targetProjectId,
+    setTargetProjectId,
+    editingProjectTitle,
+    setEditingProjectTitle,
+    projectTitleDraft,
+    setProjectTitleDraft,
+    targetSectionId,
+    setTargetSectionId,
+    editTaskId,
+    setEditTaskId,
+    editTitle,
+    setEditTitle,
+    editPlacement,
+    setEditPlacement,
+    markdownModal,
+    setMarkdownModal,
+    scopeExportOpen,
+    setScopeExportOpen,
+    detailsTaskId,
+    setDetailsTaskId,
+    taskContextMenu,
+    setTaskContextMenu,
+    selectionMode,
+    setSelectionMode,
+    selectedRootTaskIds,
+    setSelectedRootTaskIds,
+    selectedMoveOpen,
+    setSelectedMoveOpen,
+    selectedMovePlacement,
+    setSelectedMovePlacement,
+    detailTitle,
+    setDetailTitle,
+    detailDescription,
+    setDetailDescription,
+    detailDueDate,
+    setDetailDueDate,
+    detailLabelInput,
+    setDetailLabelInput,
+    detailSaveStatus,
+    setDetailSaveStatus,
+    detailProjectId,
+    setDetailProjectId,
+    detailSectionId,
+    setDetailSectionId,
+    editingDetailField,
+    setEditingDetailField,
+    datePickerOpen,
+    setDatePickerOpen,
+    showMobileLabels,
+    setShowMobileLabels,
+    showMobileComments,
+    setShowMobileComments,
+    showMobileDate,
+    setShowMobileDate,
+    showMobileSubtasks,
+    setShowMobileSubtasks,
+    detailComment,
+    setDetailComment,
+    detailCommentFiles,
+    setDetailCommentFiles,
+    detailSubtask,
+    setDetailSubtask,
+    editingCommentId,
+    setEditingCommentId,
+    editingCommentBody,
+    setEditingCommentBody,
+    openProjectMenuId,
+    setOpenProjectMenuId,
+    editingScopeDescription,
+    setEditingScopeDescription,
+    scopeDescriptionDraft,
+    setScopeDescriptionDraft,
+    copyStatus,
+    setCopyStatus,
+    calendarDraggedTaskRef,
+    mobileDragRef,
+    subtasksSectionRef,
+    sectionCreateInputRef,
+    pastedCommentSaveQueueRef,
+  } = useTaskAppState();
   const queryClient = useQueryClient();
   const markdownFloating = useFloating({ open: markdownModal !== null });
   const dndSensors = useSensors(
@@ -1659,116 +1708,50 @@ export const TaskApp = ({
               </div>
             ) : null}
           </header>
-
           {pageMode === "tasks" ? selectionToolbar : null}
-
           {tasks.isLoading ? <p className="muted">Loading tasks...</p> : null}
           {tasks.isError ? <p className="error">Unable to load tasks.</p> : null}
           {pageMode === "dates" || pageMode === "labels" ? (
-            <section className="drop-zone task-filter-page" aria-label={`${viewTitle} tasks`}>
-              {pageMode === "dates" ? (
-                <div className="date-view-switch" aria-label="Date view">
-                  <button
-                    type="button"
-                    aria-pressed={dateView === "list"}
-                    onClick={() => setDateView("list")}
-                  >
-                    List
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={dateView === "calendar"}
-                    onClick={() => setDateView("calendar")}
-                  >
-                    Calendar
-                  </button>
-                </div>
-              ) : null}
-              {pageMode === "dates" && dateView === "list" ? (
-                <nav className="date-list-filter" aria-label="Filter dated tasks">
-                  {(
-                    [
-                      { id: "all", label: "All" },
-                      { id: "overdue", label: "Overdue" },
-                      { id: "today", label: "Today" },
-                      { id: "upcoming", label: "Upcoming" },
-                    ] as const
-                  ).map((filter) => (
-                    <button
-                      type="button"
-                      key={filter.id}
-                      aria-pressed={dateListFilter === filter.id}
-                      onClick={() => setDateListFilter(filter.id)}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </nav>
-              ) : null}
-              {pageMode === "labels" ? (
-                <nav className="label-filter-list" aria-label="Filter by label">
-                  <Link className={!selectedLabel ? "active" : ""} to="/labels">
-                    All labels
-                  </Link>
-                  {Array.from(new Set(flatTasks.flatMap((task) => task.labels)))
-                    .sort()
-                    .map((label) => (
-                      <Link
-                        key={label}
-                        className={selectedLabel === label ? "active" : ""}
-                        to={`/labels?label=${encodeURIComponent(label)}`}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                </nav>
-              ) : null}
-              {pageMode === "dates" && dateView === "calendar" ? (
-                <CalendarPanel
-                  month={calendarMonth}
-                  label={calendarLabel}
-                  days={calendarDays}
-                  weekdays={calendarWeekdays}
-                  tasks={calendarTasks}
-                  taskCount={calendarTaskCount}
-                  activeDate={activeCalendarDate}
-                  locationForTask={calendarTaskLocation}
-                  onMonthChange={setCalendarMonth}
-                  onShiftMonth={(amount) => setCalendarMonth((month) => shiftCalendarMonth(month, amount))}
-                  onToday={() => setCalendarMonth(toLocalIsoDate(new Date()).slice(0, 7))}
-                  onMarkDate={markCalendarDate}
-                  onDropDate={dropTaskOnCalendarDate}
-                  onLeaveDate={() => setActiveCalendarDate(null)}
-                  onTaskDragStart={(task, event) => {
-                    calendarDraggedTaskRef.current = task.id;
-                    setDraggingTaskId(task.id);
-                    event.dataTransfer.setData("text/task-id", task.id);
-                    event.dataTransfer.effectAllowed = "move";
-                  }}
-                  onTaskDragEnd={() => {
-                    calendarDraggedTaskRef.current = null;
-                    setDraggingTaskId(null);
-                    setActiveCalendarDate(null);
-                  }}
-                  onTaskOpen={(task) => {
-                    const node = findTaskNode(allTasks, task.id);
-                    if (node) openDetails(node);
-                  }}
-                />
-              ) : viewTasks.length > 0 ? (
-                renderTaskNodes(viewTasks, taskActions)
-              ) : (
-                <p className="empty">
-                  {pageMode === "dates"
-                    ? dateListFilter === "all"
-                      ? "No dated tasks yet."
-                      : dateListFilter === "today"
-                        ? "No tasks due today."
-                        : `No ${dateListFilter} tasks.`
-                    : "No tasks with this label."}
-                </p>
-              )}
-            </section>
+            <TaskAppFilteredPage
+              mode={pageMode}
+              viewTitle={viewTitle}
+              dateView={dateView}
+              setDateView={setDateView}
+              dateListFilter={dateListFilter}
+              setDateListFilter={setDateListFilter}
+              selectedLabel={selectedLabel}
+              flatTasks={flatTasks}
+              calendarMonth={calendarMonth}
+              calendarLabel={calendarLabel}
+              calendarDays={calendarDays}
+              calendarTasks={calendarTasks}
+              calendarTaskCount={calendarTaskCount}
+              activeCalendarDate={activeCalendarDate}
+              calendarTaskLocation={calendarTaskLocation}
+              setCalendarMonth={setCalendarMonth}
+              shiftCalendarMonth={(amount) => setCalendarMonth((month) => shiftCalendarMonth(month, amount))}
+              onToday={() => setCalendarMonth(toLocalIsoDate(new Date()).slice(0, 7))}
+              onMarkDate={markCalendarDate}
+              onDropDate={dropTaskOnCalendarDate}
+              onLeaveDate={() => setActiveCalendarDate(null)}
+              onTaskDragStart={(task, event) => {
+                calendarDraggedTaskRef.current = task.id;
+                setDraggingTaskId(task.id);
+                event.dataTransfer.setData("text/task-id", task.id);
+                event.dataTransfer.effectAllowed = "move";
+              }}
+              onTaskDragEnd={() => {
+                calendarDraggedTaskRef.current = null;
+                setDraggingTaskId(null);
+                setActiveCalendarDate(null);
+              }}
+              onTaskOpen={(task) => {
+                const node = findTaskNode(allTasks, task.id);
+                if (node) openDetails(node);
+              }}
+              viewTasks={viewTasks}
+              taskActions={taskActions}
+            />
           ) : pageMode === "attachments" && attachmentsEnabled ? (
             <AttachmentLibrary
               attachments={taskAttachments}
@@ -1822,679 +1805,71 @@ export const TaskApp = ({
                 );
               }}
             />
-          ) : targetProjectId === null ? (
-            <div className="board">
-              {scopeDescriptionBlock}
-              <section
-                className={clsx("drop-zone", activeDropZone === "inbox" && "drop-active")}
-                onDragEnter={markDropZone(null, null)}
-                onDragOver={markDropZone(null, null)}
-                onDragLeave={() => setActiveDropZone(null)}
-                onDrop={moveDroppedTask(null, null)}
-                aria-label="Inbox tasks"
-              >
-                <div className="task-scope-heading">
-                  <h2>Inbox</h2>
-                  <button
-                    type="button"
-                    className="scope-add-task-button"
-                    aria-label="Add task to Inbox"
-                    onClick={() => openAddTaskDialog(inboxPlacement, inboxRootTasks[0]?.id ?? null)}
-                  >
-                    <Plus size={16} aria-hidden="true" />
-                    Add task
-                  </button>
-                </div>
-                {inboxRootTasks.length > 0 ? (
-                  <>
-                    {renderTaskNodes(inboxRootTasks, taskActions)}
-                    <button
-                      type="button"
-                      className="scope-add-task-button"
-                      aria-label="Add task to bottom of Inbox"
-                      onClick={() => openAddTaskDialog(inboxPlacement)}
-                    >
-                      <Plus size={14} aria-hidden="true" />
-                      Add task
-                    </button>
-                  </>
-                ) : (
-                  <p className="empty">No inbox tasks yet.</p>
-                )}
-              </section>
-              <div className="section-create-block">
-                {addingSection ? (
-                  <form
-                    className="inline-create-form"
-                    onSubmit={submitSection}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        cancelSectionCreate();
-                      }
-                    }}
-                  >
-                    <label htmlFor="section-title">Title</label>
-                    <input
-                      ref={sectionCreateInputRef}
-                      id="section-title"
-                      aria-label="Section title"
-                      value={sectionTitle}
-                      onChange={(event) => setSectionTitle(event.target.value)}
-                    />
-                    <div>
-                      <button type="submit" className="btn-primary">
-                        Save
-                      </button>
-                      <button type="button" onClick={cancelSectionCreate}>
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <button
-                    type="button"
-                    className="add-section-trigger"
-                    onClick={() => {
-                      setSectionTitle("");
-                      setAddingSection(true);
-                    }}
-                  >
-                    <Plus size={16} aria-hidden="true" />
-                    Add section
-                  </button>
-                )}
-              </div>
-              {inboxSections.map((section) => {
-                const sectionTasks = allTasks.filter(
-                  (task) => task.projectId === null && task.sectionId === section.id,
-                );
-
-                return (
-                  <section
-                    key={section.id}
-                    data-mobile-drop-section={section.id}
-                    className={clsx(
-                      "drop-zone",
-                      activeDropZone === sectionPlacement(section.id) && "drop-active",
-                    )}
-                    onDragEnter={markDropZone(null, section.id)}
-                    onDragOver={markDropZone(null, section.id)}
-                    onDragLeave={() => setActiveDropZone(null)}
-                    onDrop={moveDroppedTask(null, section.id)}
-                    aria-label={`Section ${section.title}`}
-                  >
-                    <div
-                      className={clsx(
-                        "section-header",
-                        draggingSectionId === section.id && "section-dragging",
-                        activeSectionDrop?.id === section.id && `section-drop-${activeSectionDrop.position}`,
-                      )}
-                      draggable={editSectionId !== section.id}
-                      onDragStart={startSectionDrag(section)}
-                      onDragEnd={() => {
-                        setDraggingSectionId(null);
-                        setActiveSectionDrop(null);
-                      }}
-                      onDragEnter={markSectionDrop(section)}
-                      onDragOver={markSectionDrop(section)}
-                      onDragLeave={(event) => {
-                        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
-                          setActiveSectionDrop(null);
-                      }}
-                      onDrop={dropSection(section, inboxSections)}
-                    >
-                      {editSectionId === section.id ? (
-                        <form
-                          className="section-edit-form"
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape") {
-                              event.preventDefault();
-                              setEditSectionId(null);
-                              setEditSectionTitle("");
-                            }
-                          }}
-                          onSubmit={submitSectionEdit(section)}
-                        >
-                          <label htmlFor={`section-edit-${section.id}`}>Section title</label>
-                          <input
-                            id={`section-edit-${section.id}`}
-                            autoFocus
-                            value={editSectionTitle}
-                            onChange={(event) => setEditSectionTitle(event.target.value)}
-                          />
-                          <button type="submit">Save section</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditSectionId(null);
-                              setEditSectionTitle("");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </form>
-                      ) : (
-                        <>
-                          <h2>{section.title}</h2>
-                          <div className="section-actions">
-                            <button
-                              type="button"
-                              aria-label={`Edit section ${section.title}`}
-                              onClick={() => startSectionEdit(section)}
-                            >
-                              <Edit3 size={14} aria-hidden="true" />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="danger"
-                              aria-label={`Delete section ${section.title}`}
-                              onClick={() => requestSectionDelete(section)}
-                            >
-                              <Trash2 size={14} aria-hidden="true" />
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    {editSectionId !== section.id ? (
-                      <button
-                        type="button"
-                        className="scope-add-task-button"
-                        aria-label={`Add task to section ${section.title}`}
-                        onClick={() =>
-                          openAddTaskDialog(sectionPlacement(section.id), sectionTasks[0]?.id ?? null)
-                        }
-                      >
-                        <Plus size={16} aria-hidden="true" />
-                        Add task
-                      </button>
-                    ) : null}
-                    {sectionTasks.length > 0 ? (
-                      <>
-                        {renderTaskNodes(sectionTasks, taskActions)}
-                        <button
-                          type="button"
-                          className="scope-add-task-button"
-                          aria-label={`Add task to bottom of section ${section.title}`}
-                          onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
-                        >
-                          <Plus size={14} aria-hidden="true" />
-                          Add task
-                        </button>
-                      </>
-                    ) : (
-                      <p className="empty">Drop inbox tasks here.</p>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
           ) : (
-            <div className="board">
-              {scopeDescriptionBlock}
-              <section
-                className={clsx(
-                  "drop-zone",
-                  activeDropZone === projectPlacement(targetProjectId) && "drop-active",
-                )}
-                onDragEnter={markDropZone(targetProjectId, null)}
-                onDragOver={markDropZone(targetProjectId, null)}
-                onDragLeave={() => setActiveDropZone(null)}
-                onDrop={moveDroppedTask(targetProjectId, null)}
-                aria-label={`${taskTargetLabel} tasks`}
-              >
-                <div className="task-scope-heading project-task-scope-heading">
-                  <button
-                    type="button"
-                    className="scope-add-task-button"
-                    aria-label={`Add task to ${taskTargetLabel}`}
-                    onClick={() =>
-                      openAddTaskDialog(projectPlacement(targetProjectId), projectRootTasks[0]?.id ?? null)
-                    }
-                  >
-                    <Plus size={16} aria-hidden="true" />
-                    Add task
-                  </button>
-                </div>
-                {projectRootTasks.length > 0 ? (
-                  <>
-                    {renderTaskNodes(projectRootTasks, taskActions)}
-                    <button
-                      type="button"
-                      className="scope-add-task-button"
-                      aria-label={`Add task to bottom of ${taskTargetLabel}`}
-                      onClick={() => openAddTaskDialog(projectPlacement(targetProjectId))}
-                    >
-                      <Plus size={14} aria-hidden="true" />
-                      Add task
-                    </button>
-                  </>
-                ) : (
-                  <p className="empty">No project tasks yet.</p>
-                )}
-              </section>
-              <div className="section-create-block">
-                {addingSection ? (
-                  <form
-                    className="inline-create-form"
-                    onSubmit={submitSection}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        cancelSectionCreate();
-                      }
-                    }}
-                  >
-                    <label htmlFor="section-title">Title</label>
-                    <input
-                      ref={sectionCreateInputRef}
-                      id="section-title"
-                      aria-label="Section title"
-                      value={sectionTitle}
-                      onChange={(event) => setSectionTitle(event.target.value)}
-                    />
-                    <div>
-                      <button type="submit" className="btn-primary">
-                        Save
-                      </button>
-                      <button type="button" onClick={cancelSectionCreate}>
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <button
-                    type="button"
-                    className="add-section-trigger"
-                    onClick={() => {
-                      setSectionTitle("");
-                      setAddingSection(true);
-                    }}
-                  >
-                    <Plus size={16} aria-hidden="true" />
-                    Add section
-                  </button>
-                )}
-              </div>
-              {projectSections.map((section) => {
-                const sectionTasks = allTasks.filter(
-                  (task) => task.projectId === targetProjectId && task.sectionId === section.id,
-                );
-                return (
-                  <section
-                    key={section.id}
-                    className={clsx(
-                      "drop-zone",
-                      activeDropZone === sectionPlacement(section.id) && "drop-active",
-                    )}
-                    onDragEnter={markDropZone(targetProjectId, section.id)}
-                    onDragOver={markDropZone(targetProjectId, section.id)}
-                    onDragLeave={() => setActiveDropZone(null)}
-                    onDrop={moveDroppedTask(targetProjectId, section.id)}
-                    aria-label={`Section ${section.title}`}
-                  >
-                    <div
-                      className={clsx(
-                        "section-header",
-                        draggingSectionId === section.id && "section-dragging",
-                        activeSectionDrop?.id === section.id && `section-drop-${activeSectionDrop.position}`,
-                      )}
-                      draggable={editSectionId !== section.id}
-                      onDragStart={startSectionDrag(section)}
-                      onDragEnd={() => {
-                        setDraggingSectionId(null);
-                        setActiveSectionDrop(null);
-                      }}
-                      onDragEnter={markSectionDrop(section)}
-                      onDragOver={markSectionDrop(section)}
-                      onDragLeave={(event) => {
-                        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
-                          setActiveSectionDrop(null);
-                      }}
-                      onDrop={dropSection(section, projectSections)}
-                    >
-                      {editSectionId === section.id ? (
-                        <form
-                          className="section-edit-form"
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape") {
-                              event.preventDefault();
-                              setEditSectionId(null);
-                              setEditSectionTitle("");
-                            }
-                          }}
-                          onSubmit={submitSectionEdit(section)}
-                        >
-                          <label htmlFor={`section-edit-${section.id}`}>Section title</label>
-                          <input
-                            id={`section-edit-${section.id}`}
-                            autoFocus
-                            value={editSectionTitle}
-                            onChange={(event) => setEditSectionTitle(event.target.value)}
-                          />
-                          <button type="submit">Save section</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditSectionId(null);
-                              setEditSectionTitle("");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </form>
-                      ) : (
-                        <>
-                          <h2>{section.title}</h2>
-                          <div className="section-actions">
-                            <button
-                              type="button"
-                              aria-label={`Edit section ${section.title}`}
-                              onClick={() => startSectionEdit(section)}
-                            >
-                              <Edit3 size={14} aria-hidden="true" />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="danger"
-                              aria-label={`Delete section ${section.title}`}
-                              onClick={() => requestSectionDelete(section)}
-                            >
-                              <Trash2 size={14} aria-hidden="true" />
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    {editSectionId !== section.id ? (
-                      <button
-                        type="button"
-                        className="scope-add-task-button"
-                        aria-label={`Add task to section ${section.title}`}
-                        onClick={() =>
-                          openAddTaskDialog(sectionPlacement(section.id), sectionTasks[0]?.id ?? null)
-                        }
-                      >
-                        <Plus size={16} aria-hidden="true" />
-                        Add task
-                      </button>
-                    ) : null}
-                    {sectionTasks.length > 0 ? (
-                      <>
-                        {renderTaskNodes(sectionTasks, taskActions)}
-                        <button
-                          type="button"
-                          className="scope-add-task-button"
-                          aria-label={`Add task to bottom of section ${section.title}`}
-                          onClick={() => openAddTaskDialog(sectionPlacement(section.id))}
-                        >
-                          <Plus size={14} aria-hidden="true" />
-                          Add task
-                        </button>
-                      </>
-                    ) : (
-                      <p className="empty">Drop project tasks here.</p>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
-          )}
+            <TaskAppBoard
+              targetProjectId={targetProjectId}
+              scopeDescriptionBlock={scopeDescriptionBlock}
+              activeDropZone={activeDropZone}
+              clearDropZone={() => setActiveDropZone(null)}
+              markDropZone={markDropZone}
+              moveDroppedTask={moveDroppedTask}
+              inboxRootTasks={inboxRootTasks}
+              projectRootTasks={projectRootTasks}
+              openAddTaskDialog={openAddTaskDialog}
+              addingSection={addingSection}
+              setAddingSection={setAddingSection}
+              submitSection={submitSection}
+              cancelSectionCreate={cancelSectionCreate}
+              sectionTitle={sectionTitle}
+              setSectionTitle={setSectionTitle}
+              sectionCreateInputRef={sectionCreateInputRef}
+              inboxSections={inboxSections}
+              projectSections={projectSections}
+              allTasks={allTasks}
+              draggingSectionId={draggingSectionId}
+              setDraggingSectionId={setDraggingSectionId}
+              activeSectionDrop={activeSectionDrop}
+              setActiveSectionDrop={setActiveSectionDrop}
+              editSectionId={editSectionId}
+              setEditSectionId={setEditSectionId}
+              editSectionTitle={editSectionTitle}
+              setEditSectionTitle={setEditSectionTitle}
+              startSectionDrag={startSectionDrag}
+              markSectionDrop={markSectionDrop}
+              dropSection={dropSection}
+              submitSectionEdit={submitSectionEdit}
+              requestSectionDelete={requestSectionDelete}
+              startSectionEdit={startSectionEdit}
+              taskActions={taskActions}
+              taskTargetLabel={taskTargetLabel}
+            />
+          )}{" "}
           {pageMode === "tasks" ? selectionToolbar : null}
         </section>
-        {selectedMoveOpen ? (
-          <div
-            className="selection-move-backdrop"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setSelectedMoveOpen(false);
-            }}
-          >
-            <section
-              className="selection-move-dialog"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Move selected tasks"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") setSelectedMoveOpen(false);
-              }}
-            >
-              <h2>
-                Move {selectedRootTasks.length} selected {selectedRootTasks.length === 1 ? "task" : "tasks"}
-              </h2>
-              <label htmlFor="selected-task-placement">Project, section, or Inbox</label>
-              <select
-                id="selected-task-placement"
-                aria-label="Move selected tasks to"
-                value={selectedMovePlacement}
-                onChange={(event) => setSelectedMovePlacement(event.target.value)}
-              >
-                {createPlacementOptions(
-                  activeProjects,
-                  allSections.filter(
-                    (section) =>
-                      section.projectId === null ||
-                      activeProjects.some((project) => project.id === section.projectId),
-                  ),
-                ).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div>
-                <button type="button" onClick={() => setSelectedMoveOpen(false)}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={selectedMoveMutation.isPending}
-                  onClick={moveSelectedTasks}
-                >
-                  Move selected tasks
-                </button>
-              </div>
-            </section>
-          </div>
-        ) : null}
-        {markdownModal !== null ? (
-          <FloatingOverlay
-            className={clsx("markdown-modal-backdrop", scopeExportOpen && "scope-preview-backdrop")}
-            lockScroll
-          >
-            <FloatingFocusManager context={markdownFloating.context}>
-              <section
-                ref={markdownFloating.refs.setFloating}
-                className="markdown-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label={
-                  markdownModal.format === "json"
-                    ? "JSON preview"
-                    : markdownModal.format === "advanced-markdown"
-                      ? "Advanced markdown preview"
-                      : "Markdown preview"
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setMarkdownModal(null);
-                  }
-                }}
-              >
-                <header className="markdown-modal-header">
-                  <h2>
-                    {markdownModal.title}{" "}
-                    {markdownModal.format === "advanced-markdown"
-                      ? "advanced markdown"
-                      : (markdownModal.format ?? "markdown")}
-                  </h2>
-                  <button type="button" onClick={() => setMarkdownModal(null)}>
-                    <X size={16} aria-hidden="true" />
-                    Close
-                  </button>
-                </header>
-                <pre>{markdownModal.markdown}</pre>
-              </section>
-            </FloatingFocusManager>
-          </FloatingOverlay>
-        ) : null}
-        {scopeExportOpen ? (
-          <div
-            className="export-options-backdrop"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setScopeExportOpen(false);
-            }}
-          >
-            <section
-              className="export-options-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Export options"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  setScopeExportOpen(false);
-                }
-              }}
-            >
-              <header>
-                <div>
-                  <p className="eyebrow">Export</p>
-                  <h2>{targetProjectId === null ? "Inbox" : (scopeProject?.title ?? taskTargetLabel)}</h2>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Close export options"
-                  onClick={() => setScopeExportOpen(false)}
-                >
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </header>
-              <div className="export-options-formats">
-                <section className="card export-format-card" aria-labelledby="scope-markdown-export-title">
-                  <div>
-                    <h3 id="scope-markdown-export-title">Markdown</h3>
-                    <p>
-                      Readable task list for{" "}
-                      {targetProjectId === null ? "Inbox" : (scopeProject?.title ?? taskTargetLabel)}.
-                    </p>
-                  </div>
-                  <div className="export-format-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMarkdownModal(
-                          Object.freeze({
-                            title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                            markdown,
-                            format: "markdown",
-                          }),
-                        )
-                      }
-                    >
-                      <Eye size={16} aria-hidden="true" />
-                      Preview markdown
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await copyText(markdown);
-                        setCopyStatus("Markdown copied");
-                      }}
-                    >
-                      <ClipboardCopy size={16} aria-hidden="true" />
-                      Copy markdown
-                    </button>
-                  </div>
-                </section>
-                <section
-                  className="card export-format-card"
-                  aria-labelledby="scope-advanced-markdown-export-title"
-                >
-                  <div>
-                    <h3 id="scope-advanced-markdown-export-title">Advanced markdown</h3>
-                    <p>Includes descriptions, due dates, labels, and comments.</p>
-                  </div>
-                  <div className="export-format-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMarkdownModal(
-                          Object.freeze({
-                            title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                            markdown: advancedMarkdown,
-                            format: "advanced-markdown",
-                          }),
-                        )
-                      }
-                    >
-                      <Eye size={16} aria-hidden="true" />
-                      Preview advanced markdown
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await copyText(advancedMarkdown);
-                        setCopyStatus("Advanced markdown copied");
-                      }}
-                    >
-                      <ClipboardCopy size={16} aria-hidden="true" />
-                      Copy advanced markdown
-                    </button>
-                  </div>
-                </section>
-                <section className="card export-format-card" aria-labelledby="scope-json-export-title">
-                  <div>
-                    <h3 id="scope-json-export-title">JSON</h3>
-                    <p>
-                      Complete structured data with tasks, sections, dates, descriptions, labels, and
-                      comments.
-                    </p>
-                  </div>
-                  <div className="export-format-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMarkdownModal(
-                          Object.freeze({
-                            title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                            markdown: scopeJson,
-                            format: "json",
-                          }),
-                        )
-                      }
-                    >
-                      <Eye size={16} aria-hidden="true" />
-                      Preview JSON
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await copyText(scopeJson);
-                        setCopyStatus("JSON copied");
-                      }}
-                    >
-                      <ClipboardCopy size={16} aria-hidden="true" />
-                      Copy JSON
-                    </button>
-                  </div>
-                </section>
-              </div>
-              {copyStatus.length > 0 ? (
-                <p className="export-copy-status" role="status">
-                  {copyStatus}
-                </p>
-              ) : null}
-            </section>
-          </div>
-        ) : null}
+        <TaskAppOverlays
+          selectedMoveOpen={selectedMoveOpen}
+          setSelectedMoveOpen={setSelectedMoveOpen}
+          selectedRootTasks={selectedRootTasks}
+          selectedMovePlacement={selectedMovePlacement}
+          setSelectedMovePlacement={setSelectedMovePlacement}
+          activeProjects={activeProjects}
+          allSections={allSections}
+          selectedMovePending={selectedMoveMutation.isPending}
+          moveSelectedTasks={moveSelectedTasks}
+          markdownModal={markdownModal}
+          setMarkdownModal={setMarkdownModal}
+          markdownFloating={markdownFloating}
+          scopeExportOpen={scopeExportOpen}
+          setScopeExportOpen={setScopeExportOpen}
+          targetProjectId={targetProjectId}
+          scopeProject={scopeProject}
+          taskTargetLabel={taskTargetLabel}
+          markdown={markdown}
+          advancedMarkdown={advancedMarkdown}
+          scopeJson={scopeJson}
+          copyStatus={copyStatus}
+          setCopyStatus={setCopyStatus}
+        />
         <AddTaskDialog
           draft={{
             open: addTaskOpen,
