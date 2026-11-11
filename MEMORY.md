@@ -1,5 +1,15 @@
 # Project Memory
 
+## 2026-11-11 — Разделить диалог задачи и тесты drag-and-drop
+
+- Боковая панель Task details вынесена в `TaskDetailsSidebar.tsx`; `TaskDetailsDialog.tsx` уменьшен с 667 до 466 строк. Проверки перемещения/перетаскивания вынесены в `TaskAppDragAndDrop.test.tsx`, `TaskAppExports.test.tsx` уменьшен с 535 до 364 строк. `App.css` не менялся. Дальнейшее разбиение `TaskApp.tsx` остаётся задачей: он всё ещё занимает 2695 строк; `memoryTaskRepository.ts` — 477 строк.
+- Проверки: `pnpm lint`, `pnpm format:check`, `pnpm test` (113 тестов), `pnpm test:e2e` (39 сценариев), `pnpm build` и `git diff --check` прошли.
+
+## 2026-11-11 — Разделить backend и sidebar на модули
+
+- Hono `app.ts` разделён на регистрацию auth/settings, attachment и Playwright-маршрутов, схемы/типы вынесены отдельно. Реализация memory task repository перемещена из `repository.ts` в `memoryTaskRepository.ts`. Управление проектами и их sidebar-интерфейс вынесены из `AppSidebar.tsx` в `SidebarProjects.tsx`. `App.css` не менялся.
+- Проверки: `pnpm lint`, `pnpm format:check`, `pnpm test` (113 тестов), `pnpm test:e2e` (39 сценариев), `pnpm build` и `git diff --check` прошли. `TaskApp.tsx` остаётся самым крупным source-файлом (2695 строк) и требует дальнейшего разбиения.
+
 ## 2026-11-11 — Разделить крупные frontend-модули
 
 - Из `TaskApp.tsx` вынесены календарная панель, библиотека вложений и экран экспорта в отдельные компоненты с явными props. Общие тестовые фикстуры перенесены в `AppTestSupport.tsx`, проверки `TaskApp` — в четыре тематических файла; `App.test.tsx` теперь содержит тесты прочих страниц и API. По просьбе пользователя `App.css` восстановлен как исходный единый файл.
