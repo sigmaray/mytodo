@@ -4,7 +4,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { createTaskApi, createToolsApi } from "./api";
 import { AppSidebar } from "./components/AppSidebar";
 import { authStatusQueryKey } from "./queryKeys";
-import { TaskApp } from "./TaskApp";
 
 const ToolsPage = lazy(() => import("./pages/ToolsPage").then((page) => ({ default: page.ToolsPage })));
 const SettingsPage = lazy(() =>
@@ -17,6 +16,16 @@ const ArchivedProjectsPage = lazy(() =>
   import("./pages/ArchivedProjectsPage").then((page) => ({ default: page.ArchivedProjectsPage })),
 );
 const LoginPage = lazy(() => import("./pages/LoginPage").then((page) => ({ default: page.LoginPage })));
+const InboxPage = lazy(() => import("./pages/InboxPage").then((page) => ({ default: page.InboxPage })));
+const DatesPage = lazy(() => import("./pages/DatesPage").then((page) => ({ default: page.DatesPage })));
+const LabelsPage = lazy(() => import("./pages/LabelsPage").then((page) => ({ default: page.LabelsPage })));
+const AttachmentsPage = lazy(() =>
+  import("./pages/AttachmentsPage").then((page) => ({ default: page.AttachmentsPage })),
+);
+const ExportPage = lazy(() => import("./pages/ExportPage").then((page) => ({ default: page.ExportPage })));
+const TaskWorkspacePage = lazy(() =>
+  import("./pages/TaskWorkspacePage").then((page) => ({ default: page.TaskWorkspacePage })),
+);
 
 export const AppRouter = () => {
   const api = createTaskApi();
@@ -38,46 +47,43 @@ export const AppRouter = () => {
   if (path.startsWith("/attachments") && authStatus.data.attachmentsEnabled !== true)
     return <Navigate to="/" replace />;
 
-  if (path.startsWith("/admin/users")) {
-    if (authStatus.data.user?.isAdmin !== true) return <Navigate to="/" replace />;
-    return (
-      <Suspense fallback={<main className="auth-loading">Loading…</main>}>
-        <AdminUsersPage api={api} sidebar={<AppSidebar api={api} />} />
-      </Suspense>
-    );
-  }
+  if (
+    (path.startsWith("/admin/users") || path.startsWith("/tools")) &&
+    authStatus.data.user?.isAdmin !== true
+  )
+    return <Navigate to="/" replace />;
+  if (path.startsWith("/archived-projects") && authStatus.data.projectArchivingEnabled !== true)
+    return <Navigate to="/" replace />;
 
-  if (path.startsWith("/settings")) {
-    return (
-      <Suspense fallback={<main className="auth-loading">Loading…</main>}>
-        <SettingsPage api={api} sidebar={<AppSidebar api={api} />} />
-      </Suspense>
-    );
-  }
-
-  if (path.startsWith("/archived-projects"))
-    return authStatus.data.projectArchivingEnabled === true ? (
-      <Suspense fallback={<main className="auth-loading">Loading…</main>}>
-        <ArchivedProjectsPage api={api} sidebar={<AppSidebar api={api} />} />
-      </Suspense>
-    ) : (
-      <Navigate to="/" replace />
-    );
-
-  if (path.startsWith("/tools")) {
-    if (authStatus.data.user?.isAdmin !== true) return <Navigate to="/" replace />;
-    return (
-      <Suspense fallback={<main className="auth-loading">Loading…</main>}>
-        <ToolsPage api={createToolsApi()} sidebar={<AppSidebar api={api} />} />
-      </Suspense>
-    );
-  }
+  const workspaceProps = {
+    api,
+    attachmentsEnabled: authStatus.data.attachmentsEnabled === true,
+    projectArchivingEnabled: authStatus.data.projectArchivingEnabled === true,
+  };
 
   return (
-    <TaskApp
-      api={api}
-      attachmentsEnabled={authStatus.data.attachmentsEnabled === true}
-      projectArchivingEnabled={authStatus.data.projectArchivingEnabled === true}
-    />
+    <Suspense fallback={<main className="auth-loading">Loading…</main>}>
+      {path.startsWith("/admin/users") ? (
+        <AdminUsersPage api={api} sidebar={<AppSidebar api={api} />} />
+      ) : path.startsWith("/settings") ? (
+        <SettingsPage api={api} sidebar={<AppSidebar api={api} />} />
+      ) : path.startsWith("/archived-projects") ? (
+        <ArchivedProjectsPage api={api} sidebar={<AppSidebar api={api} />} />
+      ) : path.startsWith("/tools") ? (
+        <ToolsPage api={createToolsApi()} sidebar={<AppSidebar api={api} />} />
+      ) : path === "/dates" ? (
+        <DatesPage {...workspaceProps} />
+      ) : path === "/labels" ? (
+        <LabelsPage {...workspaceProps} />
+      ) : path === "/attachments" ? (
+        <AttachmentsPage {...workspaceProps} />
+      ) : path === "/export" ? (
+        <ExportPage {...workspaceProps} />
+      ) : path === "/" ? (
+        <InboxPage {...workspaceProps} />
+      ) : (
+        <TaskWorkspacePage {...workspaceProps} pagePath={path} />
+      )}
+    </Suspense>
   );
 };

@@ -23,7 +23,7 @@ test("month calendar stays readable on mobile and moves tasks between days", asy
     expect(datedResponse.ok()).toBe(true);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dates");
-    await page.getByRole("button", { name: "Calendar" }).click();
+    await page.getByRole("button", { name: "Calendar", exact: true }).click();
 
     await expect(page.getByRole("columnheader")).toHaveText([
       "Mon",
