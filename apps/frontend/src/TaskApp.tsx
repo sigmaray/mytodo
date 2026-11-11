@@ -18,15 +18,12 @@ import { computeDropPlacement, computeIndentPlacement, computeOutdentPlacement }
 import clsx from "clsx";
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   ClipboardCopy,
   Download,
   Edit3,
   Eye,
   ListChecks,
   MoveRight,
-  Paperclip,
   Plus,
   Trash2,
   X,
@@ -45,8 +42,10 @@ import "./vendor/bootstrap.min.css";
 import type { ApplicationApi } from "./api";
 import { AddTaskDialog } from "./components/AddTaskDialog";
 import { AppSidebar } from "./components/AppSidebar";
-import { formatAttachmentSize } from "./components/CommentAttachment";
 import { TaskCommentsPanel } from "./components/TaskCommentsPanel";
+import { CalendarPanel } from "./components/CalendarPanel";
+import { AttachmentLibrary } from "./components/AttachmentLibrary";
+import { ExportPage } from "./components/ExportPage";
 import {
   AutoGrowTextarea,
   buildCalendarDays,
@@ -1738,133 +1737,37 @@ export const TaskApp = ({
                 </nav>
               ) : null}
               {pageMode === "dates" && dateView === "calendar" ? (
-                <section className="calendar-panel" aria-labelledby="calendar-month-heading">
-                  <header className="calendar-month-control">
-                    <div className="calendar-month-navigation">
-                      <button
-                        type="button"
-                        aria-label="Previous month"
-                        onClick={() => setCalendarMonth((month) => shiftCalendarMonth(month, -1))}
-                      >
-                        <ChevronLeft size={18} aria-hidden="true" />
-                      </button>
-                      <h2 id="calendar-month-heading">{calendarLabel}</h2>
-                      <button
-                        type="button"
-                        aria-label="Next month"
-                        onClick={() => setCalendarMonth((month) => shiftCalendarMonth(month, 1))}
-                      >
-                        <ChevronRight size={18} aria-hidden="true" />
-                      </button>
-                    </div>
-                    <p className="calendar-month-summary">
-                      {calendarTaskCount} {calendarTaskCount === 1 ? "task" : "tasks"}
-                    </p>
-                    <div className="calendar-month-actions">
-                      <button
-                        type="button"
-                        className="calendar-today-button"
-                        onClick={() => setCalendarMonth(toLocalIsoDate(new Date()).slice(0, 7))}
-                      >
-                        Today
-                      </button>
-                      <label className="calendar-month-picker">
-                        <span>Choose month</span>
-                        <input
-                          aria-label="Calendar month"
-                          type="month"
-                          value={calendarMonth}
-                          onChange={(event) => {
-                            if (event.target.value) setCalendarMonth(event.target.value);
-                          }}
-                        />
-                      </label>
-                    </div>
-                  </header>
-                  <div className="dates-calendar-scroll">
-                    <div className="dates-calendar-frame">
-                      <div className="dates-calendar-weekdays" role="row">
-                        {calendarWeekdays.map((weekday, index) => (
-                          <div
-                            key={weekday}
-                            role="columnheader"
-                            className={index > 4 ? "weekend" : undefined}
-                          >
-                            {weekday}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="dates-calendar" role="grid" aria-label="Calendar view">
-                        {calendarDays.map((day) => {
-                          const matching = calendarTasks.filter((task) => task.dueDate === day.date);
-                          return (
-                            <section
-                              key={day.date}
-                              role="gridcell"
-                              className={clsx(
-                                "dates-calendar-day",
-                                !day.isCurrentMonth && "outside-month",
-                                day.isWeekend && "weekend",
-                                day.isToday && "today",
-                                activeCalendarDate === day.date && "calendar-drop-active",
-                              )}
-                              aria-label={`Tasks for ${day.date}`}
-                              onDragOver={markCalendarDate(day.date)}
-                              onDragLeave={(event) => {
-                                if (!event.currentTarget.contains(event.relatedTarget as Node | null))
-                                  setActiveCalendarDate(null);
-                              }}
-                              onDrop={dropTaskOnCalendarDate(day.date)}
-                            >
-                              <header className="calendar-day-header">
-                                <time dateTime={day.date} aria-current={day.isToday ? "date" : undefined}>
-                                  {day.day}
-                                </time>
-                                {matching.length > 0 ? (
-                                  <span
-                                    aria-label={`${matching.length} ${matching.length === 1 ? "task" : "tasks"}`}
-                                  >
-                                    {matching.length}
-                                  </span>
-                                ) : null}
-                              </header>
-                              <div className="calendar-day-tasks">
-                                {matching.map((task) => (
-                                  <button
-                                    type="button"
-                                    className="calendar-task-card"
-                                    aria-label={task.title}
-                                    title={`${task.title} · ${calendarTaskLocation(task)}`}
-                                    key={task.id}
-                                    draggable
-                                    onDragStart={(event) => {
-                                      calendarDraggedTaskRef.current = task.id;
-                                      setDraggingTaskId(task.id);
-                                      event.dataTransfer.setData("text/task-id", task.id);
-                                      event.dataTransfer.effectAllowed = "move";
-                                    }}
-                                    onDragEnd={() => {
-                                      calendarDraggedTaskRef.current = null;
-                                      setDraggingTaskId(null);
-                                      setActiveCalendarDate(null);
-                                    }}
-                                    onClick={() => {
-                                      const node = findTaskNode(allTasks, task.id);
-                                      if (node) openDetails(node);
-                                    }}
-                                  >
-                                    <span>{task.title}</span>
-                                    <small>{calendarTaskLocation(task)}</small>
-                                  </button>
-                                ))}
-                              </div>
-                            </section>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                <CalendarPanel
+                  month={calendarMonth}
+                  label={calendarLabel}
+                  days={calendarDays}
+                  weekdays={calendarWeekdays}
+                  tasks={calendarTasks}
+                  taskCount={calendarTaskCount}
+                  activeDate={activeCalendarDate}
+                  locationForTask={calendarTaskLocation}
+                  onMonthChange={setCalendarMonth}
+                  onShiftMonth={(amount) => setCalendarMonth((month) => shiftCalendarMonth(month, amount))}
+                  onToday={() => setCalendarMonth(toLocalIsoDate(new Date()).slice(0, 7))}
+                  onMarkDate={markCalendarDate}
+                  onDropDate={dropTaskOnCalendarDate}
+                  onLeaveDate={() => setActiveCalendarDate(null)}
+                  onTaskDragStart={(task, event) => {
+                    calendarDraggedTaskRef.current = task.id;
+                    setDraggingTaskId(task.id);
+                    event.dataTransfer.setData("text/task-id", task.id);
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
+                  onTaskDragEnd={() => {
+                    calendarDraggedTaskRef.current = null;
+                    setDraggingTaskId(null);
+                    setActiveCalendarDate(null);
+                  }}
+                  onTaskOpen={(task) => {
+                    const node = findTaskNode(allTasks, task.id);
+                    if (node) openDetails(node);
+                  }}
+                />
               ) : viewTasks.length > 0 ? (
                 renderTaskNodes(viewTasks, taskActions)
               ) : (
@@ -1880,193 +1783,58 @@ export const TaskApp = ({
               )}
             </section>
           ) : pageMode === "attachments" && attachmentsEnabled ? (
-            <section className="attachments-page" aria-label="Attachments list">
-              {taskAttachments.length > 0 ? (
-                taskAttachments.map((attachment) => (
-                  <article className="attachment-library-item" key={attachment.id}>
-                    <div className="attachment-library-preview">
-                      {attachment.mimeType.startsWith("image/") ? (
-                        <a
-                          href={`/attachments/${encodeURIComponent(attachment.id)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <img
-                            src={`/attachments/${encodeURIComponent(attachment.id)}`}
-                            alt={attachment.name}
-                          />
-                        </a>
-                      ) : (
-                        <Paperclip size={28} aria-hidden="true" />
-                      )}
-                    </div>
-                    <div className="attachment-library-details">
-                      <a
-                        className="attachment-library-file-link"
-                        href={`/attachments/${encodeURIComponent(attachment.id)}`}
-                        download={attachment.name}
-                      >
-                        {attachment.name}
-                      </a>
-                      <Link
-                        className="attachment-library-task-link"
-                        to="/attachments"
-                        onClick={() => {
-                          const task = findTaskNode(allTasks, attachment.taskId);
-                          if (task !== null) openDetails(task);
-                        }}
-                      >
-                        {attachment.taskTitle}
-                      </Link>
-                      <dl>
-                        <div>
-                          <dt>Size</dt>
-                          <dd>{formatAttachmentSize(attachment.size)}</dd>
-                        </div>
-                        <div>
-                          <dt>Uploaded</dt>
-                          <dd>
-                            <time dateTime={attachment.uploadedAt}>
-                              {new Date(attachment.uploadedAt).toLocaleString()}
-                            </time>
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </article>
-                ))
-              ) : tasks.isLoading ? (
-                <p className="muted">Loading attachments...</p>
-              ) : (
-                <p className="empty">No attachments yet.</p>
-              )}
-            </section>
+            <AttachmentLibrary
+              attachments={taskAttachments}
+              loading={tasks.isLoading}
+              onTaskOpen={(taskId) => {
+                const task = findTaskNode(allTasks, taskId);
+                if (task !== null) openDetails(task);
+              }}
+            />
           ) : pageMode === "export" ? (
-            <section className="export-page" aria-label="Export data">
-              <section className="card export-format-card" aria-labelledby="markdown-export-title">
-                <div>
-                  <h2 id="markdown-export-title">Markdown</h2>
-                  <p>Human-readable task lists organized by Inbox, projects, and sections.</p>
-                </div>
-                <div className="export-format-actions">
-                  <button type="button" className="btn-primary" onClick={exportMarkdown}>
-                    <Download size={16} aria-hidden="true" />
-                    Export all markdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await copyText(allMarkdown);
-                      setCopyStatus("All markdown copied");
-                    }}
-                  >
-                    <ClipboardCopy size={16} aria-hidden="true" />
-                    Copy all markdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMarkdownModal(
-                        Object.freeze({ title: "All tasks", markdown: allMarkdown, format: "markdown" }),
-                      )
-                    }
-                  >
-                    <Eye size={16} aria-hidden="true" />
-                    Preview all markdown
-                  </button>
-                </div>
-              </section>
-              <section className="card export-format-card" aria-labelledby="advanced-markdown-export-title">
-                <div>
-                  <h2 id="advanced-markdown-export-title">Advanced markdown</h2>
-                  <p>
-                    Includes task descriptions, due dates, labels, comments, and Inbox and project
-                    descriptions.
-                  </p>
-                </div>
-                <div className="export-format-actions">
-                  <button type="button" className="btn-primary" onClick={exportAdvancedMarkdown}>
-                    <Download size={16} aria-hidden="true" />
-                    Export all advanced markdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await copyText(allAdvancedMarkdown);
-                      setCopyStatus("All advanced markdown copied");
-                    }}
-                  >
-                    <ClipboardCopy size={16} aria-hidden="true" />
-                    Copy all advanced markdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMarkdownModal(
-                        Object.freeze({
-                          title: "All tasks",
-                          markdown: allAdvancedMarkdown,
-                          format: "advanced-markdown",
-                        }),
-                      )
-                    }
-                  >
-                    <Eye size={16} aria-hidden="true" />
-                    Preview all advanced markdown
-                  </button>
-                </div>
-              </section>
-              <section className="card export-format-card" aria-labelledby="json-export-title">
-                <div>
-                  <h2 id="json-export-title">JSON</h2>
-                  <p>
-                    Complete structured data, including descriptions, dates, sections, task hierarchy, labels,
-                    comments, and archived projects.
-                  </p>
-                </div>
-                <div className="export-format-actions">
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() =>
-                      downloadBlob(
-                        new Blob([allJson], { type: "application/json;charset=utf-8" }),
-                        "mytodo.json",
-                      )
-                    }
-                  >
-                    <Download size={16} aria-hidden="true" />
-                    Export all JSON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await copyText(allJson);
-                      setCopyStatus("All JSON copied");
-                    }}
-                  >
-                    <ClipboardCopy size={16} aria-hidden="true" />
-                    Copy all JSON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMarkdownModal(
-                        Object.freeze({ title: "All data", markdown: allJson, format: "json" }),
-                      )
-                    }
-                  >
-                    <Eye size={16} aria-hidden="true" />
-                    Preview all JSON
-                  </button>
-                </div>
-              </section>
-              {copyStatus.length > 0 ? (
-                <p className="muted" role="status">
-                  {copyStatus}
-                </p>
-              ) : null}
-            </section>
+            <ExportPage
+              copyStatus={copyStatus}
+              onExport={(kind) => {
+                if (kind === "markdown") exportMarkdown();
+                else if (kind === "advancedMarkdown") exportAdvancedMarkdown();
+                else
+                  downloadBlob(
+                    new Blob([allJson], { type: "application/json;charset=utf-8" }),
+                    "mytodo.json",
+                  );
+              }}
+              onCopy={async (kind) => {
+                const content =
+                  kind === "markdown"
+                    ? allMarkdown
+                    : kind === "advancedMarkdown"
+                      ? allAdvancedMarkdown
+                      : allJson;
+                await copyText(content);
+                setCopyStatus(
+                  kind === "markdown"
+                    ? "All markdown copied"
+                    : kind === "advancedMarkdown"
+                      ? "All advanced markdown copied"
+                      : "All JSON copied",
+                );
+              }}
+              onPreview={(kind) => {
+                const content =
+                  kind === "markdown"
+                    ? allMarkdown
+                    : kind === "advancedMarkdown"
+                      ? allAdvancedMarkdown
+                      : allJson;
+                setMarkdownModal(
+                  Object.freeze({
+                    title: kind === "json" ? "All data" : "All tasks",
+                    markdown: content,
+                    format: kind === "advancedMarkdown" ? "advanced-markdown" : kind,
+                  }),
+                );
+              }}
+            />
           ) : targetProjectId === null ? (
             <div className="board">
               {scopeDescriptionBlock}

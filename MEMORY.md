@@ -1,5 +1,10 @@
 # Project Memory
 
+## 2026-11-11 — Разделить крупные frontend-модули
+
+- Из `TaskApp.tsx` вынесены календарная панель, библиотека вложений и экран экспорта в отдельные компоненты с явными props. Общие тестовые фикстуры перенесены в `AppTestSupport.tsx`, проверки `TaskApp` — в четыре тематических файла; `App.test.tsx` теперь содержит тесты прочих страниц и API. По просьбе пользователя `App.css` восстановлен как исходный единый файл.
+- Проверки: `pnpm test` (113 тестов), `pnpm test:e2e` (39 сценариев), `pnpm lint`, `pnpm format:check`, `pnpm build` прошли. Текущая работа уменьшила крупные файлы, дальнейшее выделение потоков из `TaskApp.tsx` можно продолжать отдельно.
+
 ## 2026-11-10 — Оставлять production LXD stack доступным в браузере
 
 - Добавлены `task prod:lxd:up` и `task prod:lxd:down`. Up переиспользует LXD provisioner, оставляет контейнер/stack включёнными и печатает browser URL на адресе контейнера; down штатно останавливает Compose и удаляет контейнер. Setup script переименован в `scripts/setup-production-in-lxd.sh`; его defaults: `LXD_REMOVE_CONTAINER=false`, `LXD_BROWSER_MODE=true`. Временная проверка доступна через `task test:prod:lxd:test`, которая явно включает удаление контейнера.
