@@ -1,5 +1,5 @@
-import { expect, test } from "./fixtures";
 import { createE2eApi } from "./api";
+import { expect, test } from "./fixtures";
 
 const localIsoDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
