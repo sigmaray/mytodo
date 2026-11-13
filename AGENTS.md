@@ -1,7 +1,7 @@
 # AI Agent System Prompt & Architecture Rules
 
 ## Project Overview
-Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and-drop capabilities, built for a single user.
+Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and-drop capabilities. Each installation is managed by an administrator and can contain multiple user accounts, with task data kept per user.
 
 ## Core Paradigm: STRICT FUNCTIONAL PROGRAMMING
 - **NO CLASSES, NO OOP, NO `this` keyword.** This is a hard rule.
@@ -16,7 +16,7 @@ Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and
   - `/packages/domain` - Shared types, business logic, pure functions.
   - `/apps/frontend` - React SPA.
   - `/apps/backend` - Node.js API.
-- **Frontend:** React, Vite, TanStack Query (for server state & Optimistic UI), @dnd-kit (for tree drag-and-drop), Tailwind CSS.
+- **Frontend:** React, Vite, TanStack Query (for server state & Optimistic UI), @dnd-kit (for tree drag-and-drop), Bootstrap CSS.
 - **Backend:** Hono (functional routing), Drizzle ORM (functional SQL builder, no Active Record), Zod (validation).
 - **Database:** PostgreSQL.
 - **Testing:** 
@@ -25,7 +25,7 @@ Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and
   - E2E: Playwright.
 
 ## MVP Scope Constraints
-- **Do NOT implement:** Recurring tasks, smart date NLP parsing, tags, collaboration features, activity logs.
+- **Do NOT implement:** Recurring tasks, smart date NLP parsing, collaboration features, activity logs.
 - **DO implement:** User accounts with administrator-managed accounts and per-user task data, infinite nesting (Adjacency List `parentId`), task priorities (P1-P4), boolean completion status, drag-and-drop reordering.
 - **Sorting Mechanism:** Use Lexical Sorting (Fractional Indexing) for drag-and-drop to avoid mass database updates. Save as `lexicalOrder` string field.
 
