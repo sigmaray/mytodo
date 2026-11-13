@@ -1231,6 +1231,18 @@ Verification:
 - Большая логика `TaskApp.tsx` разделена между компонентом экрана, хуками действий, мутаций и view model; диалоги/порталы используют отдельные небольшие компоненты. Все новые и затронутые модули не превышают 750 строк.
 - Сохранены поведение и CSS. Проверки: frontend build, `pnpm test` (113 тестов), `pnpm test:e2e` (39 сценариев), `pnpm lint`, `pnpm format:check` и `git diff --check` прошли.
 
+## 2026-11-13 — Перенести workspace-экраны в pages
+
+- Inbox/Projects, Dates, Labels, Attachments и Export теперь имеют собственные UI-компоненты в `apps/frontend/src/pages/`; общая композиция страниц вынесена в `TaskAppPageContent`, а `TaskAppScreen` сокращён до 562 строк. `AppRouter` использует явные React Router routes; убран строковый `pagePath` prop.
+- Сохранены общие состояние workspace, навигация, диалоги и feature/auth guards. Подправлен селектор E2E для неоднозначной кнопки Calendar; сохранён динамический aria-label страницы меток.
+- Проверки: `pnpm test` (113), `pnpm test:e2e` (39), `pnpm build`, lint, format:check и diff check прошли.
+
+## 2026-11-13 — Сузить контракты страниц и разделить task hooks
+
+- `TaskAppPageContent` теперь получает discriminated `TaskAppPageModel`, собранный отдельной функцией; страницы больше не зависят от полных объектов state/actions/view model. Drag-and-drop actions вынесены в `useTaskAppDragActions`, JSON/Markdown export calculations — в `taskAppExportModel`.
+- Размеры: `useTaskAppActions` — 341 строка (было 661), `useTaskAppViewModel` — 501 (было 607), `TaskAppScreen` — 559 (было 562); новый page model content renderer — 21 строка.
+- Проверки: `pnpm test` (113), `pnpm test:e2e` (39), frontend build, lint, format:check и `git diff --check` прошли.
+
 ## 2026-11-11 — Выделить frontend страницы по URL
 
 - Маршруты Inbox, Dates, Labels, Attachments и Export теперь имеют отдельные файлы в `apps/frontend/src/pages/`; маршрутизатор лениво загружает страницы. Остальные маршруты уже были представлены отдельными страницами в этой папке.

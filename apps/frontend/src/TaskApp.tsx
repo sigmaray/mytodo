@@ -18,6 +18,7 @@ import { useTaskAppActions } from "./useTaskAppActions";
 import { useTaskAppState } from "./useTaskAppState";
 import { useTaskAppViewModel } from "./useTaskAppViewModel";
 import { inboxPlacement, projectPlacement, sectionPlacement } from "./taskAppUtils";
+import { createTaskAppPageModel } from "./taskAppPageModel";
 
 const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
   const itemFiles = Array.from(clipboardData.items)
@@ -269,6 +270,13 @@ export const TaskApp = ({
     attachmentsEnabled,
     inboxDescription: inboxDescriptionQuery.data,
   });
+  const pageModel = createTaskAppPageModel({
+    attachmentsEnabled,
+    tasksLoading: tasks.isLoading,
+    state: taskAppState,
+    actions,
+    viewModel,
+  });
 
   return (
     <TaskAppScreen
@@ -280,6 +288,7 @@ export const TaskApp = ({
       state={taskAppState}
       actions={actions}
       viewModel={viewModel}
+      pageModel={pageModel}
       pastedFiles={pastedFiles}
       notifyAttachedFiles={notifyAttachedFiles}
     />

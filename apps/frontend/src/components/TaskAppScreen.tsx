@@ -15,6 +15,7 @@ import { TaskAppPageContent } from "./TaskAppPageContent";
 import type { useTaskAppActions } from "../useTaskAppActions";
 import type { useTaskAppState } from "../useTaskAppState";
 import type { useTaskAppViewModel } from "../useTaskAppViewModel";
+import type { TaskAppPageModel } from "../taskAppPageModel";
 import "react-toastify/dist/ReactToastify.css";
 import { Download, Edit3, ListChecks, Plus, Trash2 } from "lucide-react";
 import "../App.css";
@@ -44,6 +45,7 @@ type TaskAppScreenProps = Readonly<{
   state: ReturnType<typeof useTaskAppState>;
   actions: ReturnType<typeof useTaskAppActions>;
   viewModel: ReturnType<typeof useTaskAppViewModel>;
+  pageModel: TaskAppPageModel;
   pastedFiles: (data: DataTransfer) => ReadonlyArray<File>;
   notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
 }>;
@@ -57,6 +59,7 @@ export const TaskAppScreen = ({
   state,
   actions,
   viewModel,
+  pageModel,
   pastedFiles,
   notifyAttachedFiles,
 }: TaskAppScreenProps) => {
@@ -362,13 +365,7 @@ export const TaskAppScreen = ({
           {pageMode === "tasks" ? selectionToolbar : null}
           {tasksLoading ? <p className="muted">Loading tasks...</p> : null}
           {tasksError ? <p className="error">Unable to load tasks.</p> : null}
-          <TaskAppPageContent
-            attachmentsEnabled={attachmentsEnabled}
-            tasksLoading={tasksLoading}
-            state={state}
-            actions={actions}
-            viewModel={viewModel}
-          />
+          <TaskAppPageContent page={pageModel} />
           {pageMode === "tasks" ? selectionToolbar : null}
         </section>
         <TaskAppOverlays

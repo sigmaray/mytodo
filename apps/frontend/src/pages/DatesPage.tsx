@@ -4,7 +4,7 @@ import { CalendarPanel, type CalendarPanelProps } from "../components/CalendarPa
 import { calendarWeekdays } from "../components/TaskFormFields";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
-type DatesPageProps = Readonly<{
+export type DatesPageProps = Readonly<{
   dateView: "list" | "calendar";
   setDateView: Dispatch<SetStateAction<"list" | "calendar">>;
   dateListFilter: "all" | "overdue" | "today" | "upcoming";

@@ -2,19 +2,21 @@ import type { Task, TaskNode } from "@todoist-clone/domain";
 import { Link } from "react-router-dom";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
+export type LabelsPageProps = Readonly<{
+  selectedLabel: string;
+  viewTitle: string;
+  flatTasks: ReadonlyArray<Task>;
+  viewTasks: ReadonlyArray<TaskNode>;
+  taskActions: Parameters<typeof renderTaskNodes>[1];
+}>;
+
 export const LabelsPage = ({
   selectedLabel,
   viewTitle,
   flatTasks,
   viewTasks,
   taskActions,
-}: Readonly<{
-  selectedLabel: string;
-  viewTitle: string;
-  flatTasks: ReadonlyArray<Task>;
-  viewTasks: ReadonlyArray<TaskNode>;
-  taskActions: Parameters<typeof renderTaskNodes>[1];
-}>) => (
+}: LabelsPageProps) => (
   <section className="drop-zone task-filter-page" aria-label={`${viewTitle} tasks`}>
     <nav className="label-filter-list" aria-label="Filter by label">
       <Link className={!selectedLabel ? "active" : ""} to="/labels">

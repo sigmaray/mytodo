@@ -1,6 +1,6 @@
 import { ClipboardCopy, Download, Eye } from "lucide-react";
 
-type ExportKind = "markdown" | "advancedMarkdown" | "json";
+export type ExportKind = "markdown" | "advancedMarkdown" | "json";
 
 type ExportFormatCardProps = Readonly<{
   title: string;
@@ -45,17 +45,14 @@ const ExportFormatCard = ({
   </section>
 );
 
-export const ExportPage = ({
-  copyStatus,
-  onExport,
-  onCopy,
-  onPreview,
-}: Readonly<{
+export type ExportPageProps = Readonly<{
   copyStatus: string;
   onExport: (kind: ExportKind) => void;
   onCopy: (kind: ExportKind) => void;
   onPreview: (kind: ExportKind) => void;
-}>) => (
+}>;
+
+export const ExportPage = ({ copyStatus, onExport, onCopy, onPreview }: ExportPageProps) => (
   <section className="export-page" aria-label="Export data">
     <ExportFormatCard
       title="Markdown"

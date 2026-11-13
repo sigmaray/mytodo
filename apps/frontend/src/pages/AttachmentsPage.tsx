@@ -12,15 +12,13 @@ export type AttachmentLibraryItem = Readonly<{
   uploadedAt: string;
 }>;
 
-export const AttachmentsPage = ({
-  attachments,
-  loading,
-  onTaskOpen,
-}: Readonly<{
+export type AttachmentsPageProps = Readonly<{
   attachments: ReadonlyArray<AttachmentLibraryItem>;
   loading: boolean;
   onTaskOpen: (taskId: string) => void;
-}>) => (
+}>;
+
+export const AttachmentsPage = ({ attachments, loading, onTaskOpen }: AttachmentsPageProps) => (
   <section className="attachments-page" aria-label="Attachments list">
     {attachments.length > 0 ? (
       attachments.map((attachment) => (
