@@ -1,22 +1,20 @@
 import type { ApplicationApi } from "../api";
 import { TaskApp } from "../TaskApp";
 
-export type TaskWorkspacePageProps = Readonly<{
+export type TaskAppWorkspaceProps = Readonly<{
   api: ApplicationApi;
   attachmentsEnabled: boolean;
   projectArchivingEnabled: boolean;
 }>;
 
-export const TaskWorkspacePage = ({
+export const TaskAppWorkspace = ({
   api,
   attachmentsEnabled,
   projectArchivingEnabled,
-  pagePath,
-}: TaskWorkspacePageProps & Readonly<{ pagePath: string }>) => (
+}: TaskAppWorkspaceProps) => (
   <TaskApp
     api={api}
     attachmentsEnabled={attachmentsEnabled}
     projectArchivingEnabled={projectArchivingEnabled}
-    pagePath={pagePath}
   />
 );

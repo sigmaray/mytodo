@@ -11,6 +11,7 @@ import { useFloating } from "@floating-ui/react";
 import type { QueryClient } from "@tanstack/react-query";
 import { TaskContextMenuPortal } from "./TaskContextMenuPortal";
 import { ToastPortal } from "./ToastPortal";
+import { TaskAppPageContent } from "./TaskAppPageContent";
 import type { useTaskAppActions } from "../useTaskAppActions";
 import type { useTaskAppState } from "../useTaskAppState";
 import type { useTaskAppViewModel } from "../useTaskAppViewModel";
@@ -21,19 +22,12 @@ import "../vendor/bootstrap.min.css";
 import type { ApplicationApi } from "../api";
 import { AddTaskDialog } from "./AddTaskDialog";
 import { AppSidebar } from "./AppSidebar";
-import { AttachmentLibrary } from "./AttachmentLibrary";
-import { ExportPage } from "./ExportPage";
-import { TaskAppBoard } from "./TaskAppBoard";
-import { TaskAppFilteredPage } from "./TaskAppFilteredPage";
 import { TaskAppOverlays } from "./TaskAppOverlays";
 import { TaskDetailsDialog } from "./TaskDetailsDialog";
-import { normalizeLabels, shiftCalendarMonth } from "./TaskFormFields";
-import { toLocalIsoDate } from "../dateUtils";
+import { normalizeLabels } from "./TaskFormFields";
 import { taskQueryKey } from "../queryKeys";
 import {
-  copyText,
   createPlacementOptions,
-  downloadBlob,
   findTaskNode,
   inboxPlacement,
   parsePlacement,
@@ -67,14 +61,6 @@ export const TaskAppScreen = ({
   notifyAttachedFiles,
 }: TaskAppScreenProps) => {
   const {
-    dateView,
-    setDateView,
-    dateListFilter,
-    setDateListFilter,
-    calendarMonth,
-    setCalendarMonth,
-    activeCalendarDate,
-    setActiveCalendarDate,
     addTaskOpen,
     setAddTaskOpen,
     addTaskTitle,
@@ -103,21 +89,8 @@ export const TaskAppScreen = ({
     setAddTaskPlacement,
     addTaskBeforeId,
     setAddTaskBeforeId,
-    sectionTitle,
-    setSectionTitle,
-    addingSection,
-    setAddingSection,
-    editSectionId,
-    setEditSectionId,
-    editSectionTitle,
-    setEditSectionTitle,
-    setDraggingTaskId,
     activeDropZone,
     setActiveDropZone,
-    activeSectionDrop,
-    setActiveSectionDrop,
-    draggingSectionId,
-    setDraggingSectionId,
     targetProjectId,
     setTargetProjectId,
     editingProjectTitle,
@@ -177,28 +150,16 @@ export const TaskAppScreen = ({
     setEditingCommentBody,
     copyStatus,
     setCopyStatus,
-    calendarDraggedTaskRef,
     subtasksSectionRef,
-    sectionCreateInputRef,
   } = state;
   const {
     confirmDeletion,
     updateProjectMutation,
-    requestSectionDelete,
     requestTaskDelete,
     selectedMoveMutation,
-    submitSection,
-    cancelSectionCreate,
-    submitSectionEdit,
-    startSectionEdit,
     startSubtask,
     markDropZone,
     moveDroppedTask,
-    startSectionDrag,
-    markSectionDrop,
-    dropSection,
-    dropTaskOnCalendarDate,
-    markCalendarDate,
     startEditing,
     openDetails,
     allTasks,
@@ -219,39 +180,20 @@ export const TaskAppScreen = ({
     closeMobileSubtasks,
   } = actions;
   const {
-    inboxSections,
-    projectSections,
-    inboxRootTasks,
-    projectRootTasks,
-    scopeDescriptionBlock,
-    taskActions,
     taskTargetLabel,
     pageMode,
-    selectedLabel,
-    viewTasks,
-    calendarTasks,
-    calendarDays,
-    calendarLabel,
-    calendarTaskCount,
-    calendarTaskLocation,
     viewTitle,
     selectedProject,
     saveProjectTitle,
-    taskAttachments,
     markdown,
     openAddTaskDialog,
     deleteAllTasks,
     moveSelectedTasks,
     selectionToolbar,
     finishDndDrag,
-    allMarkdown,
-    allJson,
     scopeProject,
     advancedMarkdown,
-    allAdvancedMarkdown,
     scopeJson,
-    exportMarkdown,
-    exportAdvancedMarkdown,
   } = viewModel;
   const markdownFloating = useFloating({ open: markdownModal !== null });
   const dndSensors = useSensors(
@@ -420,139 +362,13 @@ export const TaskAppScreen = ({
           {pageMode === "tasks" ? selectionToolbar : null}
           {tasksLoading ? <p className="muted">Loading tasks...</p> : null}
           {tasksError ? <p className="error">Unable to load tasks.</p> : null}
-          {pageMode === "dates" || pageMode === "labels" ? (
-            <TaskAppFilteredPage
-              mode={pageMode}
-              viewTitle={viewTitle}
-              dateView={dateView}
-              setDateView={setDateView}
-              dateListFilter={dateListFilter}
-              setDateListFilter={setDateListFilter}
-              selectedLabel={selectedLabel}
-              flatTasks={flatTasks}
-              calendarMonth={calendarMonth}
-              calendarLabel={calendarLabel}
-              calendarDays={calendarDays}
-              calendarTasks={calendarTasks}
-              calendarTaskCount={calendarTaskCount}
-              activeCalendarDate={activeCalendarDate}
-              calendarTaskLocation={calendarTaskLocation}
-              setCalendarMonth={setCalendarMonth}
-              shiftCalendarMonth={(amount) => setCalendarMonth((month) => shiftCalendarMonth(month, amount))}
-              onToday={() => setCalendarMonth(toLocalIsoDate(new Date()).slice(0, 7))}
-              onMarkDate={markCalendarDate}
-              onDropDate={dropTaskOnCalendarDate}
-              onLeaveDate={() => setActiveCalendarDate(null)}
-              onTaskDragStart={(task, event) => {
-                calendarDraggedTaskRef.current = task.id;
-                setDraggingTaskId(task.id);
-                event.dataTransfer.setData("text/task-id", task.id);
-                event.dataTransfer.effectAllowed = "move";
-              }}
-              onTaskDragEnd={() => {
-                calendarDraggedTaskRef.current = null;
-                setDraggingTaskId(null);
-                setActiveCalendarDate(null);
-              }}
-              onTaskOpen={(task) => {
-                const node = findTaskNode(allTasks, task.id);
-                if (node) openDetails(node);
-              }}
-              viewTasks={viewTasks}
-              taskActions={taskActions}
-            />
-          ) : pageMode === "attachments" && attachmentsEnabled ? (
-            <AttachmentLibrary
-              attachments={taskAttachments}
-              loading={tasksLoading}
-              onTaskOpen={(taskId) => {
-                const task = findTaskNode(allTasks, taskId);
-                if (task !== null) openDetails(task);
-              }}
-            />
-          ) : pageMode === "export" ? (
-            <ExportPage
-              copyStatus={copyStatus}
-              onExport={(kind) => {
-                if (kind === "markdown") exportMarkdown();
-                else if (kind === "advancedMarkdown") exportAdvancedMarkdown();
-                else
-                  downloadBlob(
-                    new Blob([allJson], { type: "application/json;charset=utf-8" }),
-                    "mytodo.json",
-                  );
-              }}
-              onCopy={async (kind) => {
-                const content =
-                  kind === "markdown"
-                    ? allMarkdown
-                    : kind === "advancedMarkdown"
-                      ? allAdvancedMarkdown
-                      : allJson;
-                await copyText(content);
-                setCopyStatus(
-                  kind === "markdown"
-                    ? "All markdown copied"
-                    : kind === "advancedMarkdown"
-                      ? "All advanced markdown copied"
-                      : "All JSON copied",
-                );
-              }}
-              onPreview={(kind) => {
-                const content =
-                  kind === "markdown"
-                    ? allMarkdown
-                    : kind === "advancedMarkdown"
-                      ? allAdvancedMarkdown
-                      : allJson;
-                setMarkdownModal(
-                  Object.freeze({
-                    title: kind === "json" ? "All data" : "All tasks",
-                    markdown: content,
-                    format: kind === "advancedMarkdown" ? "advanced-markdown" : kind,
-                  }),
-                );
-              }}
-            />
-          ) : (
-            <TaskAppBoard
-              targetProjectId={targetProjectId}
-              scopeDescriptionBlock={scopeDescriptionBlock}
-              activeDropZone={activeDropZone}
-              clearDropZone={() => setActiveDropZone(null)}
-              markDropZone={markDropZone}
-              moveDroppedTask={moveDroppedTask}
-              inboxRootTasks={inboxRootTasks}
-              projectRootTasks={projectRootTasks}
-              openAddTaskDialog={openAddTaskDialog}
-              addingSection={addingSection}
-              setAddingSection={setAddingSection}
-              submitSection={submitSection}
-              cancelSectionCreate={cancelSectionCreate}
-              sectionTitle={sectionTitle}
-              setSectionTitle={setSectionTitle}
-              sectionCreateInputRef={sectionCreateInputRef}
-              inboxSections={inboxSections}
-              projectSections={projectSections}
-              allTasks={allTasks}
-              draggingSectionId={draggingSectionId}
-              setDraggingSectionId={setDraggingSectionId}
-              activeSectionDrop={activeSectionDrop}
-              setActiveSectionDrop={setActiveSectionDrop}
-              editSectionId={editSectionId}
-              setEditSectionId={setEditSectionId}
-              editSectionTitle={editSectionTitle}
-              setEditSectionTitle={setEditSectionTitle}
-              startSectionDrag={startSectionDrag}
-              markSectionDrop={markSectionDrop}
-              dropSection={dropSection}
-              submitSectionEdit={submitSectionEdit}
-              requestSectionDelete={requestSectionDelete}
-              startSectionEdit={startSectionEdit}
-              taskActions={taskActions}
-              taskTargetLabel={taskTargetLabel}
-            />
-          )}{" "}
+          <TaskAppPageContent
+            attachmentsEnabled={attachmentsEnabled}
+            tasksLoading={tasksLoading}
+            state={state}
+            actions={actions}
+            viewModel={viewModel}
+          />
           {pageMode === "tasks" ? selectionToolbar : null}
         </section>
         <TaskAppOverlays

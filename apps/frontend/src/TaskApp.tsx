@@ -34,15 +34,13 @@ export const TaskApp = ({
   api,
   attachmentsEnabled = false,
   projectArchivingEnabled = false,
-  pagePath,
 }: Readonly<{
   api: ApplicationApi;
   attachmentsEnabled?: boolean;
   projectArchivingEnabled?: boolean;
-  pagePath?: string;
 }>) => {
   const location = useLocation();
-  const currentPath = pagePath ?? location.pathname;
+  const currentPath = location.pathname;
   const taskAppState = useTaskAppState();
   const {
     addTaskOpen,

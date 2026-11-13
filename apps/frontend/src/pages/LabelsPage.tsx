@@ -1,6 +1,41 @@
-import { TaskWorkspacePage } from "./TaskWorkspacePage";
-import type { TaskWorkspacePageProps } from "./TaskWorkspacePage";
+import type { Task, TaskNode } from "@todoist-clone/domain";
+import { Link } from "react-router-dom";
+import { renderTaskNodes } from "../components/TaskTreeView";
 
-export const LabelsPage = (props: TaskWorkspacePageProps) => (
-  <TaskWorkspacePage {...props} pagePath="/labels" />
+export const LabelsPage = ({
+  selectedLabel,
+  viewTitle,
+  flatTasks,
+  viewTasks,
+  taskActions,
+}: Readonly<{
+  selectedLabel: string;
+  viewTitle: string;
+  flatTasks: ReadonlyArray<Task>;
+  viewTasks: ReadonlyArray<TaskNode>;
+  taskActions: Parameters<typeof renderTaskNodes>[1];
+}>) => (
+  <section className="drop-zone task-filter-page" aria-label={`${viewTitle} tasks`}>
+    <nav className="label-filter-list" aria-label="Filter by label">
+      <Link className={!selectedLabel ? "active" : ""} to="/labels">
+        All labels
+      </Link>
+      {Array.from(new Set(flatTasks.flatMap((task) => task.labels)))
+        .sort()
+        .map((label) => (
+          <Link
+            key={label}
+            className={selectedLabel === label ? "active" : ""}
+            to={`/labels?label=${encodeURIComponent(label)}`}
+          >
+            {label}
+          </Link>
+        ))}
+    </nav>
+    {viewTasks.length > 0 ? (
+      renderTaskNodes(viewTasks, taskActions)
+    ) : (
+      <p className="empty">No tasks with this label.</p>
+    )}
+  </section>
 );
