@@ -2,7 +2,7 @@ import type { Task } from "@todoist-clone/domain";
 import type { DragEvent } from "react";
 import type { TaskAppBoardProps } from "./components/TaskAppBoardTypes";
 import type { useTaskAppActions } from "./useTaskAppActions";
-import type { useTaskAppState } from "./useTaskAppState";
+import type { TaskAppPageModelState } from "./useTaskAppState";
 import type { useTaskAppViewModel } from "./useTaskAppViewModel";
 import type { AttachmentsPageProps } from "./pages/AttachmentsPage";
 import type { DatesPageProps } from "./pages/DatesPage";
@@ -22,7 +22,7 @@ export type TaskAppPageModel =
 type TaskAppPageModelInput = {
   attachmentsEnabled: boolean;
   tasksLoading: boolean;
-  state: ReturnType<typeof useTaskAppState>;
+  state: TaskAppPageModelState;
   actions: ReturnType<typeof useTaskAppActions>;
   viewModel: ReturnType<typeof useTaskAppViewModel>;
 };

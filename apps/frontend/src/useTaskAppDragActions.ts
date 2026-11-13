@@ -6,12 +6,12 @@ import type { ApplicationApi } from "./api";
 import { taskQueryKey } from "./queryKeys";
 import { dragPlacementFromEvent, findTaskNode, hasDescendant, inboxPlacement } from "./taskAppUtils";
 import type { useTaskAppMutations } from "./useTaskAppMutations";
-import type { DropZoneId, useTaskAppState } from "./useTaskAppState";
+import type { DropZoneId, TaskAppDragState } from "./useTaskAppState";
 
 type TaskAppDragActionInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
-  state: ReturnType<typeof useTaskAppState>;
+  state: TaskAppDragState;
   mutations: ReturnType<typeof useTaskAppMutations>;
   allTasks: Array<TaskNode>;
   flatTasks: Array<Task>;

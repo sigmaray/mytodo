@@ -79,7 +79,7 @@ export const TaskApp = ({
     subtasksSectionRef,
     sectionCreateInputRef,
     pastedCommentSaveQueueRef,
-  } = taskAppState;
+  } = taskAppState.screen;
 
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -252,7 +252,7 @@ export const TaskApp = ({
   const actions = useTaskAppActions({
     api,
     queryClient,
-    state: taskAppState,
+    state: taskAppState.actions,
     attachmentsEnabled,
     projectArchivingEnabled,
     taskData: tasks.data,
@@ -264,7 +264,7 @@ export const TaskApp = ({
   const viewModel = useTaskAppViewModel({
     api,
     queryClient,
-    state: taskAppState,
+    state: taskAppState.viewModel,
     actions,
     currentPath,
     attachmentsEnabled,
@@ -273,7 +273,7 @@ export const TaskApp = ({
   const pageModel = createTaskAppPageModel({
     attachmentsEnabled,
     tasksLoading: tasks.isLoading,
-    state: taskAppState,
+    state: taskAppState.pageModel,
     actions,
     viewModel,
   });
@@ -285,7 +285,7 @@ export const TaskApp = ({
       queryClient={queryClient}
       tasksLoading={tasks.isLoading}
       tasksError={tasks.isError}
-      state={taskAppState}
+      state={taskAppState.screen}
       actions={actions}
       viewModel={viewModel}
       pageModel={pageModel}

@@ -13,7 +13,7 @@ import { TaskContextMenuPortal } from "./TaskContextMenuPortal";
 import { ToastPortal } from "./ToastPortal";
 import { TaskAppPageContent } from "./TaskAppPageContent";
 import type { useTaskAppActions } from "../useTaskAppActions";
-import type { useTaskAppState } from "../useTaskAppState";
+import type { TaskAppScreenState } from "../useTaskAppState";
 import type { useTaskAppViewModel } from "../useTaskAppViewModel";
 import type { TaskAppPageModel } from "../taskAppPageModel";
 import "react-toastify/dist/ReactToastify.css";
@@ -42,7 +42,7 @@ type TaskAppScreenProps = {
   queryClient: QueryClient;
   tasksLoading: boolean;
   tasksError: boolean;
-  state: ReturnType<typeof useTaskAppState>;
+  state: TaskAppScreenState;
   actions: ReturnType<typeof useTaskAppActions>;
   viewModel: ReturnType<typeof useTaskAppViewModel>;
   pageModel: TaskAppPageModel;

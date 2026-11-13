@@ -5,9 +5,8 @@ import type { ApplicationApi } from "./api";
 import { appendById, removeById, replaceById } from "./queryData";
 import { projectQueryKey, sectionQueryKey, taskQueryKey } from "./queryKeys";
 import { inboxPlacement, parsePlacement, taskPlacement } from "./taskAppUtils";
-import type { useTaskAppState } from "./useTaskAppState";
+import type { TaskAppMutationsState } from "./useTaskAppState";
 
-type TaskAppState = ReturnType<typeof useTaskAppState>;
 type MoveInput = {
   taskId: TaskId;
   projectId: ProjectId | null;
@@ -20,7 +19,7 @@ type MoveInput = {
 type TaskAppMutationInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
-  state: TaskAppState;
+  state: TaskAppMutationsState;
   sectionData: Array<Section> | undefined;
   settings: { confirmDelete: boolean } | undefined;
 };

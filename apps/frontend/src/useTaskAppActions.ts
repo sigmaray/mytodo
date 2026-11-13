@@ -9,13 +9,12 @@ import { findTaskNode, inboxPlacement, projectPlacement, taskPlacement } from ".
 import { flattenTaskNodes } from "./taskTreeUtils";
 import { useTaskAppMutations } from "./useTaskAppMutations";
 import { createTaskAppDragActions } from "./useTaskAppDragActions";
-import type { useTaskAppState } from "./useTaskAppState";
+import type { TaskAppActionsState } from "./useTaskAppState";
 
-type TaskAppState = ReturnType<typeof useTaskAppState>;
 type TaskAppActionInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
-  state: TaskAppState;
+  state: TaskAppActionsState;
   attachmentsEnabled: boolean;
   projectArchivingEnabled: boolean;
   taskData: Array<TaskNode> | undefined;

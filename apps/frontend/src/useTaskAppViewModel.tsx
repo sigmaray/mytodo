@@ -19,12 +19,12 @@ import {
 } from "./taskAppUtils";
 import { createTaskAppExportModel } from "./taskAppExportModel";
 import type { useTaskAppActions } from "./useTaskAppActions";
-import type { useTaskAppState } from "./useTaskAppState";
+import type { TaskAppViewModelState } from "./useTaskAppState";
 
 type TaskAppViewModelInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
-  state: ReturnType<typeof useTaskAppState>;
+  state: TaskAppViewModelState;
   actions: ReturnType<typeof useTaskAppActions>;
   currentPath: string;
   attachmentsEnabled: boolean;
