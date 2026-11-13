@@ -8,15 +8,15 @@ import { isProjectWithinTree } from "../projectTree";
 import { appendById, removeById, replaceById } from "../queryData";
 import { projectQueryKey, sectionQueryKey, taskQueryKey } from "../queryKeys";
 
-type SidebarProjectManagementOptions = Readonly<{
+type SidebarProjectManagementOptions = {
   api: ApplicationApi | null;
-  activeProjects: ReadonlyArray<Project>;
+  activeProjects: Array<Project>;
   selectedProjectId: ProjectId | null;
   confirmDelete?: boolean;
   onInboxSelect?: () => void;
   onProjectSelect?: (projectId: ProjectId) => void;
   closeSidebar: () => void;
-}>;
+};
 
 export const useSidebarProjectManagement = ({
   api,
@@ -30,10 +30,10 @@ export const useSidebarProjectManagement = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [draggingProjectId, setDraggingProjectId] = useState<ProjectId | null>(null);
-  const [activeProjectDrop, setActiveProjectDrop] = useState<Readonly<{
+  const [activeProjectDrop, setActiveProjectDrop] = useState<{
     id: ProjectId;
     position: "before" | "after" | "inside";
-  }> | null>(null);
+  } | null>(null);
   const [addingProject, setAddingProject] = useState(false);
   const [newProjectParentId, setNewProjectParentId] = useState<ProjectId | null>(null);
   const [projectTitle, setProjectTitle] = useState("");
@@ -42,10 +42,10 @@ export const useSidebarProjectManagement = ({
   const [openProjectMenuId, setOpenProjectMenuId] = useState<ProjectId | null>(null);
   const [openProjectMenuDirection, setOpenProjectMenuDirection] = useState<"up" | "down">("down");
   const draggedProjectRef = useRef<ProjectId | null>(null);
-  const mobileProjectDropRef = useRef<Readonly<{
+  const mobileProjectDropRef = useRef<{
     id: ProjectId;
     position: "before" | "after" | "inside";
-  }> | null>(null);
+  } | null>(null);
   const projectCreateInputRef = useRef<HTMLInputElement>(null);
   const goToProject = (projectId: ProjectId) => {
     closeSidebar();
@@ -109,7 +109,7 @@ export const useSidebarProjectManagement = ({
     const drop =
       target.id === sourceId || isProjectWithinTree(activeProjects, parentId, sourceId)
         ? null
-        : Object.freeze({ id: target.id, position });
+        : { id: target.id, position };
     mobileProjectDropRef.current = drop;
     setActiveProjectDrop(drop);
   };
@@ -146,7 +146,7 @@ export const useSidebarProjectManagement = ({
       return;
     }
     event.preventDefault();
-    setActiveProjectDrop(Object.freeze({ id: target.id, position }));
+    setActiveProjectDrop({ id: target.id, position });
   };
   const dropProject = (target: Project) => (event: DragEvent<HTMLElement>) => {
     const sourceId = event.dataTransfer.getData("application/x-project-id") || draggedProjectRef.current;
@@ -165,7 +165,7 @@ export const useSidebarProjectManagement = ({
     if (api === null || title.length === 0) return;
     await queryClient.cancelQueries({ queryKey: projectQueryKey });
     const created = await api.createProject(title, newProjectParentId);
-    queryClient.setQueryData(projectQueryKey, (current: ReadonlyArray<Project> | undefined) =>
+    queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       appendById(current, created),
     );
     setProjectTitle("");
@@ -178,7 +178,7 @@ export const useSidebarProjectManagement = ({
     const title = editProjectTitle.trim();
     if (api === null || title.length === 0) return;
     const updated = await api.updateProject(project.id, { title });
-    queryClient.setQueryData(projectQueryKey, (current: ReadonlyArray<Project> | undefined) =>
+    queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       replaceById(current, updated),
     );
     setEditProjectId(null);
@@ -197,7 +197,7 @@ export const useSidebarProjectManagement = ({
   const archiveProject = async (project: Project) => {
     if (api === null) return;
     const archived = await api.archiveProject(project.id, true);
-    queryClient.setQueryData(projectQueryKey, (current: ReadonlyArray<Project> | undefined) =>
+    queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       replaceById(current, archived),
     );
     if (selectedProjectId === project.id) onInboxSelect?.();
@@ -207,7 +207,7 @@ export const useSidebarProjectManagement = ({
     if (confirmDelete !== false && !window.confirm(`Delete project “${project.title}” and all its tasks?`))
       return;
     await api.deleteProject(project.id);
-    queryClient.setQueryData(projectQueryKey, (current: ReadonlyArray<Project> | undefined) =>
+    queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       removeById(current, project.id),
     );
     await Promise.all([
@@ -216,7 +216,7 @@ export const useSidebarProjectManagement = ({
     ]);
     if (selectedProjectId === project.id) onInboxSelect?.();
   };
-  return Object.freeze({
+  return {
     draggingProjectId,
     activeProjectDrop,
     addingProject,
@@ -252,5 +252,5 @@ export const useSidebarProjectManagement = ({
     duplicateProject,
     archiveProject,
     deleteProject,
-  });
+  };
 };

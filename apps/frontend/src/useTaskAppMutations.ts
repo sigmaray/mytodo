@@ -8,22 +8,22 @@ import { inboxPlacement, parsePlacement, taskPlacement } from "./taskAppUtils";
 import type { useTaskAppState } from "./useTaskAppState";
 
 type TaskAppState = ReturnType<typeof useTaskAppState>;
-type MoveInput = Readonly<{
+type MoveInput = {
   taskId: TaskId;
   projectId: ProjectId | null;
   sectionId: SectionId | null;
   parentId: TaskId | null;
   beforeId: TaskId | null;
   afterId: TaskId | null;
-}>;
+};
 
-type TaskAppMutationInput = Readonly<{
+type TaskAppMutationInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
   state: TaskAppState;
-  sectionData: ReadonlyArray<Section> | undefined;
-  settings: Readonly<{ confirmDelete: boolean }> | undefined;
-}>;
+  sectionData: Array<Section> | undefined;
+  settings: { confirmDelete: boolean } | undefined;
+};
 
 export const useTaskAppMutations = ({
   api,
@@ -32,7 +32,7 @@ export const useTaskAppMutations = ({
   sectionData,
   settings,
 }: TaskAppMutationInput) => {
-  const allSections = sectionData ?? Object.freeze([]);
+  const allSections = sectionData ?? [];
   const {
     setSectionTitle,
     setAddingSection,
@@ -56,7 +56,7 @@ export const useTaskAppMutations = ({
   const confirmDeletion = (message: string) => settings?.confirmDelete === false || window.confirm(message);
 
   const createSubtaskMutation = useMutation({
-    mutationFn: (subtask: Readonly<{ title: string; parent: TaskNode }>) =>
+    mutationFn: (subtask: { title: string; parent: TaskNode }) =>
       api.createTask(subtask.title, subtask.parent.projectId, subtask.parent.sectionId, subtask.parent.id),
     onSuccess: async () => {
       setSubtaskTitle("");
@@ -66,10 +66,10 @@ export const useTaskAppMutations = ({
   });
 
   const updateProjectMutation = useMutation({
-    mutationFn: (project: Readonly<{ id: ProjectId; title?: string; description?: string }>) =>
+    mutationFn: (project: { id: ProjectId; title?: string; description?: string }) =>
       api.updateProject(project.id, project),
     onSuccess: (project) => {
-      queryClient.setQueryData(projectQueryKey, (current: ReadonlyArray<Project> | undefined) =>
+      queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
         replaceById(current, project),
       );
     },
@@ -80,32 +80,34 @@ export const useTaskAppMutations = ({
       id,
       beforeId,
       afterId,
-    }: Readonly<{ id: SectionId; beforeId: SectionId | null; afterId: SectionId | null }>) =>
-      api.reorderSection(id, beforeId, afterId),
+    }: {
+      id: SectionId;
+      beforeId: SectionId | null;
+      afterId: SectionId | null;
+    }) => api.reorderSection(id, beforeId, afterId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: sectionQueryKey });
     },
   });
 
   const createSectionMutation = useMutation({
-    mutationFn: (input: Readonly<{ title: string; projectId: ProjectId | null }>) =>
+    mutationFn: (input: { title: string; projectId: ProjectId | null }) =>
       api.createSection(input.title, input.projectId),
     onSuccess: (section) => {
       setSectionTitle("");
       setAddingSection(false);
-      queryClient.setQueryData(sectionQueryKey, (current: ReadonlyArray<Section> | undefined) =>
+      queryClient.setQueryData(sectionQueryKey, (current: Array<Section> | undefined) =>
         appendById(current, section),
       );
     },
   });
 
   const updateSectionMutation = useMutation({
-    mutationFn: (section: Readonly<{ id: SectionId; title: string }>) =>
-      api.updateSection(section.id, section.title),
+    mutationFn: (section: { id: SectionId; title: string }) => api.updateSection(section.id, section.title),
     onSuccess: (section) => {
       setEditSectionId(null);
       setEditSectionTitle("");
-      queryClient.setQueryData(sectionQueryKey, (current: ReadonlyArray<Section> | undefined) =>
+      queryClient.setQueryData(sectionQueryKey, (current: Array<Section> | undefined) =>
         replaceById(current, section),
       );
     },
@@ -114,7 +116,7 @@ export const useTaskAppMutations = ({
   const deleteSectionMutation = useMutation({
     mutationFn: (section: Section) => api.deleteSection(section.id).then(() => section),
     onSuccess: async (section) => {
-      queryClient.setQueryData(sectionQueryKey, (current: ReadonlyArray<Section> | undefined) =>
+      queryClient.setQueryData(sectionQueryKey, (current: Array<Section> | undefined) =>
         removeById(current, section.id),
       );
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });
@@ -131,22 +133,18 @@ export const useTaskAppMutations = ({
     mutationFn: (task: TaskNode) => api.patchTask(task.id, !task.completed),
     onMutate: async (task) => {
       await queryClient.cancelQueries({ queryKey: taskQueryKey });
-      const previousTasks = queryClient.getQueryData<ReadonlyArray<TaskNode>>(taskQueryKey);
+      const previousTasks = queryClient.getQueryData<Array<TaskNode>>(taskQueryKey);
 
-      const toggleNodes = (nodes: ReadonlyArray<TaskNode>): ReadonlyArray<TaskNode> =>
-        Object.freeze(
-          nodes.map((node) =>
-            Object.freeze({
-              ...node,
-              completed: node.id === task.id ? !node.completed : node.completed,
-              children: toggleNodes(node.children),
-            }),
-          ),
-        );
+      const toggleNodes = (nodes: Array<TaskNode>): Array<TaskNode> =>
+        nodes.map((node) => ({
+          ...node,
+          completed: node.id === task.id ? !node.completed : node.completed,
+          children: toggleNodes(node.children),
+        }));
 
-      queryClient.setQueryData(taskQueryKey, toggleNodes(previousTasks ?? Object.freeze([])));
+      queryClient.setQueryData(taskQueryKey, toggleNodes(previousTasks ?? []));
 
-      return Object.freeze({ previousTasks });
+      return { previousTasks };
     },
     onError: (_error, _task, context) => {
       queryClient.setQueryData(taskQueryKey, context?.previousTasks);
@@ -159,7 +157,7 @@ export const useTaskAppMutations = ({
   const editMutation = useMutation({
     mutationFn: async (task: TaskNode) => {
       const placement = parsePlacement(editPlacement, allSections);
-      const titleTask = await api.updateTask(task.id, Object.freeze({ title: editTitle.trim() }));
+      const titleTask = await api.updateTask(task.id, { title: editTitle.trim() });
 
       return taskPlacement(task) === editPlacement
         ? titleTask
@@ -205,13 +203,11 @@ export const useTaskAppMutations = ({
   });
 
   const selectedMoveMutation = useMutation({
-    mutationFn: async (
-      input: Readonly<{
-        taskIds: ReadonlyArray<TaskId>;
-        projectId: ProjectId | null;
-        sectionId: SectionId | null;
-      }>,
-    ) => {
+    mutationFn: async (input: {
+      taskIds: Array<TaskId>;
+      projectId: ProjectId | null;
+      sectionId: SectionId | null;
+    }) => {
       for (const taskId of input.taskIds) {
         await api.moveTask(taskId, input.projectId, input.sectionId, null, null, null);
       }
@@ -219,23 +215,23 @@ export const useTaskAppMutations = ({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });
       setSelectionMode(false);
-      setSelectedRootTaskIds(Object.freeze([]));
+      setSelectedRootTaskIds([]);
       setSelectedMoveOpen(false);
     },
   });
 
   const selectedDeleteMutation = useMutation({
-    mutationFn: async (taskIds: ReadonlyArray<TaskId>) =>
+    mutationFn: async (taskIds: Array<TaskId>) =>
       Promise.all(taskIds.map((taskId) => api.deleteTask(taskId))),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });
       setSelectionMode(false);
-      setSelectedRootTaskIds(Object.freeze([]));
+      setSelectedRootTaskIds([]);
       setSelectedMoveOpen(false);
     },
   });
 
-  return Object.freeze({
+  return {
     confirmDeletion,
     createSubtaskMutation,
     updateProjectMutation,
@@ -251,5 +247,5 @@ export const useTaskAppMutations = ({
     moveMutation,
     selectedMoveMutation,
     selectedDeleteMutation,
-  });
+  };
 };

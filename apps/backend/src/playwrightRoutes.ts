@@ -6,12 +6,12 @@ import type { AttachmentStorage } from "./attachmentStorage";
 
 export const registerPlaywrightRoutes = (
   app: AppHono,
-  dependencies: Readonly<{
+  dependencies: {
     database: ReturnType<typeof postgres>;
     attachmentStorage: AttachmentStorage;
     attachmentStorageAvailable: boolean;
     repositoryFor: RepositoryForUser;
-  }>,
+  },
 ) => {
   const {
     database: playwrightDatabase,
@@ -19,12 +19,12 @@ export const registerPlaywrightRoutes = (
     attachmentStorageAvailable,
     repositoryFor,
   } = dependencies;
-  const testTables = Object.freeze({
+  const testTables = {
     tasks: "tasks",
     task_comments: "task_comments",
     sections: "sections",
     projects: "projects",
-  } as const);
+  } as const;
   const clearTestTable = async (table: keyof typeof testTables, userId: string) => {
     const attachmentRows =
       table === "tasks" || table === "task_comments"
@@ -137,11 +137,11 @@ export const registerPlaywrightRoutes = (
       if (!result.success) return context.json({ error: "Invalid comment payload" }, 400);
       const task = (await taskRepository.list()).find((item) => item.id === result.data.taskId);
       if (task === undefined) return context.json({ error: "Task not found" }, 404);
-      const comment = Object.freeze({
+      const comment = {
         id: crypto.randomUUID(),
         body: result.data.body,
         createdAt: new Date().toISOString(),
-      });
+      };
       if (!(await taskRepository.addComment(task.id, comment)))
         return context.json({ error: "Task not found" }, 404);
       return context.json({ comment }, 201);
@@ -165,12 +165,12 @@ export const registerPlaywrightRoutes = (
         return context.json({ error: "One attachment up to 10 MB is required" }, 400);
       const file = files[0]!;
       const [attachment] = await attachmentStorage.saveMany([file]);
-      const comment = Object.freeze({
+      const comment = {
         id: crypto.randomUUID(),
         body,
         createdAt: new Date().toISOString(),
-        attachments: Object.freeze([attachment]),
-      });
+        attachments: [attachment],
+      };
       try {
         if (!(await taskRepository.addComment(task.id, comment))) throw new Error("Task not found");
         return context.json({ comment, attachment }, 201);

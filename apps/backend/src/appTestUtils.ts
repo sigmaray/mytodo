@@ -24,18 +24,16 @@ export const createTestServer = async (app: ReturnType<typeof createApp>) => {
   return server;
 };
 
-export const createTestAgent = async (
-  options: Readonly<{ projectArchivingEnabled?: boolean }> = Object.freeze({}),
-) => {
+export const createTestAgent = async (options: { projectArchivingEnabled?: boolean } = {}) => {
   const userRepository = createMemoryUserRepository([
-    Object.freeze({
+    {
       id: "test-admin",
       username: "test-admin",
       passwordHash: await hashPassword("test-admin-password"),
       isAdmin: true,
       confirmDelete: true,
       inboxDescription: "",
-    }),
+    },
   ]);
   const server = await createTestServer(
     createApp(createMemoryTaskRepository(), { userRepository, ...options }),

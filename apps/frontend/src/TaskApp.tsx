@@ -20,26 +20,26 @@ import { useTaskAppViewModel } from "./useTaskAppViewModel";
 import { inboxPlacement, projectPlacement, sectionPlacement } from "./taskAppUtils";
 import { createTaskAppPageModel } from "./taskAppPageModel";
 
-const pastedFiles = (clipboardData: DataTransfer): ReadonlyArray<File> => {
+const pastedFiles = (clipboardData: DataTransfer): Array<File> => {
   const itemFiles = Array.from(clipboardData.items)
     .filter((item) => item.kind === "file")
     .map((item) => item.getAsFile())
     .filter((file): file is File => file !== null);
-  return Object.freeze(itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files));
+  return itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files);
 };
 
-const notifyAttachedFiles = (files: ReadonlyArray<File>) =>
+const notifyAttachedFiles = (files: Array<File>) =>
   files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
 
 export const TaskApp = ({
   api,
   attachmentsEnabled = false,
   projectArchivingEnabled = false,
-}: Readonly<{
+}: {
   api: ApplicationApi;
   attachmentsEnabled?: boolean;
   projectArchivingEnabled?: boolean;
-}>) => {
+}) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const taskAppState = useTaskAppState();
@@ -170,7 +170,7 @@ export const TaskApp = ({
         setAddTaskTitle("");
         setAddTaskDescription("");
         setAddTaskDate("");
-        setAddTaskLabels(Object.freeze([]));
+        setAddTaskLabels([]);
         setAddTaskLabelInput("");
         setShowAddTaskDescription(false);
         setShowAddTaskDate(false);
@@ -202,7 +202,7 @@ export const TaskApp = ({
       event.stopPropagation();
       if (addTaskOpen) {
         const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length));
-        setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles]));
+        setAddTaskFiles([...addTaskFiles, ...acceptedFiles]);
         notifyAttachedFiles(acceptedFiles);
         return;
       }
@@ -218,7 +218,7 @@ export const TaskApp = ({
           await queryClient.invalidateQueries({ queryKey: taskQueryKey });
         })
         .catch(() => {
-          setDetailCommentFiles((current) => Object.freeze([...current, ...acceptedFiles].slice(0, 10)));
+          setDetailCommentFiles((current) => [...current, ...acceptedFiles].slice(0, 10));
           acceptedFiles.forEach((file) => toast.error(`Не удалось сохранить файл «${file.name}»`));
         });
     };

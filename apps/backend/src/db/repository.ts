@@ -14,21 +14,21 @@ export const createPostgresTaskRepository = (
   const client = sharedClient ?? postgres(databaseUrl, { max: 10 });
   const db = drizzle(client);
 
-  return Object.freeze({
+  return {
     ...createPostgresProjectMethods(db, client, userId),
     ...createPostgresSectionMethods(db, client, userId),
     ...createPostgresTaskMethods(db, client, userId),
-  });
+  };
 };
 
 export const createPostgresTaskRepositoryFactory = (databaseUrl: string) => {
   const sharedClient = postgres(databaseUrl, { max: 10 });
-  let repositories = Object.freeze({} as Readonly<Record<string, TaskRepository>>);
+  let repositories = {} as Record<string, TaskRepository>;
   return (userId: string): TaskRepository => {
     const existing = repositories[userId];
     if (existing !== undefined) return existing;
     const created = createPostgresTaskRepository(databaseUrl, userId, sharedClient);
-    repositories = Object.freeze({ ...repositories, [userId]: created });
+    repositories = { ...repositories, [userId]: created };
     return created;
   };
 };

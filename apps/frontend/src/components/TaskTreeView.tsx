@@ -13,21 +13,21 @@ import { AutoGrowTextarea } from "./TaskFormFields";
 
 type DragPlacement = "before" | "inside" | "after" | "outdent";
 
-export type ActiveDragTarget = Readonly<{
+export type ActiveDragTarget = {
   taskId: TaskId;
   placement: DragPlacement;
-}>;
+};
 
 export const renderTaskNodes = (
-  tasks: ReadonlyArray<TaskNode>,
-  actions: Readonly<{
+  tasks: Array<TaskNode>,
+  actions: {
     toggleTask: (task: TaskNode) => void;
     startEditing: (task: TaskNode) => void;
     openDetails: (task: TaskNode) => void;
     openContextMenu: (task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => void;
     selectionMode: boolean;
     attachmentsEnabled: boolean;
-    selectedTaskIds: ReadonlyArray<TaskId>;
+    selectedTaskIds: Array<TaskId>;
     toggleTaskSelection: (task: TaskNode) => void;
     deleteTask: (task: TaskNode) => void;
     startSubtask: (task: TaskNode) => void;
@@ -52,11 +52,11 @@ export const renderTaskNodes = (
     subtaskTitle: string;
     draggingTaskId: string | null;
     activeDragTarget: ActiveDragTarget | null;
-    placementOptions: ReadonlyArray<Readonly<{ value: string; label: string }>>;
+    placementOptions: Array<{ value: string; label: string }>;
     setEditTitle: (title: string) => void;
     setEditPlacement: (placement: string) => void;
     setSubtaskTitle: (title: string) => void;
-  }>,
+  },
   depth = 0,
 ): ReactElement => (
   <ul className={depth === 0 ? "task-list" : "task-children"}>

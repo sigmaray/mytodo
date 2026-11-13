@@ -8,10 +8,10 @@ import type { useSidebarProjectManagement } from "./useSidebarProjectManagement"
 
 type ProjectManagement = ReturnType<typeof useSidebarProjectManagement>;
 
-type SidebarProjectsProps = Readonly<{
+type SidebarProjectsProps = {
   api: ApplicationApi | null;
-  navigationProjects: ReadonlyArray<Project>;
-  activeProjects: ReadonlyArray<Project>;
+  navigationProjects: Array<Project>;
+  activeProjects: Array<Project>;
   selectedProjectId: ProjectId | null;
   activePage: string;
   projectArchivingEnabled: boolean;
@@ -21,7 +21,7 @@ type SidebarProjectsProps = Readonly<{
   onProjectDragLeave?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
   onProjectDrop?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
   management: ProjectManagement;
-}>;
+};
 
 type DragEventHandler<T extends HTMLElement> = (event: DragEvent<T>) => void;
 

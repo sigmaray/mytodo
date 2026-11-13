@@ -27,78 +27,75 @@ const postMultipart = async <T>(
   return JSON.parse(text) as T;
 };
 
-export const createE2eApi = (request: APIRequestContext) =>
-  Object.freeze({
-    reset: async () => postJson<Readonly<{ reset: true }>>(request, "/api/playwright/reset"),
-    clearTable: async (table: "tasks" | "task_comments" | "sections" | "projects") => {
-      const response = await request.delete(`/api/playwright/tables/${table}`);
-      const text = await response.text();
-      expect(response.ok(), `DELETE test table ${table} failed (${response.status()}): ${text}`).toBe(true);
-      return JSON.parse(text) as Readonly<{ table: string; deleted: number }>;
-    },
-    createProject: async (title: string, parentId: string | null = null) => {
-      const result = await postJson<Readonly<{ project: Readonly<{ id: string; title: string }> }>>(
-        request,
-        "/api/playwright/entities/project",
-        { title, parentId },
-      );
-      return result.project;
-    },
-    createSection: async (title: string, projectId: string | null = null) => {
-      const result = await postJson<Readonly<{ section: Readonly<{ id: string; title: string }> }>>(
-        request,
-        "/api/playwright/entities/section",
-        { title, projectId },
-      );
-      return result.section;
-    },
-    createTask: async (
-      title: string,
-      placement: Readonly<{
-        projectId?: string | null;
-        sectionId?: string | null;
-        parentId?: string | null;
-      }> = Object.freeze({}),
-    ) => {
-      const result = await postJson<Readonly<{ task: Readonly<{ id: string; title: string }> }>>(
-        request,
-        "/api/playwright/entities/task",
-        {
-          title,
-          projectId: placement.projectId ?? null,
-          sectionId: placement.sectionId ?? null,
-          parentId: placement.parentId ?? null,
-        },
-      );
-      return result.task;
-    },
-    createComment: async (taskId: string, body: string) => {
-      const result = await postJson<Readonly<{ comment: Readonly<{ id: string; body: string }> }>>(
-        request,
-        "/api/playwright/entities/comment",
-        { taskId, body },
-      );
-      return result.comment;
-    },
-    createAttachment: async (
-      taskId: string,
-      file: Readonly<{ name: string; mimeType: string; buffer: Buffer }>,
-      body = "",
-    ) => {
-      const result = await postMultipart<
-        Readonly<{
-          comment: Readonly<{ id: string }>;
-          attachment: Readonly<{ id: string; name: string; size: number }>;
-        }>
-      >(request, "/api/playwright/entities/attachment", {
-        taskId,
-        body,
-        files: { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
-      });
-      return result;
-    },
-    updateTask: async (taskId: string, data: Readonly<Record<string, unknown>>) =>
-      patchJson(request, `/tasks/${encodeURIComponent(taskId)}`, data),
-    archiveProject: async (projectId: string, archived: boolean) =>
-      patchJson(request, `/projects/${encodeURIComponent(projectId)}/archive`, { archived }),
-  });
+export const createE2eApi = (request: APIRequestContext) => ({
+  reset: async () => postJson<{ reset: true }>(request, "/api/playwright/reset"),
+  clearTable: async (table: "tasks" | "task_comments" | "sections" | "projects") => {
+    const response = await request.delete(`/api/playwright/tables/${table}`);
+    const text = await response.text();
+    expect(response.ok(), `DELETE test table ${table} failed (${response.status()}): ${text}`).toBe(true);
+    return JSON.parse(text) as { table: string; deleted: number };
+  },
+  createProject: async (title: string, parentId: string | null = null) => {
+    const result = await postJson<{ project: { id: string; title: string } }>(
+      request,
+      "/api/playwright/entities/project",
+      { title, parentId },
+    );
+    return result.project;
+  },
+  createSection: async (title: string, projectId: string | null = null) => {
+    const result = await postJson<{ section: { id: string; title: string } }>(
+      request,
+      "/api/playwright/entities/section",
+      { title, projectId },
+    );
+    return result.section;
+  },
+  createTask: async (
+    title: string,
+    placement: {
+      projectId?: string | null;
+      sectionId?: string | null;
+      parentId?: string | null;
+    } = {},
+  ) => {
+    const result = await postJson<{ task: { id: string; title: string } }>(
+      request,
+      "/api/playwright/entities/task",
+      {
+        title,
+        projectId: placement.projectId ?? null,
+        sectionId: placement.sectionId ?? null,
+        parentId: placement.parentId ?? null,
+      },
+    );
+    return result.task;
+  },
+  createComment: async (taskId: string, body: string) => {
+    const result = await postJson<{ comment: { id: string; body: string } }>(
+      request,
+      "/api/playwright/entities/comment",
+      { taskId, body },
+    );
+    return result.comment;
+  },
+  createAttachment: async (
+    taskId: string,
+    file: { name: string; mimeType: string; buffer: Buffer },
+    body = "",
+  ) => {
+    const result = await postMultipart<{
+      comment: { id: string };
+      attachment: { id: string; name: string; size: number };
+    }>(request, "/api/playwright/entities/attachment", {
+      taskId,
+      body,
+      files: { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
+    });
+    return result;
+  },
+  updateTask: async (taskId: string, data: Record<string, unknown>) =>
+    patchJson(request, `/tasks/${encodeURIComponent(taskId)}`, data),
+  archiveProject: async (projectId: string, archived: boolean) =>
+    patchJson(request, `/projects/${encodeURIComponent(projectId)}/archive`, { archived }),
+});

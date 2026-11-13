@@ -4,7 +4,7 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toLocalIsoDate } from "../dateUtils";
 
-export type AutoGrowTextareaProps = Readonly<{
+export type AutoGrowTextareaProps = {
   value: string;
   onChange: (value: string) => void;
   ariaLabel: string;
@@ -15,7 +15,7 @@ export type AutoGrowTextareaProps = Readonly<{
   className?: string;
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onPaste?: React.ClipboardEventHandler<HTMLTextAreaElement>;
-}>;
+};
 
 export const AutoGrowTextarea = ({
   value,
@@ -62,25 +62,23 @@ export const AutoGrowTextarea = ({
   );
 };
 
-type LabelPickerProps = Readonly<{
-  selected: ReadonlyArray<string>;
-  options: ReadonlyArray<string>;
+type LabelPickerProps = {
+  selected: Array<string>;
+  options: Array<string>;
   inputLabel: string;
   inputValue: string;
   onInputChange: (value: string) => void;
-  onChange: (labels: ReadonlyArray<string>) => void | Promise<unknown>;
+  onChange: (labels: Array<string>) => void | Promise<unknown>;
   autoFocus?: boolean;
-}>;
+};
 
-export const normalizeLabels = (labels: ReadonlyArray<string>): ReadonlyArray<string> =>
-  Object.freeze(
-    labels.reduce<ReadonlyArray<string>>((result, label) => {
-      const normalized = label.trim();
-      return normalized && !result.some((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase())
-        ? [...result, normalized]
-        : result;
-    }, Object.freeze([])),
-  );
+export const normalizeLabels = (labels: Array<string>): Array<string> =>
+  labels.reduce<Array<string>>((result, label) => {
+    const normalized = label.trim();
+    return normalized && !result.some((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase())
+      ? [...result, normalized]
+      : result;
+  }, []);
 
 export const LabelPicker = ({
   selected,
@@ -92,13 +90,13 @@ export const LabelPicker = ({
   autoFocus = false,
 }: LabelPickerProps) => {
   const [focused, setFocused] = useState(false);
-  const [current, setCurrent] = useState<ReadonlyArray<string>>(selected);
+  const [current, setCurrent] = useState<Array<string>>(selected);
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => setCurrent(selected), [selected]);
   useLayoutEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
-  const commit = async (labels: ReadonlyArray<string>) => {
+  const commit = async (labels: Array<string>) => {
     const next = normalizeLabels(labels);
     setCurrent(next);
     try {
@@ -146,7 +144,7 @@ export const LabelPicker = ({
             <button
               type="button"
               aria-label={`Remove label ${label}`}
-              onClick={() => void commit(Object.freeze(current.filter((item) => item !== label)))}
+              onClick={() => void commit(current.filter((item) => item !== label))}
             >
               <X size={13} aria-hidden="true" />
             </button>
@@ -167,8 +165,7 @@ export const LabelPicker = ({
               event.preventDefault();
               if (inputValue.trim()) void addLabel(inputValue);
             }
-            if (event.key === "Backspace" && !inputValue && current.length)
-              void commit(Object.freeze(current.slice(0, -1)));
+            if (event.key === "Backspace" && !inputValue && current.length) void commit(current.slice(0, -1));
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
@@ -200,21 +197,20 @@ export const LabelPicker = ({
   );
 };
 
-type CalendarDay = Readonly<{
+type CalendarDay = {
   date: string;
   day: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   isWeekend: boolean;
-}>;
+};
 
-export const calendarWeekdays = Object.freeze(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+export const calendarWeekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const calendarMonthParts = (month: string) =>
-  Object.freeze({
-    year: Number(month.slice(0, 4)),
-    monthIndex: Number(month.slice(5, 7)) - 1,
-  });
+const calendarMonthParts = (month: string) => ({
+  year: Number(month.slice(0, 4)),
+  monthIndex: Number(month.slice(5, 7)) - 1,
+});
 
 const isoDateFromUtc = (date: Date) =>
   `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
@@ -234,25 +230,23 @@ export const calendarMonthLabel = (month: string) => {
   });
 };
 
-export const buildCalendarDays = (month: string): ReadonlyArray<CalendarDay> => {
+export const buildCalendarDays = (month: string): Array<CalendarDay> => {
   const { year, monthIndex } = calendarMonthParts(month);
   const firstDay = new Date(Date.UTC(year, monthIndex, 1));
   const mondayOffset = (firstDay.getUTCDay() + 6) % 7;
   const today = toLocalIsoDate(new Date());
-  return Object.freeze(
-    Array.from({ length: 42 }, (_, index) => {
-      const current = new Date(Date.UTC(year, monthIndex, index - mondayOffset + 1));
-      const date = isoDateFromUtc(current);
-      const weekday = current.getUTCDay();
-      return Object.freeze({
-        date,
-        day: current.getUTCDate(),
-        isCurrentMonth: current.getUTCMonth() === monthIndex,
-        isToday: date === today,
-        isWeekend: weekday === 0 || weekday === 6,
-      });
-    }),
-  );
+  return Array.from({ length: 42 }, (_, index) => {
+    const current = new Date(Date.UTC(year, monthIndex, index - mondayOffset + 1));
+    const date = isoDateFromUtc(current);
+    const weekday = current.getUTCDay();
+    return {
+      date,
+      day: current.getUTCDate(),
+      isCurrentMonth: current.getUTCMonth() === monthIndex,
+      isToday: date === today,
+      isWeekend: weekday === 0 || weekday === 6,
+    };
+  });
 };
 
 const getDateShortcut = (shortcut: "Today" | "Tomorrow" | "This weekend" | "Next week") => {
@@ -269,12 +263,12 @@ export const DatePickerPanel = ({
   onChange,
   inputLabel,
   autoFocus = false,
-}: Readonly<{
+}: {
   value: string;
   onChange: (value: string) => void;
   inputLabel: string;
   autoFocus?: boolean;
-}>) => {
+}) => {
   const [month, setMonth] = useState(() => (value || getDateShortcut("Today")).slice(0, 7));
   const today = toLocalIsoDate(new Date());
   useEffect(() => {

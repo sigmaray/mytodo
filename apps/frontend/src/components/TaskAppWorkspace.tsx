@@ -1,11 +1,11 @@
 import type { ApplicationApi } from "../api";
 import { TaskApp } from "../TaskApp";
 
-export type TaskAppWorkspaceProps = Readonly<{
+export type TaskAppWorkspaceProps = {
   api: ApplicationApi;
   attachmentsEnabled: boolean;
   projectArchivingEnabled: boolean;
-}>;
+};
 
 export const TaskAppWorkspace = ({
   api,

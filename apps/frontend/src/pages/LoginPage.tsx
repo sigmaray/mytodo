@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 
-export const LoginPage = ({ api }: Readonly<{ api: ApplicationApi }>) => {
+export const LoginPage = ({ api }: { api: ApplicationApi }) => {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

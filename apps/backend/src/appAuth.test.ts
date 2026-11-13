@@ -12,14 +12,14 @@ describe("settings and session authentication", () => {
   it("keeps production session cookies secure unless explicitly disabled for local HTTP", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "production-admin",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const secureServer = await createTestServer(
       createApp(createMemoryTaskRepository(), { mode: "production", userRepository }),
@@ -81,14 +81,14 @@ describe("settings and session authentication", () => {
   it("defaults to delete confirmations and allows updating that preference", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const agent = request.agent(server);
@@ -110,14 +110,14 @@ describe("settings and session authentication", () => {
   it("persists the Inbox description", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const agent = request.agent(server);
@@ -137,14 +137,14 @@ describe("settings and session authentication", () => {
   it("protects app routes with a user-specific HttpOnly session cookie", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const agent = request.agent(server);
@@ -167,22 +167,22 @@ describe("settings and session authentication", () => {
   it("allows users to update their own username and password with unique usernames", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
-      Object.freeze({
+      },
+      {
         id: "other-user",
         username: "other",
         passwordHash,
         isAdmin: false,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const agent = request.agent(server);
@@ -222,14 +222,14 @@ describe("settings and session authentication", () => {
   it("allows only administrators to manage accounts and preserves an administrator", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const agent = request.agent(server);
@@ -248,14 +248,14 @@ describe("settings and session authentication", () => {
   it("accepts any non-empty password when creating users, updating passwords, and logging in", async () => {
     const passwordHash = await hashPassword("administrator-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(createApp(createMemoryTaskRepository(), { userRepository }));
     const admin = request.agent(server);
@@ -281,23 +281,21 @@ describe("settings and session authentication", () => {
   it("keeps task data isolated by user", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "00000000-0000-4000-8000-000000000001",
         username: "admin",
         passwordHash,
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
-    let repositories = Object.freeze(
-      {} as Readonly<Record<string, ReturnType<typeof createMemoryTaskRepository>>>,
-    );
+    let repositories = {} as Record<string, ReturnType<typeof createMemoryTaskRepository>>;
     const repositoryFor = (userId: string) => {
       const existing = repositories[userId];
       if (existing !== undefined) return existing;
       const created = createMemoryTaskRepository();
-      repositories = Object.freeze({ ...repositories, [userId]: created });
+      repositories = { ...repositories, [userId]: created };
       return created;
     };
     const server = await createTestServer(createApp(repositoryFor, { userRepository }));

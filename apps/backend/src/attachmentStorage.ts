@@ -1,16 +1,14 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 
-export type AttachmentMetadata = Readonly<{
+export type AttachmentMetadata = {
   id: string;
   name: string;
   mimeType: string;
   size: number;
-}>;
+};
 
-export const validateAttachmentFiles = (
-  files: ReadonlyArray<File>,
-): "invalid-file" | "limits-exceeded" | null => {
+export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "limits-exceeded" | null => {
   const invalidFile = files.some((file) => {
     const extension = extname(file.name);
     const validName =
@@ -54,7 +52,7 @@ export const createAttachmentStorage = (directory: string | null) => {
     if (path !== null) await rm(path, { force: true });
   };
 
-  const removeMany = async (ids: ReadonlyArray<string>) => Promise.all(ids.map(remove));
+  const removeMany = async (ids: Array<string>) => Promise.all(ids.map(remove));
 
   const saveOne = async (file: File): Promise<AttachmentMetadata> => {
     if (resolvedDirectory === null) throw new Error("Attachment storage is disabled");
@@ -63,20 +61,20 @@ export const createAttachmentStorage = (directory: string | null) => {
     if (path === null) throw new Error("Invalid attachment identifier");
     await mkdir(resolvedDirectory, { recursive: true });
     await writeFile(path, new Uint8Array(await file.arrayBuffer()), { flag: "wx", mode: 0o600 });
-    return Object.freeze({
+    return {
       id,
       name: basename(file.name.replaceAll("\\", "/")).slice(0, 255) || "attachment",
       mimeType: file.type.slice(0, 128) || "application/octet-stream",
       size: file.size,
-    });
+    };
   };
 
-  const saveMany = async (files: ReadonlyArray<File>): Promise<ReadonlyArray<AttachmentMetadata>> => {
+  const saveMany = async (files: Array<File>): Promise<Array<AttachmentMetadata>> => {
     const saveRemaining = async (
       index: number,
-      saved: ReadonlyArray<AttachmentMetadata>,
-    ): Promise<ReadonlyArray<AttachmentMetadata>> => {
-      if (index >= files.length) return Object.freeze([...saved]);
+      saved: Array<AttachmentMetadata>,
+    ): Promise<Array<AttachmentMetadata>> => {
+      if (index >= files.length) return [...saved];
       try {
         const savedAttachment = await saveOne(files[index]!);
         return await saveRemaining(index + 1, [...saved, savedAttachment]);
@@ -85,7 +83,7 @@ export const createAttachmentStorage = (directory: string | null) => {
         throw error;
       }
     };
-    return saveRemaining(0, Object.freeze([]));
+    return saveRemaining(0, []);
   };
 
   const read = async (id: string) => {
@@ -98,14 +96,14 @@ export const createAttachmentStorage = (directory: string | null) => {
     }
   };
 
-  return Object.freeze({
+  return {
     enabled: resolvedDirectory !== null,
     saveOne,
     saveMany,
     remove,
     removeMany,
     read,
-  });
+  };
 };
 
 export type AttachmentStorage = ReturnType<typeof createAttachmentStorage>;

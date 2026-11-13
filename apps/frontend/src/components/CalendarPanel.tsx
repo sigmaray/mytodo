@@ -3,20 +3,20 @@ import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DragEvent } from "react";
 
-type CalendarDay = Readonly<{
+type CalendarDay = {
   date: string;
   day: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   isWeekend: boolean;
-}>;
+};
 
-export type CalendarPanelProps = Readonly<{
+export type CalendarPanelProps = {
   month: string;
   label: string;
-  days: ReadonlyArray<CalendarDay>;
-  weekdays: ReadonlyArray<string>;
-  tasks: ReadonlyArray<Task>;
+  days: Array<CalendarDay>;
+  weekdays: Array<string>;
+  tasks: Array<Task>;
   taskCount: number;
   activeDate: string | null;
   locationForTask: (task: Task) => string;
@@ -29,7 +29,7 @@ export type CalendarPanelProps = Readonly<{
   onTaskDragStart: (task: Task, event: DragEvent<HTMLButtonElement>) => void;
   onTaskDragEnd: () => void;
   onTaskOpen: (task: Task) => void;
-}>;
+};
 
 export const CalendarPanel = ({
   month,

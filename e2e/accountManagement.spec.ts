@@ -47,9 +47,9 @@ test("deleting a user from User management removes all of their database records
 
     const usersResponse = await page.request.get("/users");
     expect(usersResponse.ok()).toBe(true);
-    const usersBody = (await usersResponse.json()) as Readonly<{
-      users: ReadonlyArray<Readonly<{ id: string; username: string }>>;
-    }>;
+    const usersBody = (await usersResponse.json()) as {
+      users: Array<{ id: string; username: string }>;
+    };
     userId = usersBody.users.find((user) => user.username === username)?.id;
     expect(userId).toBeDefined();
     if (userId === undefined) throw new Error("Created user was not returned by the admin API");
@@ -63,26 +63,23 @@ test("deleting a user from User management removes all of their database records
       data: { title: `Owned project ${suffix}` },
     });
     expect(projectResponse.status()).toBe(201);
-    const project = ((await projectResponse.json()) as Readonly<{ project: Readonly<{ id: string }> }>)
-      .project;
+    const project = ((await projectResponse.json()) as { project: { id: string } }).project;
     const subprojectResponse = await userRequest.post("/projects", {
       data: { title: `Owned subproject ${suffix}`, parentId: project.id },
     });
     expect(subprojectResponse.status()).toBe(201);
-    const subproject = ((await subprojectResponse.json()) as Readonly<{ project: Readonly<{ id: string }> }>)
-      .project;
+    const subproject = ((await subprojectResponse.json()) as { project: { id: string } }).project;
 
     const sectionResponse = await userRequest.post("/sections", {
       data: { title: `Owned section ${suffix}`, projectId: subproject.id },
     });
     expect(sectionResponse.status()).toBe(201);
-    const section = ((await sectionResponse.json()) as Readonly<{ section: Readonly<{ id: string }> }>)
-      .section;
+    const section = ((await sectionResponse.json()) as { section: { id: string } }).section;
     const taskResponse = await userRequest.post("/tasks", {
       data: { title: `Owned task ${suffix}`, projectId: subproject.id, sectionId: section.id },
     });
     expect(taskResponse.status()).toBe(201);
-    const task = ((await taskResponse.json()) as Readonly<{ task: Readonly<{ id: string }> }>).task;
+    const task = ((await taskResponse.json()) as { task: { id: string } }).task;
     const childTaskResponse = await userRequest.post("/tasks", {
       data: {
         title: `Owned child task ${suffix}`,
@@ -112,11 +109,9 @@ test("deleting a user from User management removes all of their database records
       },
     });
     expect(countResponse.ok()).toBe(true);
-    const countBody = (await countResponse.json()) as Readonly<{
-      rows: ReadonlyArray<
-        Readonly<{ users: number; sessions: number; projects: number; sections: number; tasks: number }>
-      >;
-    }>;
+    const countBody = (await countResponse.json()) as {
+      rows: Array<{ users: number; sessions: number; projects: number; sections: number; tasks: number }>;
+    };
     expect(countBody.rows[0]).toEqual({ users: 1, sessions: 1, projects: 2, sections: 1, tasks: 3 });
 
     const managedUser = page
@@ -131,20 +126,18 @@ test("deleting a user from User management removes all of their database records
       },
     });
     expect(remainingResponse.ok()).toBe(true);
-    const remainingBody = (await remainingResponse.json()) as Readonly<{
-      rows: ReadonlyArray<
-        Readonly<{ users: number; sessions: number; projects: number; sections: number; tasks: number }>
-      >;
-    }>;
+    const remainingBody = (await remainingResponse.json()) as {
+      rows: Array<{ users: number; sessions: number; projects: number; sections: number; tasks: number }>;
+    };
     expect(remainingBody.rows[0]).toEqual({ users: 0, sessions: 0, projects: 0, sections: 0, tasks: 0 });
     expect((await userRequest.get("/tasks")).status()).toBe(401);
   } finally {
     await userContext.close();
     const cleanupUsersResponse = await page.request.get("/users");
     if (cleanupUsersResponse.ok()) {
-      const cleanupUsersBody = (await cleanupUsersResponse.json()) as Readonly<{
-        users: ReadonlyArray<Readonly<{ id: string; username: string }>>;
-      }>;
+      const cleanupUsersBody = (await cleanupUsersResponse.json()) as {
+        users: Array<{ id: string; username: string }>;
+      };
       const cleanupUserId = userId ?? cleanupUsersBody.users.find((user) => user.username === username)?.id;
       if (cleanupUserId !== undefined) await page.request.delete(`/users/${cleanupUserId}`);
     }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 
-export const AdminUsersPage = ({ api, sidebar }: Readonly<{ api: ApplicationApi; sidebar?: ReactNode }>) => {
+export const AdminUsersPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: ReactNode }) => {
   const queryClient = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
   const [newUsername, setNewUsername] = useState("");
@@ -43,8 +43,10 @@ export const AdminUsersPage = ({ api, sidebar }: Readonly<{ api: ApplicationApi;
     mutationFn: ({
       id,
       patch,
-    }: Readonly<{ id: string; patch: { username?: string; password?: string; isAdmin?: boolean } }>) =>
-      api.updateUser(id, patch),
+    }: {
+      id: string;
+      patch: { username?: string; password?: string; isAdmin?: boolean };
+    }) => api.updateUser(id, patch),
     onSuccess: refreshUsers,
   });
   const deleteUser = useMutation({ mutationFn: api.deleteUser, onSuccess: refreshUsers });

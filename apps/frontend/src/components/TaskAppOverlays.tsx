@@ -6,20 +6,20 @@ import { ClipboardCopy, Eye, X } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { copyText, createPlacementOptions } from "../taskAppUtils";
 
-export type TaskAppMarkdownModal = Readonly<{
+export type TaskAppMarkdownModal = {
   title: string;
   markdown: string;
   format?: "markdown" | "advanced-markdown" | "json";
-}>;
+};
 
-type TaskAppOverlaysProps = Readonly<{
+type TaskAppOverlaysProps = {
   selectedMoveOpen: boolean;
   setSelectedMoveOpen: (open: boolean) => void;
-  selectedRootTasks: ReadonlyArray<TaskNode>;
+  selectedRootTasks: Array<TaskNode>;
   selectedMovePlacement: string;
   setSelectedMovePlacement: (placement: string) => void;
-  activeProjects: ReadonlyArray<Project>;
-  allSections: ReadonlyArray<Section>;
+  activeProjects: Array<Project>;
+  allSections: Array<Section>;
   selectedMovePending: boolean;
   moveSelectedTasks: () => void;
   markdownModal: TaskAppMarkdownModal | null;
@@ -35,7 +35,7 @@ type TaskAppOverlaysProps = Readonly<{
   scopeJson: string;
   copyStatus: string;
   setCopyStatus: (status: string) => void;
-}>;
+};
 
 export const TaskAppOverlays = ({
   selectedMoveOpen,
@@ -201,13 +201,11 @@ export const TaskAppOverlays = ({
                 <button
                   type="button"
                   onClick={() =>
-                    setMarkdownModal(
-                      Object.freeze({
-                        title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                        markdown,
-                        format: "markdown",
-                      }),
-                    )
+                    setMarkdownModal({
+                      title: targetProjectId === null ? "Inbox" : taskTargetLabel,
+                      markdown,
+                      format: "markdown",
+                    })
                   }
                 >
                   <Eye size={16} aria-hidden="true" />
@@ -237,13 +235,11 @@ export const TaskAppOverlays = ({
                 <button
                   type="button"
                   onClick={() =>
-                    setMarkdownModal(
-                      Object.freeze({
-                        title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                        markdown: advancedMarkdown,
-                        format: "advanced-markdown",
-                      }),
-                    )
+                    setMarkdownModal({
+                      title: targetProjectId === null ? "Inbox" : taskTargetLabel,
+                      markdown: advancedMarkdown,
+                      format: "advanced-markdown",
+                    })
                   }
                 >
                   <Eye size={16} aria-hidden="true" />
@@ -272,13 +268,11 @@ export const TaskAppOverlays = ({
                 <button
                   type="button"
                   onClick={() =>
-                    setMarkdownModal(
-                      Object.freeze({
-                        title: targetProjectId === null ? "Inbox" : taskTargetLabel,
-                        markdown: scopeJson,
-                        format: "json",
-                      }),
-                    )
+                    setMarkdownModal({
+                      title: targetProjectId === null ? "Inbox" : taskTargetLabel,
+                      markdown: scopeJson,
+                      format: "json",
+                    })
                   }
                 >
                   <Eye size={16} aria-hidden="true" />

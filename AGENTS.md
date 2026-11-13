@@ -3,13 +3,11 @@
 ## Project Overview
 Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and-drop capabilities. Each installation is managed by an administrator and can contain multiple user accounts, with task data kept per user.
 
-## Core Paradigm: STRICT FUNCTIONAL PROGRAMMING
+## Code Paradigm
 - **NO CLASSES, NO OOP, NO `this` keyword.** This is a hard rule.
-- Use only pure functions, closures, and factory functions.
-- All data structures must be immutable. Use `Readonly<T>`, `ReadonlyArray<T>`, and `Object.freeze()`.
-- Prefer TypeScript `Readonly<T>`/`ReadonlyArray<T>` as the main immutability mechanism. Use runtime `Object.freeze()` only at useful boundaries (for example shared constants, returned trees, and test fixtures), and avoid ceremonial wrappers such as `freezeTask`/`freezeProject`/`freezeSection`; inline freezing at the creation boundary is clearer when runtime freezing is actually useful.
-- Do not use structural mutation. Return new objects/arrays.
-- Use Discriminated Unions and Pattern Matching (via `switch` or functional libraries) instead of polymorphism.
+- Prefer pure functions when they make behavior easier to test and understand.
+- Choose straightforward patterns suited to each layer and its frameworks; avoid imposing a single programming paradigm across the whole application.
+- Use discriminated unions where they clarify domain states, and handle their variants explicitly.
 
 ## Tech Stack
 - **Architecture:** Monorepo (pnpm workspaces).

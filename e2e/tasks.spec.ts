@@ -96,9 +96,9 @@ test("PostgreSQL preserves task tree, concurrent comments, and tenant links", as
     expect(firstComment.status()).toBe(201);
     expect(secondComment.status()).toBe(201);
     const tasksResponse = await page.request.get("/tasks");
-    const tasksBody = (await tasksResponse.json()) as Readonly<{
-      tasks: ReadonlyArray<Readonly<{ id: string; comments: ReadonlyArray<Readonly<{ body: string }>> }>>;
-    }>;
+    const tasksBody = (await tasksResponse.json()) as {
+      tasks: Array<{ id: string; comments: Array<{ body: string }> }>;
+    };
     expect(
       tasksBody.tasks
         .find((task) => task.id === parent.id)
@@ -108,9 +108,9 @@ test("PostgreSQL preserves task tree, concurrent comments, and tenant links", as
     const toolMigration = await page.request.post("/tools-api/migrate");
     expect(toolMigration.ok()).toBe(true);
     const afterMigration = await page.request.get("/tasks");
-    const afterMigrationBody = (await afterMigration.json()) as Readonly<{
-      tasks: ReadonlyArray<Readonly<{ id: string; comments: ReadonlyArray<Readonly<{ body: string }>> }>>;
-    }>;
+    const afterMigrationBody = (await afterMigration.json()) as {
+      tasks: Array<{ id: string; comments: Array<{ body: string }> }>;
+    };
     expect(
       afterMigrationBody.tasks
         .find((task) => task.id === parent.id)
@@ -127,23 +127,21 @@ test("PostgreSQL preserves task tree, concurrent comments, and tenant links", as
     const deleteProjectResponse = await page.request.delete(`/projects/${project.id}`);
     expect(deleteProjectResponse.ok()).toBe(true);
     const afterProjectDelete = await page.request.get("/tasks");
-    const afterProjectDeleteBody = (await afterProjectDelete.json()) as Readonly<{
-      tasks: ReadonlyArray<Readonly<{ id: string }>>;
-    }>;
+    const afterProjectDeleteBody = (await afterProjectDelete.json()) as {
+      tasks: Array<{ id: string }>;
+    };
     expect(afterProjectDeleteBody.tasks.some((task) => task.id === projectTask.id)).toBe(false);
 
     const adminProjectResponse = await page.request.post("/projects", {
       data: { title: `Foreign project ${suffix}` },
     });
-    const adminProject = (
-      (await adminProjectResponse.json()) as Readonly<{ project: Readonly<{ id: string }> }>
-    ).project;
+    const adminProject = ((await adminProjectResponse.json()) as { project: { id: string } }).project;
     const otherUserName = `integrity-${suffix}`;
     const otherUserResponse = await page.request.post("/users", {
       data: { username: otherUserName, password: `integrity-password-${suffix}` },
     });
     expect(otherUserResponse.status()).toBe(201);
-    otherUserId = ((await otherUserResponse.json()) as Readonly<{ user: Readonly<{ id: string }> }>).user.id;
+    otherUserId = ((await otherUserResponse.json()) as { user: { id: string } }).user.id;
     const invalidInsert = await page.request.post("/tools-api/query", {
       data: {
         sql: `INSERT INTO tasks (id, user_id, title, completed, parent_id, project_id, section_id, lexical_order) VALUES ('cross-user-${suffix}', '${otherUserId}', 'invalid cross-user task', false, NULL, '${adminProject.id}', NULL, 'U')`,

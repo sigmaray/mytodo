@@ -2,23 +2,23 @@ import { Plus, X } from "lucide-react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { AutoGrowTextarea, DatePickerPanel, LabelPicker } from "./TaskFormFields";
 
-type AddTaskDraft = Readonly<{
+type AddTaskDraft = {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   title: string;
   setTitle: Dispatch<SetStateAction<string>>;
   description: string;
   setDescription: Dispatch<SetStateAction<string>>;
-  files: ReadonlyArray<File>;
-  setFiles: Dispatch<SetStateAction<ReadonlyArray<File>>>;
+  files: Array<File>;
+  setFiles: Dispatch<SetStateAction<Array<File>>>;
   date: string;
   setDate: Dispatch<SetStateAction<string>>;
   datePickerOpen: boolean;
   setDatePickerOpen: Dispatch<SetStateAction<boolean>>;
   dateBeforePicker: string;
   setDateBeforePicker: Dispatch<SetStateAction<string>>;
-  labels: ReadonlyArray<string>;
-  setLabels: Dispatch<SetStateAction<ReadonlyArray<string>>>;
+  labels: Array<string>;
+  setLabels: Dispatch<SetStateAction<Array<string>>>;
   labelInput: string;
   setLabelInput: Dispatch<SetStateAction<string>>;
   showDescription: boolean;
@@ -29,17 +29,17 @@ type AddTaskDraft = Readonly<{
   setShowLabels: Dispatch<SetStateAction<boolean>>;
   placement: string;
   setPlacement: Dispatch<SetStateAction<string>>;
-}>;
+};
 
-type AddTaskDialogProps = Readonly<{
+type AddTaskDialogProps = {
   draft: AddTaskDraft;
   attachmentsEnabled: boolean;
-  availableLabels: ReadonlyArray<string>;
-  placementOptions: ReadonlyArray<Readonly<{ value: string; label: string }>>;
+  availableLabels: Array<string>;
+  placementOptions: Array<{ value: string; label: string }>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
-  pastedFiles: (data: DataTransfer) => ReadonlyArray<File>;
-  notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
-}>;
+  pastedFiles: (data: DataTransfer) => Array<File>;
+  notifyAttachedFiles: (files: Array<File>) => void;
+};
 
 export const AddTaskDialog = ({
   draft,
@@ -98,7 +98,7 @@ export const AddTaskDialog = ({
           if (files.length > 0) {
             event.preventDefault();
             const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length));
-            setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles]));
+            setAddTaskFiles([...addTaskFiles, ...acceptedFiles]);
             notifyAttachedFiles(acceptedFiles);
           }
         }}
@@ -260,7 +260,7 @@ export const AddTaskDialog = ({
                 className="add-task-mobile-collapse"
                 aria-label="Remove labels and hide section"
                 onClick={() => {
-                  setAddTaskLabels(Object.freeze([]));
+                  setAddTaskLabels([]);
                   setAddTaskLabelInput("");
                   setShowAddTaskLabels(false);
                 }}
@@ -289,7 +289,7 @@ export const AddTaskDialog = ({
                   onChange={(event) => {
                     const files = Array.from(event.currentTarget.files ?? []);
                     const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length));
-                    setAddTaskFiles(Object.freeze([...addTaskFiles, ...acceptedFiles]));
+                    setAddTaskFiles([...addTaskFiles, ...acceptedFiles]);
                     notifyAttachedFiles(acceptedFiles);
                     event.currentTarget.value = "";
                   }}
@@ -302,9 +302,7 @@ export const AddTaskDialog = ({
                     type="button"
                     aria-label={`Remove ${file.name}`}
                     onClick={() =>
-                      setAddTaskFiles(
-                        Object.freeze(addTaskFiles.filter((_, itemIndex) => index !== itemIndex)),
-                      )
+                      setAddTaskFiles(addTaskFiles.filter((_, itemIndex) => index !== itemIndex))
                     }
                   >
                     ×

@@ -13,19 +13,19 @@ import { shiftCalendarMonth } from "./components/TaskFormFields";
 import { toLocalIsoDate } from "./dateUtils";
 
 export type TaskAppPageModel =
-  | Readonly<{ mode: "dates"; props: DatesPageProps }>
-  | Readonly<{ mode: "labels"; props: LabelsPageProps }>
-  | Readonly<{ mode: "attachments"; props: AttachmentsPageProps }>
-  | Readonly<{ mode: "export"; props: ExportPageProps }>
-  | Readonly<{ mode: "inbox"; props: TaskAppBoardProps }>;
+  | { mode: "dates"; props: DatesPageProps }
+  | { mode: "labels"; props: LabelsPageProps }
+  | { mode: "attachments"; props: AttachmentsPageProps }
+  | { mode: "export"; props: ExportPageProps }
+  | { mode: "inbox"; props: TaskAppBoardProps };
 
-type TaskAppPageModelInput = Readonly<{
+type TaskAppPageModelInput = {
   attachmentsEnabled: boolean;
   tasksLoading: boolean;
   state: ReturnType<typeof useTaskAppState>;
   actions: ReturnType<typeof useTaskAppActions>;
   viewModel: ReturnType<typeof useTaskAppViewModel>;
-}>;
+};
 
 export const createTaskAppPageModel = ({
   attachmentsEnabled,
@@ -109,9 +109,9 @@ export const createTaskAppPageModel = ({
   } = viewModel;
 
   if (pageMode === "dates") {
-    return Object.freeze({
+    return {
       mode: "dates",
-      props: Object.freeze({
+      props: {
         dateView,
         setDateView,
         dateListFilter,
@@ -147,33 +147,33 @@ export const createTaskAppPageModel = ({
         },
         viewTasks,
         taskActions,
-      }),
-    });
+      },
+    };
   }
 
   if (pageMode === "labels")
-    return Object.freeze({
+    return {
       mode: "labels",
-      props: Object.freeze({ selectedLabel, viewTitle, flatTasks, viewTasks, taskActions }),
-    });
+      props: { selectedLabel, viewTitle, flatTasks, viewTasks, taskActions },
+    };
 
   if (pageMode === "attachments" && attachmentsEnabled)
-    return Object.freeze({
+    return {
       mode: "attachments",
-      props: Object.freeze({
+      props: {
         attachments: taskAttachments,
         loading: tasksLoading,
         onTaskOpen: (taskId: string) => {
           const task = findTaskNode(allTasks, taskId);
           if (task !== null) openDetails(task);
         },
-      }),
-    });
+      },
+    };
 
   if (pageMode === "export")
-    return Object.freeze({
+    return {
       mode: "export",
-      props: Object.freeze({
+      props: {
         copyStatus,
         onExport: (kind: ExportKind) => {
           if (kind === "markdown") exportMarkdown();
@@ -195,20 +195,18 @@ export const createTaskAppPageModel = ({
         onPreview: (kind: ExportKind) => {
           const content =
             kind === "markdown" ? allMarkdown : kind === "advancedMarkdown" ? allAdvancedMarkdown : allJson;
-          setMarkdownModal(
-            Object.freeze({
-              title: kind === "json" ? "All data" : "All tasks",
-              markdown: content,
-              format: kind === "advancedMarkdown" ? "advanced-markdown" : kind,
-            }),
-          );
+          setMarkdownModal({
+            title: kind === "json" ? "All data" : "All tasks",
+            markdown: content,
+            format: kind === "advancedMarkdown" ? "advanced-markdown" : kind,
+          });
         },
-      }),
-    });
+      },
+    };
 
-  return Object.freeze({
+  return {
     mode: "inbox",
-    props: Object.freeze({
+    props: {
       targetProjectId,
       scopeDescriptionBlock,
       activeDropZone,
@@ -244,6 +242,6 @@ export const createTaskAppPageModel = ({
       startSectionEdit,
       taskActions,
       taskTargetLabel,
-    }),
-  });
+    },
+  };
 };

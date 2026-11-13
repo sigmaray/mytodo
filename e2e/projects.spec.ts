@@ -199,14 +199,14 @@ test("nests a project with touch dragging in the mobile sidebar", async ({ page 
     await expect(sourceRow).toHaveClass(/project-dragging/);
     const currentTargetBox = await targetRow.boundingBox();
     if (!currentTargetBox) throw new Error("Mobile project drop target must remain visible");
-    const start = Object.freeze({
+    const start = {
       x: sourceBox.x + sourceBox.width / 2,
       y: sourceBox.y + sourceBox.height / 2,
-    });
-    const finish = Object.freeze({
+    };
+    const finish = {
       x: currentTargetBox.x + currentTargetBox.width / 2,
       y: currentTargetBox.y + currentTargetBox.height / 2,
-    });
+    };
     for (const progress of [0.25, 0.5, 0.75, 1]) {
       await cdp.send("Input.dispatchTouchEvent", {
         type: "touchMove",

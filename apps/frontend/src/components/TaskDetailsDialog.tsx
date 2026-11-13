@@ -10,7 +10,7 @@ import { AutoGrowTextarea, DatePickerPanel } from "./TaskFormFields";
 
 type TaskDetailsPatch = Parameters<ApplicationApi["updateTask"]>[1];
 
-export type TaskDetailsDialogProps = Readonly<{
+export type TaskDetailsDialogProps = {
   api: ApplicationApi;
   queryClient: QueryClient;
   attachmentsEnabled: boolean;
@@ -18,9 +18,9 @@ export type TaskDetailsDialogProps = Readonly<{
   selectedDetailsProject: Project | null;
   selectedDetailsSection: Section | null;
   selectedDetailsParent: TaskNode | null;
-  activeProjects: ReadonlyArray<Project>;
-  allSections: ReadonlyArray<Section>;
-  availableLabels: ReadonlyArray<string>;
+  activeProjects: Array<Project>;
+  allSections: Array<Section>;
+  availableLabels: Array<string>;
   detailTitle: string;
   detailDescription: string;
   detailDueDate: string;
@@ -35,7 +35,7 @@ export type TaskDetailsDialogProps = Readonly<{
   showMobileDate: boolean;
   showMobileSubtasks: boolean;
   detailComment: string;
-  detailCommentFiles: ReadonlyArray<File>;
+  detailCommentFiles: Array<File>;
   detailSubtask: string;
   editingCommentId: string | null;
   editingCommentBody: string;
@@ -55,7 +55,7 @@ export type TaskDetailsDialogProps = Readonly<{
   setShowMobileDate: Dispatch<SetStateAction<boolean>>;
   setShowMobileSubtasks: Dispatch<SetStateAction<boolean>>;
   setDetailComment: Dispatch<SetStateAction<string>>;
-  setDetailCommentFiles: Dispatch<SetStateAction<ReadonlyArray<File>>>;
+  setDetailCommentFiles: Dispatch<SetStateAction<Array<File>>>;
   setDetailSubtask: Dispatch<SetStateAction<string>>;
   setEditingCommentId: Dispatch<SetStateAction<string | null>>;
   setEditingCommentBody: Dispatch<SetStateAction<string>>;
@@ -66,9 +66,9 @@ export type TaskDetailsDialogProps = Readonly<{
   closeMobileComments: () => Promise<void>;
   closeMobileSubtasks: () => Promise<void>;
   openDetails: (task: TaskNode) => void;
-  notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
-  pastedFiles: (clipboardData: DataTransfer) => ReadonlyArray<File>;
-}>;
+  notifyAttachedFiles: (files: Array<File>) => void;
+  pastedFiles: (clipboardData: DataTransfer) => Array<File>;
+};
 
 export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
   const {
@@ -134,7 +134,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
               if (files.length > 0) {
                 event.preventDefault();
                 const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length));
-                setDetailCommentFiles(Object.freeze([...detailCommentFiles, ...acceptedFiles]));
+                setDetailCommentFiles([...detailCommentFiles, ...acceptedFiles]);
                 notifyAttachedFiles(acceptedFiles);
               }
             }}

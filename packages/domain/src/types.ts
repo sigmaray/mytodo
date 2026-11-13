@@ -2,13 +2,13 @@ export type TaskId = string;
 export type ProjectId = string;
 export type SectionId = string;
 
-export type Task = Readonly<{
+export type Task = {
   id: TaskId;
   title: string;
   description: string;
   dueDate: string | null;
-  labels: ReadonlyArray<string>;
-  comments: ReadonlyArray<Comment>;
+  labels: Array<string>;
+  comments: Array<Comment>;
   completed: boolean;
   parentId: TaskId | null;
   projectId: ProjectId | null;
@@ -16,22 +16,21 @@ export type Task = Readonly<{
   lexicalOrder: string;
   createdAt: string;
   updatedAt: string;
-}>;
+};
 
-export type Attachment = Readonly<{ id: string; name: string; mimeType: string; size: number }>;
-export type Comment = Readonly<{
+export type Attachment = { id: string; name: string; mimeType: string; size: number };
+export type Comment = {
   id: string;
   body: string;
   createdAt: string;
-  attachments?: ReadonlyArray<Attachment>;
-}>;
+  attachments?: Array<Attachment>;
+};
 
-export type TaskNode = Task &
-  Readonly<{
-    children: ReadonlyArray<TaskNode>;
-  }>;
+export type TaskNode = Task & {
+  children: Array<TaskNode>;
+};
 
-export type Project = Readonly<{
+export type Project = {
   id: ProjectId;
   title: string;
   description: string;
@@ -40,13 +39,13 @@ export type Project = Readonly<{
   lexicalOrder: string;
   createdAt: string;
   updatedAt: string;
-}>;
+};
 
-export type Section = Readonly<{
+export type Section = {
   id: SectionId;
   title: string;
   projectId: ProjectId | null;
   lexicalOrder: string;
   createdAt: string;
   updatedAt: string;
-}>;
+};

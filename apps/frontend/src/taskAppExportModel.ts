@@ -7,15 +7,15 @@ import {
   filterTaskTree,
 } from "./taskAppUtils";
 
-type TaskAppExportModelInput = Readonly<{
-  allProjects: ReadonlyArray<Project>;
-  allSections: ReadonlyArray<Section>;
-  allTasks: ReadonlyArray<TaskNode>;
-  flatTasks: ReadonlyArray<Task>;
+type TaskAppExportModelInput = {
+  allProjects: Array<Project>;
+  allSections: Array<Section>;
+  allTasks: Array<TaskNode>;
+  flatTasks: Array<Task>;
   targetProjectId: ProjectId | null;
   taskTargetLabel: string;
   inboxDescription: string | undefined;
-}>;
+};
 
 export const createTaskAppExportModel = ({
   allProjects,
@@ -28,40 +28,36 @@ export const createTaskAppExportModel = ({
 }: TaskAppExportModelInput) => {
   const allMarkdown = allMarkdownDocument(allProjects, allSections, allTasks);
   const allJson = JSON.stringify(
-    Object.freeze({
+    {
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),
-      inbox: Object.freeze({
+      inbox: {
         description: inboxDescription ?? "",
         sections: allSections.filter((section) => section.projectId === null),
         tasks: flatTasks.filter((task) => task.projectId === null),
-      }),
-      projects: allProjects.map((project) =>
-        Object.freeze({
-          ...project,
-          sections: allSections.filter((section) => section.projectId === project.id),
-          tasks: flatTasks.filter((task) => task.projectId === project.id),
-        }),
-      ),
+      },
+      projects: allProjects.map((project) => ({
+        ...project,
+        sections: allSections.filter((section) => section.projectId === project.id),
+        tasks: flatTasks.filter((task) => task.projectId === project.id),
+      })),
       sections: allSections,
       tasks: flatTasks,
       taskTree: allTasks,
       dates: flatTasks
         .filter((task) => task.dueDate !== null)
-        .map((task) => Object.freeze({ taskId: task.id, dueDate: task.dueDate })),
+        .map((task) => ({ taskId: task.id, dueDate: task.dueDate })),
       comments: flatTasks.flatMap((task) =>
-        task.comments.map((comment) => Object.freeze({ ...comment, taskId: task.id })),
+        task.comments.map((comment) => ({ ...comment, taskId: task.id })),
       ),
-      descriptions: Object.freeze({
+      descriptions: {
         inbox: inboxDescription ?? "",
-        projects: allProjects.map((project) =>
-          Object.freeze({ id: project.id, description: project.description }),
-        ),
+        projects: allProjects.map((project) => ({ id: project.id, description: project.description })),
         tasks: flatTasks
           .filter((task) => task.description.length > 0)
-          .map((task) => Object.freeze({ id: task.id, description: task.description })),
-      }),
-    }),
+          .map((task) => ({ id: task.id, description: task.description })),
+      },
+    },
     null,
     2,
   );
@@ -86,43 +82,40 @@ export const createTaskAppExportModel = ({
     inboxDescription ?? "",
   );
   const scopeJson = JSON.stringify(
-    Object.freeze({
+    {
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),
-      scope: Object.freeze({
+      scope: {
         type: targetProjectId === null ? "inbox" : "project",
         id: targetProjectId,
         title: targetProjectId === null ? "Inbox" : (scopeProject?.title ?? taskTargetLabel),
-      }),
+      },
       inbox:
         targetProjectId === null
-          ? Object.freeze({ description: scopeDescription, sections: scopeSections, tasks: scopeTasks })
+          ? { description: scopeDescription, sections: scopeSections, tasks: scopeTasks }
           : null,
-      project:
-        scopeProject === null
-          ? null
-          : Object.freeze({ ...scopeProject, sections: scopeSections, tasks: scopeTasks }),
+      project: scopeProject === null ? null : { ...scopeProject, sections: scopeSections, tasks: scopeTasks },
       sections: scopeSections,
       tasks: scopeTasks,
       taskTree: scopeTaskTree,
       dates: scopeTasks
         .filter((task) => task.dueDate !== null)
-        .map((task) => Object.freeze({ taskId: task.id, dueDate: task.dueDate })),
+        .map((task) => ({ taskId: task.id, dueDate: task.dueDate })),
       comments: scopeTasks.flatMap((task) =>
-        task.comments.map((comment) => Object.freeze({ ...comment, taskId: task.id })),
+        task.comments.map((comment) => ({ ...comment, taskId: task.id })),
       ),
-      descriptions: Object.freeze({
+      descriptions: {
         scope: scopeDescription,
         tasks: scopeTasks
           .filter((task) => task.description.length > 0)
-          .map((task) => Object.freeze({ id: task.id, description: task.description })),
-      }),
-    }),
+          .map((task) => ({ id: task.id, description: task.description })),
+      },
+    },
     null,
     2,
   );
 
-  return Object.freeze({
+  return {
     allMarkdown,
     allJson,
     scopeProject,
@@ -136,5 +129,5 @@ export const createTaskAppExportModel = ({
         new Blob([allAdvancedMarkdown], { type: "text/markdown;charset=utf-8" }),
         "mytodo-advanced.md",
       ),
-  });
+  };
 };

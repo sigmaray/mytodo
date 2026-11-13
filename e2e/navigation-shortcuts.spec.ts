@@ -131,7 +131,7 @@ test("task dialog, inline keyboard editing, navigation, search, and calendar wor
       page
         .locator('section[aria-label^="Section "]')
         .evaluateAll(
-          (sections, names: Readonly<{ first: string; second: string }>) =>
+          (sections, names: { first: string; second: string }) =>
             sections.findIndex(
               (section) => section.getAttribute("aria-label") === `Section ${names.second}`,
             ) <

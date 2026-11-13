@@ -1,7 +1,7 @@
 import type { TaskNode } from "@todoist-clone/domain";
 import { createPortal } from "react-dom";
 
-type TaskContextMenuPortalProps = Readonly<{
+type TaskContextMenuPortalProps = {
   task: TaskNode | null;
   left: number;
   top: number;
@@ -9,7 +9,7 @@ type TaskContextMenuPortalProps = Readonly<{
   onQuickEdit: () => void;
   onAddSubtask: () => void;
   onDelete: () => void;
-}>;
+};
 
 export const TaskContextMenuPortal = ({
   task,

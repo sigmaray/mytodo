@@ -36,7 +36,7 @@ import {
   sectionPlacement,
 } from "../taskAppUtils";
 
-type TaskAppScreenProps = Readonly<{
+type TaskAppScreenProps = {
   api: ApplicationApi;
   attachmentsEnabled: boolean;
   queryClient: QueryClient;
@@ -46,9 +46,9 @@ type TaskAppScreenProps = Readonly<{
   actions: ReturnType<typeof useTaskAppActions>;
   viewModel: ReturnType<typeof useTaskAppViewModel>;
   pageModel: TaskAppPageModel;
-  pastedFiles: (data: DataTransfer) => ReadonlyArray<File>;
-  notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
-}>;
+  pastedFiles: (data: DataTransfer) => Array<File>;
+  notifyAttachedFiles: (files: Array<File>) => void;
+};
 
 export const TaskAppScreen = ({
   api,
@@ -200,7 +200,7 @@ export const TaskAppScreen = ({
   } = viewModel;
   const markdownFloating = useFloating({ open: markdownModal !== null });
   const dndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: Object.freeze({ distance: 4 }) }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   return (

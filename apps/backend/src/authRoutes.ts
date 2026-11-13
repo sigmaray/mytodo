@@ -23,7 +23,7 @@ import { defaultAdminUserId } from "./users";
 
 export const registerAuthRoutes = (
   app: AppHono,
-  dependencies: Readonly<{
+  dependencies: {
     userRepository: UserRepository;
     repositoryFor: RepositoryForUser;
     secureCookies: boolean;
@@ -32,7 +32,7 @@ export const registerAuthRoutes = (
     attachmentStorageAvailable: boolean;
     attachmentStorage: AttachmentStorage;
     requireAdmin: (userId: string) => Promise<boolean>;
-  }>,
+  },
 ) => {
   const {
     userRepository,

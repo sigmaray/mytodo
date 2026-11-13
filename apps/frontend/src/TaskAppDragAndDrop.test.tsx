@@ -25,17 +25,10 @@ describe("TaskApp drag and drop", () => {
       ): Promise<Task> => task({ id, title: "Child", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({ id: "parent", title: "Parent task" }),
-            task({ id: "child", title: "Child task" }),
-          ]),
-        ),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "parent", title: "Parent task" }), task({ id: "child", title: "Child task" })]),
+      moveTask,
+    });
 
     await screen.findByText("Parent task");
     const dataTransfer = dragTask("Child task");
@@ -57,18 +50,14 @@ describe("TaskApp drag and drop", () => {
       ): Promise<Task> => task({ id, title: "Moved", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({ id: "a", title: "Alpha", lexicalOrder: "a" }),
-            task({ id: "b", title: "Beta", lexicalOrder: "b" }),
-            task({ id: "c", title: "Gamma", lexicalOrder: "c" }),
-          ]),
-        ),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({ id: "a", title: "Alpha", lexicalOrder: "a" }),
+        task({ id: "b", title: "Beta", lexicalOrder: "b" }),
+        task({ id: "c", title: "Gamma", lexicalOrder: "c" }),
+      ]),
+      moveTask,
+    });
 
     await screen.findByText("Alpha");
     const dataTransfer = dragTask("Gamma");
@@ -94,25 +83,19 @@ describe("TaskApp drag and drop", () => {
       ): Promise<Task> => task({ id, title: "Moved", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({ id: "a", title: "Alpha", lexicalOrder: "a" }),
-            task({ id: "b", title: "Beta", lexicalOrder: "b" }),
-            task({
-              id: "parent",
-              title: "Parent",
-              lexicalOrder: "c",
-              children: Object.freeze([
-                task({ id: "child", title: "Child", parentId: "parent", lexicalOrder: "a" }),
-              ]),
-            }),
-          ]),
-        ),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({ id: "a", title: "Alpha", lexicalOrder: "a" }),
+        task({ id: "b", title: "Beta", lexicalOrder: "b" }),
+        task({
+          id: "parent",
+          title: "Parent",
+          lexicalOrder: "c",
+          children: [task({ id: "child", title: "Child", parentId: "parent", lexicalOrder: "a" })],
+        }),
+      ]),
+      moveTask,
+    });
 
     await screen.findByText("Beta");
     fireEvent.keyDown(taskRow("Beta"), { key: "ArrowRight", ctrlKey: true });
@@ -134,23 +117,17 @@ describe("TaskApp drag and drop", () => {
       ): Promise<Task> => task({ id, title: "Moved", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({
-              id: "parent",
-              title: "Parent",
-              lexicalOrder: "a",
-              children: Object.freeze([
-                task({ id: "child", title: "Child", parentId: "parent", lexicalOrder: "a" }),
-              ]),
-            }),
-          ]),
-        ),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({
+          id: "parent",
+          title: "Parent",
+          lexicalOrder: "a",
+          children: [task({ id: "child", title: "Child", parentId: "parent", lexicalOrder: "a" })],
+        }),
+      ]),
+      moveTask,
+    });
 
     await screen.findByText("Child");
     const dataTransfer = dragTask("Child");
@@ -159,18 +136,17 @@ describe("TaskApp drag and drop", () => {
     placePointer(childRow, 0);
     Object.defineProperty(childRow, "getBoundingClientRect", {
       configurable: true,
-      value: () =>
-        Object.freeze({
-          x: 50,
-          y: 0,
-          top: 0,
-          right: 450,
-          bottom: 100,
-          left: 50,
-          width: 400,
-          height: 100,
-          toJSON: () => Object.freeze({}),
-        }),
+      value: () => ({
+        x: 50,
+        y: 0,
+        top: 0,
+        right: 450,
+        bottom: 100,
+        left: 50,
+        width: 400,
+        height: 100,
+        toJSON: () => ({}),
+      }),
     });
     fireEvent.drop(childRow, { dataTransfer, clientX: -24 });
 

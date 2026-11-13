@@ -5,22 +5,22 @@ import { createPortal } from "react-dom";
 
 export const SearchPalette = ({
   tasks,
-  projects = Object.freeze([]),
-  sections = Object.freeze([]),
+  projects = [],
+  sections = [],
   onTaskSelect,
-}: Readonly<{
-  tasks: ReadonlyArray<Task>;
-  projects?: ReadonlyArray<Project>;
-  sections?: ReadonlyArray<Section>;
+}: {
+  tasks: Array<Task>;
+  projects?: Array<Project>;
+  sections?: Array<Section>;
   onTaskSelect: (task: Task) => void;
-}>) => {
+}) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const taskResults =
     normalizedQuery.length === 0
-      ? Object.freeze([])
+      ? []
       : tasks.filter((task) =>
           [task.title, task.description, ...task.labels].some((value) =>
             value.toLocaleLowerCase().includes(normalizedQuery),

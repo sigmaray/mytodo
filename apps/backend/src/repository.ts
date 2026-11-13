@@ -1,33 +1,33 @@
 import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskId } from "@todoist-clone/domain";
 
-export type TaskCommentPatch = Readonly<{
+export type TaskCommentPatch = {
   id?: string;
   body: string;
   attachments?: Comment["attachments"];
-}>;
+};
 
-export type TaskPatch = Readonly<{
+export type TaskPatch = {
   title?: string;
   description?: string;
   dueDate?: string | null;
-  labels?: ReadonlyArray<string>;
-  comments?: ReadonlyArray<TaskCommentPatch>;
+  labels?: Array<string>;
+  comments?: Array<TaskCommentPatch>;
   completed?: boolean;
   projectId?: ProjectId | null;
   sectionId?: SectionId | null;
-}>;
+};
 
-export type TaskMove = Readonly<{
+export type TaskMove = {
   parentId: TaskId | null;
   projectId: ProjectId | null;
   sectionId: SectionId | null;
   beforeId: TaskId | null;
   afterId: TaskId | null;
-}>;
+};
 
-export type TaskRepository = Readonly<{
-  list: () => Promise<ReadonlyArray<Task>>;
-  listProjects: () => Promise<ReadonlyArray<Project>>;
+export type TaskRepository = {
+  list: () => Promise<Array<Task>>;
+  listProjects: () => Promise<Array<Project>>;
   createProject: (title: string) => Promise<Project>;
   createSubproject: (title: string, parentId: ProjectId) => Promise<Project>;
   moveProject: (id: ProjectId, parentId: ProjectId | null) => Promise<Project | null>;
@@ -36,14 +36,11 @@ export type TaskRepository = Readonly<{
     beforeId: ProjectId | null,
     afterId: ProjectId | null,
   ) => Promise<Project | null>;
-  updateProject: (
-    id: ProjectId,
-    patch: Readonly<{ title?: string; description?: string }>,
-  ) => Promise<Project | null>;
+  updateProject: (id: ProjectId, patch: { title?: string; description?: string }) => Promise<Project | null>;
   deleteProject: (id: ProjectId) => Promise<boolean>;
   duplicateProject: (id: ProjectId) => Promise<Project | null>;
   setProjectArchived: (id: ProjectId, archived: boolean) => Promise<Project | null>;
-  listSections: () => Promise<ReadonlyArray<Section>>;
+  listSections: () => Promise<Array<Section>>;
   reorderSection: (
     id: SectionId,
     beforeId: SectionId | null,
@@ -62,6 +59,6 @@ export type TaskRepository = Readonly<{
   addComment: (id: TaskId, comment: Task["comments"][number]) => Promise<boolean>;
   move: (id: TaskId, move: TaskMove) => Promise<Task | null>;
   delete: (id: TaskId) => Promise<boolean>;
-}>;
+};
 
 export { createMemoryTaskRepository } from "./memoryTaskRepository";

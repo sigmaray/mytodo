@@ -2,7 +2,7 @@ import { Paperclip } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatAttachmentSize } from "../components/CommentAttachment";
 
-export type AttachmentLibraryItem = Readonly<{
+export type AttachmentLibraryItem = {
   id: string;
   name: string;
   mimeType: string;
@@ -10,13 +10,13 @@ export type AttachmentLibraryItem = Readonly<{
   taskId: string;
   taskTitle: string;
   uploadedAt: string;
-}>;
+};
 
-export type AttachmentsPageProps = Readonly<{
-  attachments: ReadonlyArray<AttachmentLibraryItem>;
+export type AttachmentsPageProps = {
+  attachments: Array<AttachmentLibraryItem>;
   loading: boolean;
   onTaskOpen: (taskId: string) => void;
-}>;
+};
 
 export const AttachmentsPage = ({ attachments, loading, onTaskOpen }: AttachmentsPageProps) => (
   <section className="attachments-page" aria-label="Attachments list">

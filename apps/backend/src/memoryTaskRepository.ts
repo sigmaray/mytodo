@@ -4,33 +4,28 @@ import type { TaskRepository } from "./repository";
 
 const now = () => new Date().toISOString();
 
-const collectDescendantIds = (allTasks: ReadonlyArray<Task>, id: TaskId): ReadonlyArray<TaskId> =>
-  Object.freeze([
-    id,
-    ...allTasks
-      .filter((task) => task.parentId === id)
-      .flatMap((task) => collectDescendantIds(allTasks, task.id)),
-  ]);
+const collectDescendantIds = (allTasks: Array<Task>, id: TaskId): Array<TaskId> => [
+  id,
+  ...allTasks
+    .filter((task) => task.parentId === id)
+    .flatMap((task) => collectDescendantIds(allTasks, task.id)),
+];
 
-const wouldCreateTaskCycle = (
-  tasks: ReadonlyArray<Task>,
-  taskId: TaskId,
-  parentId: TaskId | null,
-): boolean => {
-  const followsParentChain = (ancestorId: TaskId | null, visited: ReadonlyArray<TaskId>): boolean => {
+const wouldCreateTaskCycle = (tasks: Array<Task>, taskId: TaskId, parentId: TaskId | null): boolean => {
+  const followsParentChain = (ancestorId: TaskId | null, visited: Array<TaskId>): boolean => {
     if (ancestorId === null) return false;
     if (ancestorId === taskId || visited.includes(ancestorId)) return true;
     const parent = tasks.find((task) => task.id === ancestorId);
-    return followsParentChain(parent?.parentId ?? null, Object.freeze([...visited, ancestorId]));
+    return followsParentChain(parent?.parentId ?? null, [...visited, ancestorId]);
   };
-  return followsParentChain(parentId, Object.freeze([]));
+  return followsParentChain(parentId, []);
 };
 
 const compareOrder = (left: Task, right: Task): number =>
   left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0;
 
 const findSiblingOrder = (
-  tasks: ReadonlyArray<Task>,
+  tasks: Array<Task>,
   parentId: TaskId | null,
   projectId: ProjectId | null,
   sectionId: SectionId | null,
@@ -55,20 +50,18 @@ const findSiblingOrder = (
   return generateLexicalOrder(low, high);
 };
 
-export const createMemoryTaskRepository = (
-  initialTasks: ReadonlyArray<Task> = Object.freeze([]),
-): TaskRepository => {
-  let tasks = Object.freeze(initialTasks.map((task) => Object.freeze({ ...task })));
-  let projects = Object.freeze([] as ReadonlyArray<Project>);
-  let sections = Object.freeze([] as ReadonlyArray<Section>);
+export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): TaskRepository => {
+  let tasks = initialTasks.map((task) => ({ ...task }));
+  let projects = [] as Array<Project>;
+  let sections = [] as Array<Section>;
 
-  const replace = (nextTasks: ReadonlyArray<Task>) => {
-    tasks = Object.freeze(nextTasks.map((task) => Object.freeze({ ...task })));
+  const replace = (nextTasks: Array<Task>) => {
+    tasks = nextTasks.map((task) => ({ ...task }));
   };
   const hasValidTaskPlacement = (projectId: string | null, sectionId: string | null): boolean =>
     sectionId === null || sections.find((section) => section.id === sectionId)?.projectId === projectId;
 
-  return Object.freeze({
+  return {
     list: async () => tasks,
     listProjects: async () => projects,
     createProject: async (title) => {
@@ -76,7 +69,7 @@ export const createMemoryTaskRepository = (
       const siblings = projects
         .filter((project) => project.parentId === null)
         .toSorted((left, right) => left.lexicalOrder.localeCompare(right.lexicalOrder));
-      const project = Object.freeze({
+      const project = {
         id: crypto.randomUUID(),
         title,
         description: "",
@@ -85,9 +78,9 @@ export const createMemoryTaskRepository = (
         lexicalOrder: generateLexicalOrder(siblings.at(-1)?.lexicalOrder ?? null, null),
         createdAt,
         updatedAt: createdAt,
-      });
+      };
 
-      projects = Object.freeze([...projects, project]);
+      projects = [...projects, project];
 
       return project;
     },
@@ -97,7 +90,7 @@ export const createMemoryTaskRepository = (
       const siblings = projects
         .filter((item) => item.parentId === parentId)
         .toSorted((left, right) => left.lexicalOrder.localeCompare(right.lexicalOrder));
-      const project = Object.freeze({
+      const project = {
         id: crypto.randomUUID(),
         title,
         description: "",
@@ -106,8 +99,8 @@ export const createMemoryTaskRepository = (
         lexicalOrder: generateLexicalOrder(siblings.at(-1)?.lexicalOrder ?? null, null),
         createdAt,
         updatedAt: createdAt,
-      });
-      projects = Object.freeze([...projects, project]);
+      };
+      projects = [...projects, project];
       return project;
     },
     moveProject: async (id, parentId) => {
@@ -126,13 +119,13 @@ export const createMemoryTaskRepository = (
       const siblings = projects
         .filter((item) => item.parentId === parentId && item.id !== id)
         .toSorted((left, right) => left.lexicalOrder.localeCompare(right.lexicalOrder));
-      const moved = Object.freeze({
+      const moved = {
         ...existing,
         parentId,
         lexicalOrder: generateLexicalOrder(siblings.at(-1)?.lexicalOrder ?? null, null),
         updatedAt: now(),
-      });
-      projects = Object.freeze(projects.map((item) => (item.id === id ? moved : item)));
+      };
+      projects = projects.map((item) => (item.id === id ? moved : item));
       return moved;
     },
     reorderProject: async (id, beforeId, afterId) => {
@@ -152,18 +145,16 @@ export const createMemoryTaskRepository = (
             ? (ordered.at(-1)?.lexicalOrder ?? null)
             : null;
       const high = beforeIndex >= 0 ? (ordered[beforeIndex]?.lexicalOrder ?? null) : null;
-      const reordered = Object.freeze({
+      const reordered = {
         ...existing,
         lexicalOrder: generateLexicalOrder(low, high),
         updatedAt: now(),
-      });
-      projects = Object.freeze(
-        projects
-          .map((project) => (project.id === id ? reordered : project))
-          .toSorted((left, right) =>
-            left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0,
-          ),
-      );
+      };
+      projects = projects
+        .map((project) => (project.id === id ? reordered : project))
+        .toSorted((left, right) =>
+          left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0,
+        );
       return reordered;
     },
     updateProject: async (id, patch) => {
@@ -173,13 +164,13 @@ export const createMemoryTaskRepository = (
         return null;
       }
 
-      const updated = Object.freeze({
+      const updated = {
         ...existing,
         ...patch,
         updatedAt: now(),
-      });
+      };
 
-      projects = Object.freeze(projects.map((project) => (project.id === id ? updated : project)));
+      projects = projects.map((project) => (project.id === id ? updated : project));
 
       return updated;
     },
@@ -202,16 +193,12 @@ export const createMemoryTaskRepository = (
       const doomedIds = new Set(doomedRootIds.flatMap((taskId) => collectDescendantIds(tasks, taskId)));
 
       replace(tasks.filter((task) => !doomedIds.has(task.id)));
-      sections = Object.freeze(sections.filter((section) => section.projectId !== id));
-      projects = Object.freeze(
-        projects
-          .filter((project) => project.id !== id)
-          .map((project) =>
-            project.parentId === id
-              ? Object.freeze({ ...project, parentId: existing.parentId, updatedAt: now() })
-              : project,
-          ),
-      );
+      sections = sections.filter((section) => section.projectId !== id);
+      projects = projects
+        .filter((project) => project.id !== id)
+        .map((project) =>
+          project.parentId === id ? { ...project, parentId: existing.parentId, updatedAt: now() } : project,
+        );
 
       return true;
     },
@@ -222,7 +209,7 @@ export const createMemoryTaskRepository = (
       const siblingProjects = projects
         .filter((project) => project.parentId === source.parentId)
         .toSorted((left, right) => left.lexicalOrder.localeCompare(right.lexicalOrder));
-      const duplicated = Object.freeze({
+      const duplicated = {
         ...source,
         id: crypto.randomUUID(),
         title: `${source.title} copy`,
@@ -233,41 +220,37 @@ export const createMemoryTaskRepository = (
         ),
         createdAt,
         updatedAt: createdAt,
-      });
+      };
       const sourceSections = sections.filter((section) => section.projectId === id);
       const sectionMap = new Map(sourceSections.map((section) => [section.id, crypto.randomUUID()]));
-      const newSections = sourceSections.map((section) =>
-        Object.freeze({
-          ...section,
-          id: sectionMap.get(section.id)!,
-          projectId: duplicated.id,
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      );
+      const newSections = sourceSections.map((section) => ({
+        ...section,
+        id: sectionMap.get(section.id)!,
+        projectId: duplicated.id,
+        createdAt,
+        updatedAt: createdAt,
+      }));
       const sourceTasks = tasks.filter((task) => task.projectId === id);
       const taskMap = new Map(sourceTasks.map((task) => [task.id, crypto.randomUUID()]));
-      const newTasks = sourceTasks.map((task) =>
-        Object.freeze({
-          ...task,
-          id: taskMap.get(task.id)!,
-          projectId: duplicated.id,
-          sectionId: task.sectionId === null ? null : (sectionMap.get(task.sectionId) ?? null),
-          parentId: task.parentId === null ? null : (taskMap.get(task.parentId) ?? null),
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      );
-      projects = Object.freeze([...projects, duplicated]);
-      sections = Object.freeze([...sections, ...newSections]);
+      const newTasks = sourceTasks.map((task) => ({
+        ...task,
+        id: taskMap.get(task.id)!,
+        projectId: duplicated.id,
+        sectionId: task.sectionId === null ? null : (sectionMap.get(task.sectionId) ?? null),
+        parentId: task.parentId === null ? null : (taskMap.get(task.parentId) ?? null),
+        createdAt,
+        updatedAt: createdAt,
+      }));
+      projects = [...projects, duplicated];
+      sections = [...sections, ...newSections];
       replace([...tasks, ...newTasks]);
       return duplicated;
     },
     setProjectArchived: async (id, archived) => {
       const existing = projects.find((project) => project.id === id);
       if (existing === undefined) return null;
-      const updated = Object.freeze({ ...existing, archived, updatedAt: now() });
-      projects = Object.freeze(projects.map((project) => (project.id === id ? updated : project)));
+      const updated = { ...existing, archived, updatedAt: now() };
+      projects = projects.map((project) => (project.id === id ? updated : project));
       return updated;
     },
     listSections: async () => sections,
@@ -288,33 +271,31 @@ export const createMemoryTaskRepository = (
             ? (siblings.at(-1)?.lexicalOrder ?? null)
             : null;
       const high = beforeIndex >= 0 ? (siblings[beforeIndex]?.lexicalOrder ?? null) : null;
-      const reordered = Object.freeze({
+      const reordered = {
         ...section,
         lexicalOrder: generateLexicalOrder(low, high),
         updatedAt: now(),
-      });
-      sections = Object.freeze(
-        sections
-          .map((item) => (item.id === id ? reordered : item))
-          .toSorted((left, right) =>
-            left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0,
-          ),
-      );
+      };
+      sections = sections
+        .map((item) => (item.id === id ? reordered : item))
+        .toSorted((left, right) =>
+          left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0,
+        );
       return reordered;
     },
     createSection: async (title, projectId) => {
       const createdAt = now();
       const siblings = sections.filter((section) => section.projectId === projectId);
-      const section = Object.freeze({
+      const section = {
         id: crypto.randomUUID(),
         title,
         projectId,
         lexicalOrder: generateLexicalOrder(siblings.at(-1)?.lexicalOrder ?? null, null),
         createdAt,
         updatedAt: createdAt,
-      });
+      };
 
-      sections = Object.freeze([...sections, section]);
+      sections = [...sections, section];
 
       return section;
     },
@@ -325,13 +306,13 @@ export const createMemoryTaskRepository = (
         return null;
       }
 
-      const updated = Object.freeze({
+      const updated = {
         ...existing,
         title,
         updatedAt: now(),
-      });
+      };
 
-      sections = Object.freeze(sections.map((section) => (section.id === id ? updated : section)));
+      sections = sections.map((section) => (section.id === id ? updated : section));
 
       return updated;
     },
@@ -342,12 +323,10 @@ export const createMemoryTaskRepository = (
         return false;
       }
 
-      sections = Object.freeze(sections.filter((section) => section.id !== id));
+      sections = sections.filter((section) => section.id !== id);
       replace(
         tasks.map((task) =>
-          task.sectionId === id
-            ? Object.freeze({ ...task, parentId: null, sectionId: null, updatedAt: now() })
-            : task,
+          task.sectionId === id ? { ...task, parentId: null, sectionId: null, updatedAt: now() } : task,
         ),
       );
 
@@ -356,13 +335,13 @@ export const createMemoryTaskRepository = (
     create: async (title, parentId, projectId, sectionId) => {
       if (!hasValidTaskPlacement(projectId, sectionId)) throw new Error("Section does not belong to project");
       const createdAt = now();
-      const task = Object.freeze({
+      const task = {
         id: crypto.randomUUID(),
         title,
         description: "",
         dueDate: null,
-        labels: Object.freeze([]),
-        comments: Object.freeze([]),
+        labels: [],
+        comments: [],
         completed: false,
         parentId,
         projectId,
@@ -370,7 +349,7 @@ export const createMemoryTaskRepository = (
         lexicalOrder: findSiblingOrder(tasks, parentId, projectId, sectionId, null, null),
         createdAt,
         updatedAt: createdAt,
-      });
+      };
 
       replace([...tasks, task]);
 
@@ -390,29 +369,27 @@ export const createMemoryTaskRepository = (
       )
         return null;
 
-      const updated = Object.freeze({
+      const updated = {
         ...existing,
         ...patch,
         comments:
           patch.comments === undefined
             ? existing.comments
-            : Object.freeze(
-                patch.comments.map((comment) => {
-                  const previous = existing.comments.find((item) => item.id === comment.id);
-                  return Object.freeze({
-                    id: previous?.id ?? crypto.randomUUID(),
-                    body: comment.body,
-                    createdAt: previous?.createdAt ?? now(),
-                    ...(comment.attachments === undefined
-                      ? previous?.attachments === undefined
-                        ? {}
-                        : { attachments: previous.attachments }
-                      : { attachments: Object.freeze([...comment.attachments]) }),
-                  });
-                }),
-              ),
+            : patch.comments.map((comment) => {
+                const previous = existing.comments.find((item) => item.id === comment.id);
+                return {
+                  id: previous?.id ?? crypto.randomUUID(),
+                  body: comment.body,
+                  createdAt: previous?.createdAt ?? now(),
+                  ...(comment.attachments === undefined
+                    ? previous?.attachments === undefined
+                      ? {}
+                      : { attachments: previous.attachments }
+                    : { attachments: [...comment.attachments] }),
+                };
+              }),
         updatedAt: now(),
-      });
+      };
 
       replace(tasks.map((task) => (task.id === id ? updated : task)));
 
@@ -421,11 +398,11 @@ export const createMemoryTaskRepository = (
     addComment: async (id, comment) => {
       const existing = tasks.find((task) => task.id === id);
       if (existing === undefined) return false;
-      const updated = Object.freeze({
+      const updated = {
         ...existing,
-        comments: Object.freeze([...existing.comments, comment]),
+        comments: [...existing.comments, comment],
         updatedAt: now(),
-      });
+      };
       replace(tasks.map((task) => (task.id === id ? updated : task)));
       return true;
     },
@@ -440,7 +417,7 @@ export const createMemoryTaskRepository = (
       if (wouldCreateTaskCycle(tasks, id, move.parentId)) return null;
       if (!hasValidTaskPlacement(move.projectId, move.sectionId)) return null;
 
-      const updated = Object.freeze({
+      const updated = {
         ...existing,
         parentId: move.parentId,
         projectId: move.projectId,
@@ -454,7 +431,7 @@ export const createMemoryTaskRepository = (
           move.afterId,
         ),
         updatedAt: now(),
-      });
+      };
 
       replace(tasks.map((task) => (task.id === id ? updated : task)));
 
@@ -473,5 +450,5 @@ export const createMemoryTaskRepository = (
 
       return true;
     },
-  });
+  };
 };

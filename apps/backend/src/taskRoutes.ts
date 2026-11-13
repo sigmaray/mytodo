@@ -84,7 +84,7 @@ export const registerTaskRoutes = (
   parseJson: (request: Request) => Promise<unknown>,
   projectArchivingEnabled: boolean,
   attachmentStorageAvailable: boolean,
-  removeAttachments: (ids: ReadonlyArray<string>) => Promise<unknown>,
+  removeAttachments: (ids: Array<string>) => Promise<unknown>,
 ): void => {
   app.get("/tasks", async (context) => {
     const tasks = await repositoryFor(context.get("userId")).list();
@@ -312,9 +312,7 @@ export const registerTaskRoutes = (
     )
       return context.json({ error: "Section does not belong to project" }, 400);
     if (previous !== undefined && result.data.comments !== undefined) {
-      const allowed = new Map(
-        previous.comments.map((comment) => [comment.id, comment.attachments ?? Object.freeze([])]),
-      );
+      const allowed = new Map(previous.comments.map((comment) => [comment.id, comment.attachments ?? []]));
       const hasForgedAttachment = result.data.comments.some((comment) =>
         (comment.attachments ?? []).some(
           (attachment) =>

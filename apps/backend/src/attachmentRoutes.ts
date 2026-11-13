@@ -5,11 +5,11 @@ import { detectSafeImageMimeType, validateAttachmentFiles } from "./attachmentSt
 
 export const registerAttachmentRoutes = (
   app: AppHono,
-  dependencies: Readonly<{
+  dependencies: {
     repositoryFor: RepositoryForUser;
     attachmentStorage: AttachmentStorage;
     attachmentStorageAvailable: boolean;
-  }>,
+  },
 ) => {
   const { repositoryFor, attachmentStorage, attachmentStorageAvailable } = dependencies;
   app.post("/tasks/:id/comments", bodyLimit({ maxSize: 26 * 1024 * 1024 }), async (context) => {
@@ -35,15 +35,15 @@ export const registerAttachmentRoutes = (
       return context.json({ error: "Unsupported filename or MIME type" }, 400);
     if (fileValidation === "limits-exceeded")
       return context.json({ error: "Attachment limits exceeded (10 files, 10 MB each, 25 MB total)" }, 413);
-    let attachments: ReadonlyArray<AttachmentMetadata> | undefined;
+    let attachments: Array<AttachmentMetadata> | undefined;
     try {
       attachments = await attachmentStorage.saveMany(files);
-      const comment = Object.freeze({
+      const comment = {
         id: crypto.randomUUID(),
         body,
         createdAt: new Date().toISOString(),
-        ...(attachments.length ? { attachments: Object.freeze(attachments) } : {}),
-      });
+        ...(attachments.length ? { attachments: attachments } : {}),
+      };
       if (!(await taskRepository.addComment(taskId, comment))) throw new Error("Task not found");
       return context.json({ comment }, 201);
     } catch {

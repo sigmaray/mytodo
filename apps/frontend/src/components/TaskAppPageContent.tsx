@@ -5,7 +5,7 @@ import { InboxPage } from "../pages/InboxPage";
 import { LabelsPage } from "../pages/LabelsPage";
 import type { TaskAppPageModel } from "../taskAppPageModel";
 
-export const TaskAppPageContent = ({ page }: Readonly<{ page: TaskAppPageModel }>) => {
+export const TaskAppPageContent = ({ page }: { page: TaskAppPageModel }) => {
   switch (page.mode) {
     case "dates":
       return <DatesPage {...page.props} />;

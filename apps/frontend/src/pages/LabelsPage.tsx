@@ -2,13 +2,13 @@ import type { Task, TaskNode } from "@todoist-clone/domain";
 import { Link } from "react-router-dom";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
-export type LabelsPageProps = Readonly<{
+export type LabelsPageProps = {
   selectedLabel: string;
   viewTitle: string;
-  flatTasks: ReadonlyArray<Task>;
-  viewTasks: ReadonlyArray<TaskNode>;
+  flatTasks: Array<Task>;
+  viewTasks: Array<TaskNode>;
   taskActions: Parameters<typeof renderTaskNodes>[1];
-}>;
+};
 
 export const LabelsPage = ({
   selectedLabel,

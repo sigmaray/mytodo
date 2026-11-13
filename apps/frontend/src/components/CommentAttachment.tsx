@@ -70,10 +70,10 @@ export const renderCommentMarkdown = (body: string) =>
 export const CommentAttachment = ({
   attachment,
   onRemove,
-}: Readonly<{
+}: {
   attachment: NonNullable<Task["comments"][number]["attachments"]>[number];
   onRemove?: () => void;
-}>) => {
+}) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [preview, setPreview] = useState("");
   const [previewLoaded, setPreviewLoaded] = useState(false);

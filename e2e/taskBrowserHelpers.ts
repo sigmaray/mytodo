@@ -9,7 +9,7 @@ export const createTask = (page: Page) => async (title: string) => {
   await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
 };
 
-export const createTasks = (page: Page) => async (titles: ReadonlyArray<string>) => {
+export const createTasks = (page: Page) => async (titles: Array<string>) => {
   const projectId = await page.evaluate(() => new URLSearchParams(window.location.search).get("project"));
   const api = createE2eApi(page.request);
   for (const title of titles) await api.createTask(title, { projectId });
@@ -33,7 +33,7 @@ export const createProject = (page: Page) => async (title: string) => {
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
 };
 
-export const createProjects = (page: Page) => async (titles: ReadonlyArray<string>) => {
+export const createProjects = (page: Page) => async (titles: Array<string>) => {
   const api = createE2eApi(page.request);
   for (const title of titles) await api.createProject(title);
   await page.reload();

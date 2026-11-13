@@ -32,14 +32,14 @@ describe("comment attachments", () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-disabled-"));
     temporaryDirectories.add(directory);
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "test-admin",
         username: "test-admin",
         passwordHash: await hashPassword("test-admin-password"),
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(
       createApp(createMemoryTaskRepository(), {
@@ -65,14 +65,14 @@ describe("comment attachments", () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-"));
     temporaryDirectories.add(directory);
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "test-admin",
         username: "test-admin",
         passwordHash: await hashPassword("test-admin-password"),
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(
       createApp(createMemoryTaskRepository(), {
@@ -110,14 +110,14 @@ describe("comment attachments", () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-concurrent-"));
     temporaryDirectories.add(directory);
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "test-admin",
         username: "test-admin",
         passwordHash: await hashPassword("test-admin-password"),
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(
       createApp(createMemoryTaskRepository(), {
@@ -152,26 +152,26 @@ describe("comment attachments", () => {
 
   it("allows editing and deleting comments with PostgreSQL-ordered attachment metadata", async () => {
     const createdAt = "2026-11-08T15:00:31.010Z";
-    const attachment = Object.freeze({
+    const attachment = {
       id: "attachment-1",
       name: "image.png",
       size: 7754,
       mimeType: "image/png",
-    });
-    const initialTask: Task = Object.freeze({
+    };
+    const initialTask: Task = {
       id: "task-with-attachment",
       title: "Task with attachment",
       description: "",
       dueDate: null,
-      labels: Object.freeze([]),
-      comments: Object.freeze([
-        Object.freeze({
+      labels: [],
+      comments: [
+        {
           id: "comment-with-attachment",
           body: "",
           createdAt,
-          attachments: Object.freeze([attachment]),
-        }),
-      ]),
+          attachments: [attachment],
+        },
+      ],
       completed: false,
       parentId: null,
       projectId: null,
@@ -179,16 +179,16 @@ describe("comment attachments", () => {
       lexicalOrder: "a",
       createdAt,
       updatedAt: createdAt,
-    });
+    };
     const userRepository = createMemoryUserRepository([
-      Object.freeze({
+      {
         id: "test-admin",
         username: "test-admin",
         passwordHash: await hashPassword("test-admin-password"),
         isAdmin: true,
         confirmDelete: true,
         inboxDescription: "",
-      }),
+      },
     ]);
     const server = await createTestServer(
       createApp(createMemoryTaskRepository([initialTask]), { userRepository }),

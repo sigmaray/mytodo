@@ -12,20 +12,17 @@ const compareTaskOrder = (left: Task, right: Task) =>
       ? 1
       : left.createdAt.localeCompare(right.createdAt);
 
-const freezeNode = (task: Task, children: ReadonlyArray<TaskNode>): TaskNode =>
-  Object.freeze({
-    ...task,
-    children: Object.freeze(children),
-  });
+const freezeNode = (task: Task, children: Array<TaskNode>): TaskNode => ({
+  ...task,
+  children: children,
+});
 
-export const buildTaskTree = (tasks: ReadonlyArray<Task>): ReadonlyArray<TaskNode> => {
-  const buildChildren = (parentId: TaskId | null): ReadonlyArray<TaskNode> =>
-    Object.freeze(
-      tasks
-        .filter((task) => task.parentId === parentId)
-        .toSorted(compareTaskOrder)
-        .map((task) => freezeNode(task, buildChildren(task.id))),
-    );
+export const buildTaskTree = (tasks: Array<Task>): Array<TaskNode> => {
+  const buildChildren = (parentId: TaskId | null): Array<TaskNode> =>
+    tasks
+      .filter((task) => task.parentId === parentId)
+      .toSorted(compareTaskOrder)
+      .map((task) => freezeNode(task, buildChildren(task.id)));
 
   return buildChildren(null);
 };
@@ -53,13 +50,13 @@ export const generateLexicalOrder = (before: string | null, after: string | null
   return findMiddle(0, "");
 };
 
-export type TaskPlacement = Readonly<{
+export type TaskPlacement = {
   parentId: TaskId | null;
   projectId: ProjectId | null;
   sectionId: SectionId | null;
   beforeId: TaskId | null;
   afterId: TaskId | null;
-}>;
+};
 
 export type DropPosition = "before" | "after";
 
@@ -71,16 +68,14 @@ const sameLocation = (
 ): boolean => task.parentId === parentId && task.projectId === projectId && task.sectionId === sectionId;
 
 export const listSiblings = (
-  tasks: ReadonlyArray<Task>,
+  tasks: Array<Task>,
   parentId: TaskId | null,
   projectId: ProjectId | null,
   sectionId: SectionId | null,
-): ReadonlyArray<Task> =>
-  Object.freeze(
-    tasks.filter((task) => sameLocation(task, parentId, projectId, sectionId)).toSorted(compareTaskOrder),
-  );
+): Array<Task> =>
+  tasks.filter((task) => sameLocation(task, parentId, projectId, sectionId)).toSorted(compareTaskOrder);
 
-const isDescendantOf = (tasks: ReadonlyArray<Task>, ancestorId: TaskId, id: TaskId): boolean => {
+const isDescendantOf = (tasks: Array<Task>, ancestorId: TaskId, id: TaskId): boolean => {
   const task = tasks.find((candidate) => candidate.id === id);
 
   if (task === undefined || task.parentId === null) {
@@ -91,7 +86,7 @@ const isDescendantOf = (tasks: ReadonlyArray<Task>, ancestorId: TaskId, id: Task
 };
 
 export const computeDropPlacement = (
-  tasks: ReadonlyArray<Task>,
+  tasks: Array<Task>,
   moved: Task,
   target: Task,
   position: DropPosition,
@@ -100,13 +95,13 @@ export const computeDropPlacement = (
     return null;
   }
 
-  const placement = Object.freeze({
+  const placement = {
     parentId: target.parentId,
     projectId: target.projectId,
     sectionId: target.sectionId,
     beforeId: position === "before" ? target.id : null,
     afterId: position === "after" ? target.id : null,
-  });
+  };
 
   if (!sameLocation(moved, placement.parentId, placement.projectId, placement.sectionId)) {
     return placement;
@@ -127,7 +122,7 @@ export const computeDropPlacement = (
   return placement;
 };
 
-export const computeIndentPlacement = (tasks: ReadonlyArray<Task>, task: Task): TaskPlacement | null => {
+export const computeIndentPlacement = (tasks: Array<Task>, task: Task): TaskPlacement | null => {
   const siblings = listSiblings(tasks, task.parentId, task.projectId, task.sectionId);
   const index = siblings.findIndex((sibling) => sibling.id === task.id);
   const previous = index > 0 ? siblings[index - 1] : undefined;
@@ -136,16 +131,16 @@ export const computeIndentPlacement = (tasks: ReadonlyArray<Task>, task: Task): 
     return null;
   }
 
-  return Object.freeze({
+  return {
     parentId: previous.id,
     projectId: previous.projectId,
     sectionId: previous.sectionId,
     beforeId: null,
     afterId: null,
-  });
+  };
 };
 
-export const computeOutdentPlacement = (tasks: ReadonlyArray<Task>, task: Task): TaskPlacement | null => {
+export const computeOutdentPlacement = (tasks: Array<Task>, task: Task): TaskPlacement | null => {
   if (task.parentId === null) {
     return null;
   }
@@ -156,27 +151,26 @@ export const computeOutdentPlacement = (tasks: ReadonlyArray<Task>, task: Task):
     return null;
   }
 
-  return Object.freeze({
+  return {
     parentId: parent.parentId,
     projectId: parent.projectId,
     sectionId: parent.sectionId,
     beforeId: null,
     afterId: parent.id,
-  });
+  };
 };
 
 const checkbox = (completed: boolean) => (completed ? "x" : " ");
 
-const renderTaskMarkdown = (task: TaskNode, depth: number): ReadonlyArray<string> =>
-  Object.freeze([
-    `${"  ".repeat(depth)}- [${checkbox(task.completed)}] ${task.title}`,
-    ...task.children.flatMap((child) => renderTaskMarkdown(child, depth + 1)),
-  ]);
+const renderTaskMarkdown = (task: TaskNode, depth: number): Array<string> => [
+  `${"  ".repeat(depth)}- [${checkbox(task.completed)}] ${task.title}`,
+  ...task.children.flatMap((child) => renderTaskMarkdown(child, depth + 1)),
+];
 
 export const renderTaskMarkdownDocument = (
   title: string,
-  tasks: ReadonlyArray<TaskNode>,
-  sections: ReadonlyArray<Readonly<{ title: string; tasks: ReadonlyArray<TaskNode> }>> = Object.freeze([]),
+  tasks: Array<TaskNode>,
+  sections: Array<{ title: string; tasks: Array<TaskNode> }> = [],
 ): string => {
   const body = tasks.flatMap((task) => renderTaskMarkdown(task, 0));
   const sectionContent = sections.flatMap((section, index) => [
@@ -196,10 +190,10 @@ export const renderTaskMarkdownDocument = (
   ].join("\n");
 };
 
-const quoteMarkdownText = (value: string, prefix: string): ReadonlyArray<string> =>
-  Object.freeze(value.split("\n").map((line) => `${prefix}> ${line}`));
+const quoteMarkdownText = (value: string, prefix: string): Array<string> =>
+  value.split("\n").map((line) => `${prefix}> ${line}`);
 
-const renderAdvancedTaskMarkdown = (task: TaskNode, depth: number): ReadonlyArray<string> => {
+const renderAdvancedTaskMarkdown = (task: TaskNode, depth: number): Array<string> => {
   const indent = "  ".repeat(depth);
   const detailPrefix = `${indent}  `;
   const details = [
@@ -220,15 +214,13 @@ const renderAdvancedTaskMarkdown = (task: TaskNode, depth: number): ReadonlyArra
         ]),
     ...task.children.flatMap((child) => renderAdvancedTaskMarkdown(child, depth + 1)),
   ];
-  return Object.freeze([`${indent}- [${checkbox(task.completed)}] ${task.title}`, ...details]);
+  return [`${indent}- [${checkbox(task.completed)}] ${task.title}`, ...details];
 };
 
 export const renderAdvancedMarkdownDocument = (
   title: string,
-  tasks: ReadonlyArray<TaskNode>,
-  sections: ReadonlyArray<
-    Readonly<{ title: string; tasks: ReadonlyArray<TaskNode>; description?: string }>
-  > = Object.freeze([]),
+  tasks: Array<TaskNode>,
+  sections: Array<{ title: string; tasks: Array<TaskNode>; description?: string }> = [],
   description = "",
 ): string => {
   const body = [

@@ -4,7 +4,7 @@ import { CalendarPanel, type CalendarPanelProps } from "../components/CalendarPa
 import { calendarWeekdays } from "../components/TaskFormFields";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
-export type DatesPageProps = Readonly<{
+export type DatesPageProps = {
   dateView: "list" | "calendar";
   setDateView: Dispatch<SetStateAction<"list" | "calendar">>;
   dateListFilter: "all" | "overdue" | "today" | "upcoming";
@@ -12,7 +12,7 @@ export type DatesPageProps = Readonly<{
   calendarMonth: string;
   calendarLabel: string;
   calendarDays: CalendarPanelProps["days"];
-  calendarTasks: ReadonlyArray<Task>;
+  calendarTasks: Array<Task>;
   calendarTaskCount: number;
   activeCalendarDate: string | null;
   calendarTaskLocation: (task: Task) => string;
@@ -25,9 +25,9 @@ export type DatesPageProps = Readonly<{
   onTaskDragStart: CalendarPanelProps["onTaskDragStart"];
   onTaskDragEnd: CalendarPanelProps["onTaskDragEnd"];
   onTaskOpen: CalendarPanelProps["onTaskOpen"];
-  viewTasks: ReadonlyArray<TaskNode>;
+  viewTasks: Array<TaskNode>;
   taskActions: Parameters<typeof renderTaskNodes>[1];
-}>;
+};
 
 export const DatesPage = ({
   dateView,

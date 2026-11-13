@@ -12,17 +12,17 @@ import { createTaskAppDragActions } from "./useTaskAppDragActions";
 import type { useTaskAppState } from "./useTaskAppState";
 
 type TaskAppState = ReturnType<typeof useTaskAppState>;
-type TaskAppActionInput = Readonly<{
+type TaskAppActionInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
   state: TaskAppState;
   attachmentsEnabled: boolean;
   projectArchivingEnabled: boolean;
-  taskData: ReadonlyArray<TaskNode> | undefined;
-  projectData: ReadonlyArray<Project> | undefined;
-  sectionData: ReadonlyArray<Section> | undefined;
-  settings: Readonly<{ confirmDelete: boolean }> | undefined;
-}>;
+  taskData: Array<TaskNode> | undefined;
+  projectData: Array<Project> | undefined;
+  sectionData: Array<Section> | undefined;
+  settings: { confirmDelete: boolean } | undefined;
+};
 
 export const useTaskAppActions = ({
   api,
@@ -113,7 +113,7 @@ export const useTaskAppActions = ({
     const trimmed = editSectionTitle.trim();
 
     if (trimmed.length > 0) {
-      updateSectionMutation.mutate(Object.freeze({ id: section.id, title: trimmed }));
+      updateSectionMutation.mutate({ id: section.id, title: trimmed });
     }
   };
 
@@ -131,7 +131,7 @@ export const useTaskAppActions = ({
     const trimmed = subtaskTitle.trim();
 
     if (trimmed.length > 0) {
-      createSubtaskMutation.mutate(Object.freeze({ title: trimmed, parent: task }));
+      createSubtaskMutation.mutate({ title: trimmed, parent: task });
     }
   };
 
@@ -168,18 +168,20 @@ export const useTaskAppActions = ({
     editMutation.mutate(task);
   };
 
-  const allTasks = taskData ?? Object.freeze([]);
+  const allTasks = taskData ?? [];
   const flatTasks = flattenTaskNodes(allTasks);
   const scopeRootTasks = allTasks.filter(
     (task) => task.parentId === null && task.projectId === targetProjectId,
   );
   const selectedRootTasks = scopeRootTasks.filter((task) => selectedRootTaskIds.includes(task.id));
-  const collectSelectedTaskIds = (task: TaskNode): ReadonlyArray<TaskId> =>
-    Object.freeze([task.id, ...task.children.flatMap(collectSelectedTaskIds)]);
-  const selectedTaskIds = Object.freeze(selectedRootTasks.flatMap(collectSelectedTaskIds));
+  const collectSelectedTaskIds = (task: TaskNode): Array<TaskId> => [
+    task.id,
+    ...task.children.flatMap(collectSelectedTaskIds),
+  ];
+  const selectedTaskIds = selectedRootTasks.flatMap(collectSelectedTaskIds);
   const clearSelection = () => {
     setSelectionMode(false);
-    setSelectedRootTaskIds(Object.freeze([]));
+    setSelectedRootTaskIds([]);
     setSelectedMoveOpen(false);
   };
   const rootTaskForSelection = (task: TaskNode): TaskNode => {
@@ -192,11 +194,7 @@ export const useTaskAppActions = ({
     const rootTask = rootTaskForSelection(task);
     if (!scopeRootTasks.some((candidate) => candidate.id === rootTask.id)) return;
     setSelectedRootTaskIds((current) =>
-      Object.freeze(
-        current.includes(rootTask.id)
-          ? current.filter((id) => id !== rootTask.id)
-          : [...current, rootTask.id],
-      ),
+      current.includes(rootTask.id) ? current.filter((id) => id !== rootTask.id) : [...current, rootTask.id],
     );
   };
   const availableLabels = normalizeLabels(flatTasks.flatMap((task) => task.labels));
@@ -213,9 +211,9 @@ export const useTaskAppActions = ({
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [allTasks, targetProjectId]);
-  const allProjects = projectData ?? Object.freeze([]);
+  const allProjects = projectData ?? [];
   const activeProjects = allProjects.filter((project) => !projectArchivingEnabled || !project.archived);
-  const allSections = sectionData ?? Object.freeze([]);
+  const allSections = sectionData ?? [];
   const dragActions = createTaskAppDragActions({
     api,
     queryClient,
@@ -241,12 +239,12 @@ export const useTaskAppActions = ({
     setDetailSaveStatus("Saving…");
     try {
       const updatedTask = await api.updateTask(selectedDetailsTask.id, patch);
-      queryClient.setQueryData<ReadonlyArray<TaskNode>>(taskQueryKey, (current) => {
+      queryClient.setQueryData<Array<TaskNode>>(taskQueryKey, (current) => {
         if (current === undefined) return current;
         const updateNode = (node: TaskNode): TaskNode =>
           node.id === updatedTask.id
-            ? Object.freeze({ ...node, ...updatedTask, children: node.children })
-            : Object.freeze({ ...node, children: node.children.map(updateNode) });
+            ? { ...node, ...updatedTask, children: node.children }
+            : { ...node, children: node.children.map(updateNode) };
         return current.map(updateNode);
       });
       setDetailSaveStatus("Saved");
@@ -262,7 +260,7 @@ export const useTaskAppActions = ({
       if (comment.id !== commentId) return [comment];
       const attachments = (comment.attachments ?? []).filter((attachment) => attachment.id !== attachmentId);
       if (!comment.body.trim() && attachments.length === 0) return [];
-      return [Object.freeze({ ...comment, attachments: Object.freeze(attachments) })];
+      return [{ ...comment, attachments: attachments }];
     });
     const commentWasRemoved = !comments.some((comment) => comment.id === commentId);
     if ((await saveTaskDetails({ comments })) && commentWasRemoved)
@@ -300,7 +298,7 @@ export const useTaskAppActions = ({
     if (selectedDetailsTask.children.length > 0)
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });
   };
-  return Object.freeze({
+  return {
     confirmDeletion,
     updateProjectMutation,
     requestSectionDelete,
@@ -337,5 +335,5 @@ export const useTaskAppActions = ({
     closeMobileLabels,
     closeMobileComments,
     closeMobileSubtasks,
-  });
+  };
 };

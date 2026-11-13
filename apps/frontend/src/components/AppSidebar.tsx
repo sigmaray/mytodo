@@ -44,10 +44,10 @@ const useSidebarScrollPosition = () => {
   const rememberScroll = (event: UIEvent<HTMLElement>) => {
     rememberedSidebarScrollTop = event.currentTarget.scrollTop;
   };
-  return Object.freeze({ ref: sidebarRef, onScroll: rememberScroll });
+  return { ref: sidebarRef, onScroll: rememberScroll };
 };
 
-type AppSidebarProps = Readonly<{
+type AppSidebarProps = {
   api: ApplicationApi | null;
   selectedProjectId?: ProjectId | null;
   onInboxSelect?: () => void;
@@ -63,7 +63,7 @@ type AppSidebarProps = Readonly<{
   onProjectDragOver?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
   onProjectDragLeave?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
   onProjectDrop?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
-}>;
+};
 
 export const AppSidebar = ({
   api,
@@ -93,33 +93,32 @@ export const AppSidebar = ({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const projectsQuery = useQuery({
     queryKey: projectQueryKey,
-    queryFn: api?.listProjects ?? (async () => Object.freeze([])),
+    queryFn: api?.listProjects ?? (async () => []),
     enabled: api !== null,
   });
   const tasksQuery = useQuery({
     queryKey: taskQueryKey,
-    queryFn: api?.listTasks ?? (async () => Object.freeze([])),
+    queryFn: api?.listTasks ?? (async () => []),
     enabled: api !== null,
   });
   const sectionsQuery = useQuery({
     queryKey: sectionQueryKey,
-    queryFn: api?.listSections ?? (async () => Object.freeze([])),
+    queryFn: api?.listSections ?? (async () => []),
     enabled: api !== null,
   });
   const settingsQuery = useQuery({
     queryKey: settingsQueryKey,
     queryFn:
       api?.getSettings ??
-      (async () =>
-        Object.freeze({ confirmDelete: true, accessMode: "password" as const, username: "admin" })),
+      (async () => ({ confirmDelete: true, accessMode: "password" as const, username: "admin" })),
     enabled: api !== null,
   });
-  const allProjects = projectsQuery.data ?? Object.freeze([]);
+  const allProjects = projectsQuery.data ?? [];
   const projectArchivingEnabled = authStatus.data?.projectArchivingEnabled === true;
   const activeProjects = allProjects.filter((project) => !projectArchivingEnabled || !project.archived);
   const navigationProjects = projectTreeOrder(activeProjects);
-  const allTasks = tasksQuery.data ?? Object.freeze([]);
-  const allSections = sectionsQuery.data ?? Object.freeze([]);
+  const allTasks = tasksQuery.data ?? [];
+  const allSections = sectionsQuery.data ?? [];
   const closeSidebar = () => setMobileSidebarOpen(false);
 
   const projectManagement = useSidebarProjectManagement({

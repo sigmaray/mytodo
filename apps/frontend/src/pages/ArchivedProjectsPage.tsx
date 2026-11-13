@@ -8,10 +8,7 @@ import type { ApplicationApi } from "../api";
 import { isTaskDueToday, taskDueDateTone } from "../dateUtils";
 import { projectQueryKey, taskQueryKey } from "../queryKeys";
 
-export const ArchivedProjectsPage = ({
-  api,
-  sidebar,
-}: Readonly<{ api: ApplicationApi; sidebar?: ReactNode }>) => {
+export const ArchivedProjectsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: ReactNode }) => {
   const queryClient = useQueryClient();
   const [selectedProjectId, setSelectedProjectId] = useState<ProjectId | null>(null);
   const projects = useQuery({ queryKey: projectQueryKey, queryFn: api.listProjects });
@@ -27,7 +24,7 @@ export const ArchivedProjectsPage = ({
     await queryClient.invalidateQueries({ queryKey: projectQueryKey });
     await queryClient.invalidateQueries({ queryKey: taskQueryKey });
   };
-  const renderTasks = (nodes: ReadonlyArray<TaskNode>): ReactElement => (
+  const renderTasks = (nodes: Array<TaskNode>): ReactElement => (
     <ul className="archived-task-tree">
       {nodes.map((task) => (
         <li key={task.id}>

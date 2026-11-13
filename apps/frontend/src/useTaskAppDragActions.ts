@@ -8,15 +8,15 @@ import { dragPlacementFromEvent, findTaskNode, hasDescendant, inboxPlacement } f
 import type { useTaskAppMutations } from "./useTaskAppMutations";
 import type { DropZoneId, useTaskAppState } from "./useTaskAppState";
 
-type TaskAppDragActionInput = Readonly<{
+type TaskAppDragActionInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
   state: ReturnType<typeof useTaskAppState>;
   mutations: ReturnType<typeof useTaskAppMutations>;
-  allTasks: ReadonlyArray<TaskNode>;
-  flatTasks: ReadonlyArray<Task>;
-  allSections: ReadonlyArray<Section>;
-}>;
+  allTasks: Array<TaskNode>;
+  flatTasks: Array<Task>;
+  allSections: Array<Section>;
+};
 
 export const createTaskAppDragActions = ({
   api,
@@ -60,18 +60,27 @@ export const createTaskAppDragActions = ({
       if (taskId.length > 0) {
         if (taskIdsJson.length > 0) {
           try {
-            const taskIds = JSON.parse(taskIdsJson) as ReadonlyArray<TaskId>;
-            if (taskIds.length > 0)
-              selectedMoveMutation.mutate(Object.freeze({ taskIds, projectId, sectionId }));
+            const taskIds = JSON.parse(taskIdsJson) as Array<TaskId>;
+            if (taskIds.length > 0) selectedMoveMutation.mutate({ taskIds, projectId, sectionId });
           } catch {
-            moveMutation.mutate(
-              Object.freeze({ taskId, projectId, sectionId, parentId: null, beforeId: null, afterId: null }),
-            );
+            moveMutation.mutate({
+              taskId,
+              projectId,
+              sectionId,
+              parentId: null,
+              beforeId: null,
+              afterId: null,
+            });
           }
         } else {
-          moveMutation.mutate(
-            Object.freeze({ taskId, projectId, sectionId, parentId: null, beforeId: null, afterId: null }),
-          );
+          moveMutation.mutate({
+            taskId,
+            projectId,
+            sectionId,
+            parentId: null,
+            beforeId: null,
+            afterId: null,
+          });
         }
       }
     };
@@ -85,37 +94,33 @@ export const createTaskAppDragActions = ({
     if (!event.dataTransfer.types.includes("application/x-section-id") && draggingSectionId === null) return;
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
-    setActiveSectionDrop(
-      Object.freeze({
-        id: section.id,
-        position: event.clientY < rect.top + rect.height / 2 ? "before" : "after",
-      }),
-    );
+    setActiveSectionDrop({
+      id: section.id,
+      position: event.clientY < rect.top + rect.height / 2 ? "before" : "after",
+    });
   };
-  const dropSection =
-    (section: Section, siblings: ReadonlyArray<Section>) => (event: DragEvent<HTMLElement>) => {
-      const draggedId = event.dataTransfer.getData("application/x-section-id") || draggingSectionId;
-      if (!draggedId || draggedId === section.id) return;
-      event.preventDefault();
-      const position =
-        event.clientY <
-        event.currentTarget.getBoundingClientRect().top +
-          event.currentTarget.getBoundingClientRect().height / 2
-          ? "before"
-          : "after";
-      const ordered = siblings.filter((item) => item.id !== draggedId);
-      const index = ordered.findIndex((item) => item.id === section.id);
-      const beforeId = position === "before" ? section.id : (ordered[index + 1]?.id ?? null);
-      const afterId = position === "before" ? (ordered[index - 1]?.id ?? null) : section.id;
-      setDraggingSectionId(null);
-      setActiveSectionDrop(null);
-      reorderSectionMutation.mutate({ id: draggedId, beforeId, afterId });
-    };
+  const dropSection = (section: Section, siblings: Array<Section>) => (event: DragEvent<HTMLElement>) => {
+    const draggedId = event.dataTransfer.getData("application/x-section-id") || draggingSectionId;
+    if (!draggedId || draggedId === section.id) return;
+    event.preventDefault();
+    const position =
+      event.clientY <
+      event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2
+        ? "before"
+        : "after";
+    const ordered = siblings.filter((item) => item.id !== draggedId);
+    const index = ordered.findIndex((item) => item.id === section.id);
+    const beforeId = position === "before" ? section.id : (ordered[index + 1]?.id ?? null);
+    const afterId = position === "before" ? (ordered[index - 1]?.id ?? null) : section.id;
+    setDraggingSectionId(null);
+    setActiveSectionDrop(null);
+    reorderSectionMutation.mutate({ id: draggedId, beforeId, afterId });
+  };
   const startMobileTaskDrag = (task: TaskNode) => (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    mobileDragRef.current = Object.freeze({ id: task.id });
+    mobileDragRef.current = { id: task.id };
     setDraggingTaskId(task.id);
     setActiveDragTarget(null);
     setActiveDropZone(null);
@@ -143,7 +148,7 @@ export const createTaskAppDragActions = ({
           const rect = taskTarget.getBoundingClientRect();
           const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
           const placement = ratio < 0.3 ? "before" : ratio > 0.7 ? "after" : "inside";
-          setActiveDragTarget(Object.freeze({ taskId: targetTask.id, placement }));
+          setActiveDragTarget({ taskId: targetTask.id, placement });
         } else setActiveDragTarget(null);
         setActiveDropZone(null);
       } else if (sectionTarget !== null) {
@@ -182,43 +187,38 @@ export const createTaskAppDragActions = ({
           const placement = ratio < 0.3 ? "before" : ratio > 0.7 ? "after" : "inside";
           const nextPlacement =
             placement === "inside"
-              ? Object.freeze({
+              ? {
                   parentId: targetTask.id,
                   projectId: targetTask.projectId,
                   sectionId: targetTask.sectionId,
                   beforeId: null,
                   afterId: null,
-                })
+                }
               : computeDropPlacement(flatTasks, moved, targetTask, placement);
-          if (nextPlacement !== null)
-            moveMutation.mutate(Object.freeze({ taskId: moved.id, ...nextPlacement }));
+          if (nextPlacement !== null) moveMutation.mutate({ taskId: moved.id, ...nextPlacement });
         }
       } else if (moved !== null && destinationSection !== null) {
-        moveMutation.mutate(
-          Object.freeze({
-            taskId: moved.id,
-            projectId: moved.projectId,
-            sectionId: destinationSection.dataset.mobileDropSection ?? null,
-            parentId: null,
-            beforeId: null,
-            afterId: null,
-          }),
-        );
+        moveMutation.mutate({
+          taskId: moved.id,
+          projectId: moved.projectId,
+          sectionId: destinationSection.dataset.mobileDropSection ?? null,
+          parentId: null,
+          beforeId: null,
+          afterId: null,
+        });
       } else if (moved !== null && destinationProject !== null) {
         const projectId =
           destinationProject.dataset.mobileDropProject === "inbox"
             ? null
             : (destinationProject.dataset.mobileDropProject ?? null);
-        moveMutation.mutate(
-          Object.freeze({
-            taskId: moved.id,
-            projectId,
-            sectionId: null,
-            parentId: null,
-            beforeId: null,
-            afterId: null,
-          }),
-        );
+        moveMutation.mutate({
+          taskId: moved.id,
+          projectId,
+          sectionId: null,
+          parentId: null,
+          beforeId: null,
+          afterId: null,
+        });
       }
     }
     setDraggingTaskId(null);
@@ -267,10 +267,8 @@ export const createTaskAppDragActions = ({
     const taskIdsJson = event.dataTransfer.getData("text/task-ids");
     if (taskIdsJson.length > 0) {
       try {
-        const taskIds = JSON.parse(taskIdsJson) as ReadonlyArray<TaskId>;
-        selectedMoveMutation.mutate(
-          Object.freeze({ taskIds, projectId: target.projectId, sectionId: target.sectionId }),
-        );
+        const taskIds = JSON.parse(taskIdsJson) as Array<TaskId>;
+        selectedMoveMutation.mutate({ taskIds, projectId: target.projectId, sectionId: target.sectionId });
         return;
       } catch {
         // Fall back to the existing single-task drop behavior for invalid payloads.
@@ -291,17 +289,17 @@ export const createTaskAppDragActions = ({
         : moved.id === target.id
           ? null
           : placement === "inside"
-            ? Object.freeze({
+            ? {
                 parentId: target.id,
                 projectId: target.projectId,
                 sectionId: target.sectionId,
                 beforeId: null,
                 afterId: null,
-              })
+              }
             : computeDropPlacement(flatTasks, moved, target, placement);
 
     if (nextPlacement !== null) {
-      moveMutation.mutate(Object.freeze({ taskId, ...nextPlacement }));
+      moveMutation.mutate({ taskId, ...nextPlacement });
       return;
     }
 
@@ -311,12 +309,12 @@ export const createTaskAppDragActions = ({
 
   const markDragTarget = (task: TaskNode) => (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
-    setActiveDragTarget(Object.freeze({ taskId: task.id, placement: dragPlacementFromEvent(event) }));
+    setActiveDragTarget({ taskId: task.id, placement: dragPlacementFromEvent(event) });
   };
 
   const moveByPlacement = (task: TaskNode, placement: ReturnType<typeof computeIndentPlacement>) => {
     if (placement !== null) {
-      moveMutation.mutate(Object.freeze({ taskId: task.id, ...placement }));
+      moveMutation.mutate({ taskId: task.id, ...placement });
     }
   };
 
@@ -334,7 +332,7 @@ export const createTaskAppDragActions = ({
     );
   };
 
-  return Object.freeze({
+  return {
     markDropZone,
     moveDroppedTask,
     startSectionDrag,
@@ -350,5 +348,5 @@ export const createTaskAppDragActions = ({
     moveTaskOntoTask,
     markDragTarget,
     handleTaskKeys,
-  });
+  };
 };

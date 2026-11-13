@@ -17,66 +17,60 @@ export const taskPlacement = (task: TaskNode) =>
 
 export const parsePlacement = (
   placement: string,
-  sections: ReadonlyArray<Section>,
-): Readonly<{ projectId: ProjectId | null; sectionId: SectionId | null }> => {
+  sections: Array<Section>,
+): { projectId: ProjectId | null; sectionId: SectionId | null } => {
   if (placement.startsWith("project:")) {
-    return Object.freeze({ projectId: placement.slice("project:".length), sectionId: null });
+    return { projectId: placement.slice("project:".length), sectionId: null };
   }
 
   if (placement.startsWith("section:")) {
     const sectionId = placement.slice("section:".length);
-    return Object.freeze({
+    return {
       projectId: sections.find((section) => section.id === sectionId)?.projectId ?? null,
       sectionId,
-    });
+    };
   }
 
-  return Object.freeze({ projectId: null, sectionId: null });
+  return { projectId: null, sectionId: null };
 };
 
 export const createPlacementOptions = (
-  projects: ReadonlyArray<Project>,
-  sections: ReadonlyArray<Section>,
-): ReadonlyArray<Readonly<{ value: string; label: string }>> =>
-  Object.freeze(
-    [
-      Object.freeze({ value: inboxPlacement, label: "Inbox" }),
-      ...sections.map((section) => {
-        const projectTitle =
-          section.projectId === null
-            ? "Inbox"
-            : (projects.find((project) => project.id === section.projectId)?.title ?? "Project");
-        return Object.freeze({
-          value: sectionPlacement(section.id),
-          label: `${projectTitle} / ${section.title}`,
-        });
-      }),
-      ...projects.map((project) =>
-        Object.freeze({ value: projectPlacement(project.id), label: project.title }),
-      ),
-    ].sort(
-      (left, right) =>
-        left.label.localeCompare(right.label, undefined, { sensitivity: "base" }) ||
-        left.value.localeCompare(right.value),
-    ),
+  projects: Array<Project>,
+  sections: Array<Section>,
+): Array<{ value: string; label: string }> =>
+  [
+    { value: inboxPlacement, label: "Inbox" },
+    ...sections.map((section) => {
+      const projectTitle =
+        section.projectId === null
+          ? "Inbox"
+          : (projects.find((project) => project.id === section.projectId)?.title ?? "Project");
+      return {
+        value: sectionPlacement(section.id),
+        label: `${projectTitle} / ${section.title}`,
+      };
+    }),
+    ...projects.map((project) => ({ value: projectPlacement(project.id), label: project.title })),
+  ].sort(
+    (left, right) =>
+      left.label.localeCompare(right.label, undefined, { sensitivity: "base" }) ||
+      left.value.localeCompare(right.value),
   );
 
-export const findTaskNode = (tasks: ReadonlyArray<TaskNode>, id: string): TaskNode | null =>
+export const findTaskNode = (tasks: Array<TaskNode>, id: string): TaskNode | null =>
   tasks.reduce<TaskNode | null>(
     (found, task) => found ?? (task.id === id ? task : findTaskNode(task.children, id)),
     null,
   );
 
 export const filterTaskTree = (
-  tasks: ReadonlyArray<TaskNode>,
+  tasks: Array<TaskNode>,
   predicate: (task: TaskNode) => boolean,
-): ReadonlyArray<TaskNode> =>
-  Object.freeze(
-    tasks.flatMap((task) => {
-      if (predicate(task)) return [task];
-      return filterTaskTree(task.children, predicate);
-    }),
-  );
+): Array<TaskNode> =>
+  tasks.flatMap((task) => {
+    if (predicate(task)) return [task];
+    return filterTaskTree(task.children, predicate);
+  });
 
 export const hasDescendant = (task: TaskNode, id: string): boolean =>
   task.children.some((child) => child.id === id || hasDescendant(child, id));
@@ -103,9 +97,9 @@ export const dragPlacementFromEvent = (event: DragEvent<HTMLElement>): DragPlace
 
 export const currentMarkdown = (
   title: string,
-  inboxRootTasks: ReadonlyArray<TaskNode>,
-  sections: ReadonlyArray<Section>,
-  allTasks: ReadonlyArray<TaskNode>,
+  inboxRootTasks: Array<TaskNode>,
+  sections: Array<Section>,
+  allTasks: Array<TaskNode>,
   targetProjectId: ProjectId | null,
 ) => {
   if (targetProjectId !== null) {
@@ -114,14 +108,12 @@ export const currentMarkdown = (
       allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null),
       sections
         .filter((section) => section.projectId === targetProjectId)
-        .map((section) =>
-          Object.freeze({
-            title: section.title,
-            tasks: allTasks.filter(
-              (task) => task.projectId === targetProjectId && task.sectionId === section.id,
-            ),
-          }),
-        ),
+        .map((section) => ({
+          title: section.title,
+          tasks: allTasks.filter(
+            (task) => task.projectId === targetProjectId && task.sectionId === section.id,
+          ),
+        })),
     );
   }
 
@@ -130,19 +122,17 @@ export const currentMarkdown = (
     inboxRootTasks,
     sections
       .filter((section) => section.projectId === null)
-      .map((section) =>
-        Object.freeze({
-          title: section.title,
-          tasks: allTasks.filter((task) => task.projectId === null && task.sectionId === section.id),
-        }),
-      ),
+      .map((section) => ({
+        title: section.title,
+        tasks: allTasks.filter((task) => task.projectId === null && task.sectionId === section.id),
+      })),
   );
 };
 
 export const currentAdvancedMarkdown = (
   title: string,
-  sections: ReadonlyArray<Section>,
-  allTasks: ReadonlyArray<TaskNode>,
+  sections: Array<Section>,
+  allTasks: Array<TaskNode>,
   targetProjectId: ProjectId | null,
   description: string,
 ) =>
@@ -151,92 +141,80 @@ export const currentAdvancedMarkdown = (
     allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null),
     sections
       .filter((section) => section.projectId === targetProjectId)
-      .map((section) =>
-        Object.freeze({
-          title: section.title,
-          tasks: allTasks.filter(
-            (task) => task.projectId === targetProjectId && task.sectionId === section.id,
-          ),
-        }),
-      ),
+      .map((section) => ({
+        title: section.title,
+        tasks: allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === section.id),
+      })),
     description,
   );
 
 export const allMarkdownDocument = (
-  projects: ReadonlyArray<Project>,
-  sections: ReadonlyArray<Section>,
-  tasks: ReadonlyArray<TaskNode>,
+  projects: Array<Project>,
+  sections: Array<Section>,
+  tasks: Array<TaskNode>,
 ) =>
   renderTaskMarkdownDocument(
     "All tasks",
     [],
     [
-      Object.freeze({
+      {
         title: "Inbox",
         tasks: tasks.filter((task) => task.projectId === null && task.sectionId === null),
-      }),
+      },
       ...sections
         .filter((section) => section.projectId === null)
-        .map((section) =>
-          Object.freeze({
-            title: `Inbox / ${section.title}`,
-            tasks: tasks.filter((task) => task.projectId === null && task.sectionId === section.id),
-          }),
-        ),
+        .map((section) => ({
+          title: `Inbox / ${section.title}`,
+          tasks: tasks.filter((task) => task.projectId === null && task.sectionId === section.id),
+        })),
       ...projects.flatMap((project) => [
-        Object.freeze({
+        {
           title: project.title,
           tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === null),
-        }),
+        },
         ...sections
           .filter((section) => section.projectId === project.id)
-          .map((section) =>
-            Object.freeze({
-              title: `${project.title} / ${section.title}`,
-              tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === section.id),
-            }),
-          ),
+          .map((section) => ({
+            title: `${project.title} / ${section.title}`,
+            tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === section.id),
+          })),
       ]),
     ],
   );
 
 export const allAdvancedMarkdownDocument = (
-  projects: ReadonlyArray<Project>,
-  sections: ReadonlyArray<Section>,
-  tasks: ReadonlyArray<TaskNode>,
+  projects: Array<Project>,
+  sections: Array<Section>,
+  tasks: Array<TaskNode>,
   inboxDescription: string,
 ) =>
   renderAdvancedMarkdownDocument(
     "All tasks",
     [],
     [
-      Object.freeze({
+      {
         title: "Inbox",
         description: inboxDescription,
         tasks: tasks.filter((task) => task.projectId === null && task.sectionId === null),
-      }),
+      },
       ...sections
         .filter((section) => section.projectId === null)
-        .map((section) =>
-          Object.freeze({
-            title: `Inbox / ${section.title}`,
-            tasks: tasks.filter((task) => task.projectId === null && task.sectionId === section.id),
-          }),
-        ),
+        .map((section) => ({
+          title: `Inbox / ${section.title}`,
+          tasks: tasks.filter((task) => task.projectId === null && task.sectionId === section.id),
+        })),
       ...projects.flatMap((project) => [
-        Object.freeze({
+        {
           title: project.title,
           description: project.description,
           tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === null),
-        }),
+        },
         ...sections
           .filter((section) => section.projectId === project.id)
-          .map((section) =>
-            Object.freeze({
-              title: `${project.title} / ${section.title}`,
-              tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === section.id),
-            }),
-          ),
+          .map((section) => ({
+            title: `${project.title} / ${section.title}`,
+            tasks: tasks.filter((task) => task.projectId === project.id && task.sectionId === section.id),
+          })),
       ]),
     ],
   );

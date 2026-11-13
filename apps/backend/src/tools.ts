@@ -22,7 +22,7 @@ const quoteIdentifier = (name: string) => {
   return `"${name}"`;
 };
 
-const migrationFiles = Object.freeze([
+const migrationFiles = [
   new URL("../drizzle/0000_create_tasks.sql", import.meta.url),
   new URL("../drizzle/0001_settings_auth.sql", import.meta.url),
   new URL("../drizzle/0002_task_details_archives.sql", import.meta.url),
@@ -34,23 +34,23 @@ const migrationFiles = Object.freeze([
   new URL("../drizzle/0008_data_integrity.sql", import.meta.url),
   new URL("../drizzle/0009_database_constraints_and_indexes.sql", import.meta.url),
   new URL("../drizzle/0010_uuid_user_ids.sql", import.meta.url),
-]);
-const protectedTables = Object.freeze(["sessions", "users"]);
+];
+const protectedTables = ["sessions", "users"];
 
-const seedTasks = Object.freeze([
-  Object.freeze({
+const seedTasks = [
+  {
     id: "seed-inbox",
     title: "Review seeded task",
     parentId: null,
     lexicalOrder: "U",
-  }),
-  Object.freeze({
+  },
+  {
     id: "seed-child",
     title: "Nested seeded task",
     parentId: "seed-inbox",
     lexicalOrder: "U",
-  }),
-]);
+  },
+];
 
 const parseJson = async (request: Request) => {
   const contentType = request.headers.get("content-type") ?? "";
@@ -78,7 +78,7 @@ const clearTable = async (sql: postgres.Sql, table: string) => {
 
   await sql.unsafe(`TRUNCATE TABLE ${quoteIdentifier(table)} RESTART IDENTITY CASCADE`);
 
-  return Object.freeze({ table });
+  return { table };
 };
 
 const clearAllTables = async (sql: postgres.Sql) => {
@@ -86,7 +86,7 @@ const clearAllTables = async (sql: postgres.Sql) => {
 
   await Promise.all(tables.map((table) => clearTable(sql, table.table_name)));
 
-  return Object.freeze({ tables: Object.freeze(tables.map((table) => table.table_name)) });
+  return { tables: tables.map((table) => table.table_name) };
 };
 
 const dropAllTables = async (sql: postgres.Sql) => {
@@ -130,7 +130,7 @@ const seed = async (sql: postgres.Sql) => {
     ),
   );
 
-  return Object.freeze({ inserted: seedTasks.length });
+  return { inserted: seedTasks.length };
 };
 
 export const createToolsRouter = (databaseUrl: string, mode: string) => {

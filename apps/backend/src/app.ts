@@ -17,7 +17,7 @@ import { createMemoryUserRepository } from "./users";
 
 export const createApp = (
   repository: TaskRepository | ((userId: string) => TaskRepository) = createMemoryTaskRepository(),
-  options: Readonly<{
+  options: {
     databaseUrl?: string;
     mode?: string;
     secureCookies?: boolean;
@@ -26,7 +26,7 @@ export const createApp = (
     attachmentsEnabled?: boolean;
     projectArchivingEnabled?: boolean;
     playwrightApiEnabled?: boolean;
-  }> = Object.freeze({}),
+  } = {},
 ) => {
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
@@ -128,7 +128,7 @@ export const createApp = (
   app.delete("/tasks/:id", async (context) => {
     const taskRepository = repositoryFor(context.get("userId"));
     const allTasks = await taskRepository.list();
-    const collect = (id: string): ReadonlyArray<string> => [
+    const collect = (id: string): Array<string> => [
       id,
       ...allTasks.filter((task) => task.parentId === id).flatMap((task) => collect(task.id)),
     ];

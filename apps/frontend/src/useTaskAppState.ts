@@ -4,15 +4,15 @@ import type { TaskAppMarkdownModal } from "./components/TaskAppOverlays";
 import type { ActiveDragTarget } from "./components/TaskTreeView";
 import { inboxPlacement } from "./taskAppUtils";
 
-type MobileDragItem = Readonly<{ id: string }>;
+type MobileDragItem = { id: string };
 
 export type DropZoneId = "inbox" | `project:${ProjectId}` | `section:${SectionId}`;
 
-type TaskContextMenuState = Readonly<{
+type TaskContextMenuState = {
   task: TaskNode;
   left: number;
   top: number;
-}>;
+};
 
 export const useTaskAppState = () => {
   const [dateView, setDateView] = useState<"list" | "calendar">("list");
@@ -23,11 +23,11 @@ export const useTaskAppState = () => {
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addTaskTitle, setAddTaskTitle] = useState("");
   const [addTaskDescription, setAddTaskDescription] = useState("");
-  const [addTaskFiles, setAddTaskFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
+  const [addTaskFiles, setAddTaskFiles] = useState<Array<File>>([]);
   const [addTaskDate, setAddTaskDate] = useState("");
   const [addTaskDatePickerOpen, setAddTaskDatePickerOpen] = useState(false);
   const [addTaskDateBeforePicker, setAddTaskDateBeforePicker] = useState("");
-  const [addTaskLabels, setAddTaskLabels] = useState<ReadonlyArray<string>>(Object.freeze([]));
+  const [addTaskLabels, setAddTaskLabels] = useState<Array<string>>([]);
   const [addTaskLabelInput, setAddTaskLabelInput] = useState("");
   const [showAddTaskDescription, setShowAddTaskDescription] = useState(false);
   const [showAddTaskDate, setShowAddTaskDate] = useState(false);
@@ -44,10 +44,10 @@ export const useTaskAppState = () => {
   const [activeDragTarget, setActiveDragTarget] = useState<ActiveDragTarget | null>(null);
   const [activeDropZone, setActiveDropZone] = useState<DropZoneId | null>(null);
   const mobileDragRef = useRef<MobileDragItem | null>(null);
-  const [activeSectionDrop, setActiveSectionDrop] = useState<Readonly<{
+  const [activeSectionDrop, setActiveSectionDrop] = useState<{
     id: SectionId;
     position: "before" | "after";
-  }> | null>(null);
+  } | null>(null);
   const [draggingSectionId, setDraggingSectionId] = useState<SectionId | null>(null);
   const [targetProjectId, setTargetProjectId] = useState<ProjectId | null>(() =>
     new URLSearchParams(window.location.search).get("project"),
@@ -63,7 +63,7 @@ export const useTaskAppState = () => {
   const [detailsTaskId, setDetailsTaskId] = useState<TaskId | null>(null);
   const [taskContextMenu, setTaskContextMenu] = useState<TaskContextMenuState | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedRootTaskIds, setSelectedRootTaskIds] = useState<ReadonlyArray<TaskId>>(Object.freeze([]));
+  const [selectedRootTaskIds, setSelectedRootTaskIds] = useState<Array<TaskId>>([]);
   const [selectedMoveOpen, setSelectedMoveOpen] = useState(false);
   const [selectedMovePlacement, setSelectedMovePlacement] = useState(inboxPlacement);
   const [detailTitle, setDetailTitle] = useState("");
@@ -82,7 +82,7 @@ export const useTaskAppState = () => {
   const subtasksSectionRef = useRef<HTMLElement>(null);
   const sectionCreateInputRef = useRef<HTMLInputElement>(null);
   const [detailComment, setDetailComment] = useState("");
-  const [detailCommentFiles, setDetailCommentFiles] = useState<ReadonlyArray<File>>(Object.freeze([]));
+  const [detailCommentFiles, setDetailCommentFiles] = useState<Array<File>>([]);
   const pastedCommentSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [detailSubtask, setDetailSubtask] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export const useTaskAppState = () => {
   const [editingScopeDescription, setEditingScopeDescription] = useState(false);
   const [scopeDescriptionDraft, setScopeDescriptionDraft] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
-  return Object.freeze({
+  return {
     dateView,
     setDateView,
     dateListFilter,
@@ -229,5 +229,5 @@ export const useTaskAppState = () => {
     subtasksSectionRef,
     sectionCreateInputRef,
     pastedCommentSaveQueueRef,
-  });
+  };
 };

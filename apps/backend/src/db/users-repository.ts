@@ -4,51 +4,52 @@ import postgres from "postgres";
 import type { PublicUser, UserRecord, UserRepository } from "../users";
 import { sessions, users } from "./schema";
 
-const toPublicUser = (user: Pick<UserRecord, "id" | "username" | "isAdmin">): PublicUser =>
-  Object.freeze({ id: user.id, username: user.username, isAdmin: user.isAdmin });
+const toPublicUser = (user: Pick<UserRecord, "id" | "username" | "isAdmin">): PublicUser => ({
+  id: user.id,
+  username: user.username,
+  isAdmin: user.isAdmin,
+});
 
 export const createPostgresUserRepository = (databaseUrl: string): UserRepository => {
   const client = postgres(databaseUrl, { max: 10 });
   const db = drizzle(client);
 
-  return Object.freeze({
+  return {
     getByUsername: async (username) => {
       const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
       const row = rows[0];
       return row === undefined
         ? null
-        : Object.freeze({
+        : {
             id: row.id,
             username: row.username,
             passwordHash: row.passwordHash,
             isAdmin: row.isAdmin,
             confirmDelete: row.confirmDelete,
             inboxDescription: row.inboxDescription,
-          });
+          };
     },
     getById: async (id) => {
       const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
       const row = rows[0];
       return row === undefined
         ? null
-        : Object.freeze({
+        : {
             id: row.id,
             username: row.username,
             passwordHash: row.passwordHash,
             isAdmin: row.isAdmin,
             confirmDelete: row.confirmDelete,
             inboxDescription: row.inboxDescription,
-          });
+          };
     },
     list: async () =>
-      Object.freeze(
-        (
-          await db
-            .select({ id: users.id, username: users.username, isAdmin: users.isAdmin })
-            .from(users)
-            .orderBy(users.username)
-        ).map(toPublicUser),
-      ),
+      (
+        await db
+          .select({ id: users.id, username: users.username, isAdmin: users.isAdmin })
+          .from(users)
+          .orderBy(users.username)
+      ).map(toPublicUser),
     create: async (username, passwordHash, isAdmin) => {
       const rows = await db
         .insert(users)
@@ -117,5 +118,5 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
     close: async () => {
       await client.end();
     },
-  });
+  };
 };

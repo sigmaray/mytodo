@@ -18,18 +18,16 @@ beforeEach(() => {
 describe("TaskApp", () => {
   it("calls update and delete handlers", async () => {
     const updateTask = vi.fn(
-      async (id: string, patch: Readonly<{ title?: string }>): Promise<Task> =>
+      async (id: string, patch: { title?: string }): Promise<Task> =>
         task({ id, title: patch.title ?? "Plan MVP" }),
     );
     const deleteTask = vi.fn(async () => undefined);
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])),
-        updateTask,
-        deleteTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "1", title: "Plan MVP" })]),
+      updateTask,
+      deleteTask,
+    });
 
     await screen.findByText("Plan MVP");
     await userEvent.click(screen.getByRole("button", { name: "Edit task Plan MVP" }));
@@ -50,9 +48,7 @@ describe("TaskApp", () => {
     const deleteTask = vi.fn(async () => undefined);
     vi.mocked(window.confirm).mockReturnValue(false);
 
-    renderApp(
-      Object.freeze({ ...baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])), deleteTask }),
-    );
+    renderApp({ ...baseApi([task({ id: "1", title: "Plan MVP" })]), deleteTask });
     await screen.findByText("Plan MVP");
     await userEvent.click(screen.getByRole("button", { name: "Delete task Plan MVP" }));
 
@@ -62,12 +58,11 @@ describe("TaskApp", () => {
 
   it("skips delete confirmation when the preference is disabled", async () => {
     const deleteTask = vi.fn(async () => undefined);
-    const api = Object.freeze({
-      ...baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])),
-      getSettings: async () =>
-        Object.freeze({ confirmDelete: false, accessMode: "password" as const, username: "admin" }),
+    const api = {
+      ...baseApi([task({ id: "1", title: "Plan MVP" })]),
+      getSettings: async () => ({ confirmDelete: false, accessMode: "password" as const, username: "admin" }),
       deleteTask,
-    });
+    };
 
     renderApp(api);
     await screen.findByText("Plan MVP");
@@ -79,7 +74,7 @@ describe("TaskApp", () => {
 
   it("assigns a task to a project while editing", async () => {
     const updateTask = vi.fn(
-      async (id: string, patch: Readonly<{ title?: string }>): Promise<Task> =>
+      async (id: string, patch: { title?: string }): Promise<Task> =>
         task({ id, title: patch.title ?? "Plan MVP" }),
     );
     const moveTask = vi.fn(
@@ -91,14 +86,12 @@ describe("TaskApp", () => {
       ): Promise<Task> => task({ id, title: "Plan MVP", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-        updateTask,
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "1", title: "Plan MVP" })]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+      updateTask,
+      moveTask,
+    });
 
     await screen.findByText("Plan MVP");
     await userEvent.click(screen.getByRole("button", { name: "Edit task Plan MVP" }));
@@ -115,14 +108,12 @@ describe("TaskApp", () => {
     );
     const deleteSection = vi.fn(async () => undefined);
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listSections: async () => Object.freeze([section({ id: "section-1", title: "Later" })]),
-        updateSection,
-        deleteSection,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listSections: async () => [section({ id: "section-1", title: "Later" })],
+      updateSection,
+      deleteSection,
+    });
 
     await screen.findByRole("heading", { name: "Later" });
     await userEvent.click(screen.getByRole("button", { name: "Edit section Later" }));
@@ -160,16 +151,12 @@ describe("TaskApp", () => {
         parentId: string | null,
       ): Promise<Task> => task({ id, title: "Created task", projectId, sectionId, parentId }),
     );
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([task({ id: "existing-task", title: "Existing task", sectionId: "section-1" })]),
-        ),
-        listSections: async () => Object.freeze([section({ id: "section-1", title: "Later" })]),
-        createTask,
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "existing-task", title: "Existing task", sectionId: "section-1" })]),
+      listSections: async () => [section({ id: "section-1", title: "Later" })],
+      createTask,
+      moveTask,
+    });
 
     await screen.findByText("Existing task");
     expect(screen.getByRole("button", { name: "Add task to bottom of section Later" })).toBeInTheDocument();
@@ -192,7 +179,7 @@ describe("TaskApp", () => {
   });
 
   it("previews markdown for the current task list", async () => {
-    renderApp(baseApi(Object.freeze([task({ id: "1", title: "Plan MVP", completed: true })])));
+    renderApp(baseApi([task({ id: "1", title: "Plan MVP", completed: true })]));
 
     await screen.findByText("Plan MVP");
     expect(screen.queryByText("P1")).not.toBeInTheDocument();
@@ -217,22 +204,22 @@ describe("TaskApp", () => {
       projectId: "project-1",
       sectionId: "section-1",
       dueDate: "2026-12-04",
-      labels: Object.freeze(["planning"]),
-      comments: Object.freeze([
-        Object.freeze({
+      labels: ["planning"],
+      comments: [
+        {
           id: "project-comment",
           body: "Project comment",
           createdAt: "2026-10-22T10:00:00.000Z",
-        }),
-      ]),
+        },
+      ],
     });
-    const api = Object.freeze({
-      ...baseApi(Object.freeze([task({ id: "inbox-task", title: "Inbox only" }), projectTask])),
-      listProjects: async () =>
-        Object.freeze([project({ id: "project-1", title: "Roadmap", description: "Roadmap details" })]),
-      listSections: async () =>
-        Object.freeze([section({ id: "section-1", title: "Milestone", projectId: "project-1" })]),
-    });
+    const api = {
+      ...baseApi([task({ id: "inbox-task", title: "Inbox only" }), projectTask]),
+      listProjects: async () => [
+        project({ id: "project-1", title: "Roadmap", description: "Roadmap details" }),
+      ],
+      listSections: async () => [section({ id: "section-1", title: "Milestone", projectId: "project-1" })],
+    };
     renderApp(api);
 
     await screen.findByText("Project task");
@@ -246,17 +233,17 @@ describe("TaskApp", () => {
       scope: { type: string; title: string };
       project: {
         description: string;
-        sections: ReadonlyArray<{ title: string }>;
-        tasks: ReadonlyArray<{
+        sections: Array<{ title: string }>;
+        tasks: Array<{
           description: string;
           dueDate: string;
-          labels: ReadonlyArray<string>;
-          comments: ReadonlyArray<{ body: string }>;
+          labels: Array<string>;
+          comments: Array<{ body: string }>;
         }>;
       };
       inbox: unknown;
-      comments: ReadonlyArray<{ body: string }>;
-      dates: ReadonlyArray<{ dueDate: string }>;
+      comments: Array<{ body: string }>;
+      dates: Array<{ dueDate: string }>;
     };
     expect(exported.scope).toEqual({ type: "project", id: "project-1", title: "Roadmap" });
     expect(exported.inbox).toBeNull();
@@ -295,19 +282,17 @@ describe("TaskApp", () => {
       title: "All tasks note",
       description: "Task description",
       dueDate: "2026-11-18",
-      labels: Object.freeze(["important"]),
-      comments: Object.freeze([
-        Object.freeze({ id: "comment-1", body: "Task comment", createdAt: "2026-10-22T10:00:00.000Z" }),
-      ]),
+      labels: ["important"],
+      comments: [{ id: "comment-1", body: "Task comment", createdAt: "2026-10-22T10:00:00.000Z" }],
     });
-    const api = Object.freeze({
-      ...baseApi(Object.freeze([inboxTask])),
+    const api = {
+      ...baseApi([inboxTask]),
       getInboxDescription: async () => "Inbox description",
-      listProjects: async () =>
-        Object.freeze([project({ id: "project-1", title: "Roadmap", description: "Project description" })]),
-      listSections: async () =>
-        Object.freeze([section({ id: "section-1", title: "Later", projectId: "project-1" })]),
-    });
+      listProjects: async () => [
+        project({ id: "project-1", title: "Roadmap", description: "Project description" }),
+      ],
+      listSections: async () => [section({ id: "section-1", title: "Later", projectId: "project-1" })],
+    };
     renderApp(api);
 
     expect(await screen.findByRole("heading", { name: "Export" })).toBeInTheDocument();
@@ -336,16 +321,16 @@ describe("TaskApp", () => {
     const exported = JSON.parse(jsonText) as {
       inbox: {
         description: string;
-        tasks: ReadonlyArray<{
+        tasks: Array<{
           description: string;
           dueDate: string;
-          comments: ReadonlyArray<{ body: string }>;
+          comments: Array<{ body: string }>;
         }>;
       };
-      projects: ReadonlyArray<{ description: string; sections: ReadonlyArray<{ title: string }> }>;
-      sections: ReadonlyArray<{ title: string }>;
-      dates: ReadonlyArray<{ dueDate: string }>;
-      comments: ReadonlyArray<{ body: string }>;
+      projects: Array<{ description: string; sections: Array<{ title: string }> }>;
+      sections: Array<{ title: string }>;
+      dates: Array<{ dueDate: string }>;
+      comments: Array<{ body: string }>;
     };
     expect(exported.inbox.description).toBe("Inbox description");
     expect(exported.inbox.tasks[0]).toMatchObject({

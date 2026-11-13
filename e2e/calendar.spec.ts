@@ -16,7 +16,7 @@ test("month calendar stays readable on mobile and moves tasks between days", asy
     data: { title, projectId: null, sectionId: null, parentId: null },
   });
   expect(createdResponse.ok()).toBe(true);
-  const created = (await createdResponse.json()) as Readonly<{ task: Readonly<{ id: string }> }>;
+  const created = (await createdResponse.json()) as { task: { id: string } };
 
   try {
     const datedResponse = await request.patch(`/tasks/${created.task.id}`, { data: { dueDate: today } });
@@ -111,9 +111,9 @@ test("Dates list tabs show only tasks in their date range", async ({ page }, tes
 
     const persistedResponse = await request.get("/tasks");
     expect(persistedResponse.ok()).toBe(true);
-    const persisted = (await persistedResponse.json()) as Readonly<{
-      tasks: ReadonlyArray<Readonly<{ id: string; title: string; dueDate: string | null }>>;
-    }>;
+    const persisted = (await persistedResponse.json()) as {
+      tasks: Array<{ id: string; title: string; dueDate: string | null }>;
+    };
     for (const [index, taskCase] of taskCases.entries()) {
       expect(persisted.tasks).toContainEqual(
         expect.objectContaining({
@@ -128,10 +128,10 @@ test("Dates list tabs show only tasks in their date range", async ({ page }, tes
     await expect(page.getByRole("heading", { name: "Dates" })).toBeVisible();
     const datedTasks = page.getByLabel("Dates tasks");
     const taskButton = (title: string) => datedTasks.getByRole("button", { name: title, exact: true });
-    const expectVisible = async (...titles: ReadonlyArray<string>) => {
+    const expectVisible = async (...titles: Array<string>) => {
       for (const title of titles) await expect(taskButton(title)).toBeVisible();
     };
-    const expectHidden = async (...titles: ReadonlyArray<string>) => {
+    const expectHidden = async (...titles: Array<string>) => {
       for (const title of titles) await expect(taskButton(title)).toHaveCount(0);
     };
     const [overdue, today, upcoming, undated] = taskCases.map(({ title }) => title);

@@ -18,20 +18,16 @@ beforeEach(() => {
 describe("TaskApp", () => {
   it("deletes selected roots with the existing confirmation and their subtasks", async () => {
     const deleteTask = vi.fn(async () => undefined);
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({
-              id: "root",
-              title: "Parent",
-              children: Object.freeze([task({ id: "child", title: "Child", parentId: "root" })]),
-            }),
-          ]),
-        ),
-        deleteTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({
+          id: "root",
+          title: "Parent",
+          children: [task({ id: "child", title: "Child", parentId: "root" })],
+        }),
+      ]),
+      deleteTask,
+    });
 
     await screen.findByText("Parent");
     await userEvent.click(screen.getByRole("button", { name: "Select tasks" }));
@@ -48,13 +44,11 @@ describe("TaskApp", () => {
       async (title: string): Promise<Project> => project({ id: "project-1", title }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => Object.freeze([]),
-        createProject,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [],
+      createProject,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Add project" }));
     await userEvent.type(screen.getByLabelText("Project title"), "Roadmap");
@@ -66,19 +60,17 @@ describe("TaskApp", () => {
 
   it("updates and deletes projects from the sidebar", async () => {
     const updateProject = vi.fn(
-      async (id: string, patch: Readonly<{ title?: string; description?: string }>): Promise<Project> =>
+      async (id: string, patch: { title?: string; description?: string }): Promise<Project> =>
         project({ id, title: patch.title ?? "Roadmap", description: patch.description ?? "" }),
     );
     const deleteProject = vi.fn(async () => undefined);
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-        updateProject,
-        deleteProject,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+      updateProject,
+      deleteProject,
+    });
 
     await screen.findByRole("button", { name: "Roadmap" });
     await userEvent.click(screen.getByLabelText("Project menu Roadmap"));
@@ -104,17 +96,15 @@ describe("TaskApp", () => {
 
   it("renames the selected project inline from its heading", async () => {
     const updateProject = vi.fn(
-      async (id: string, patch: Readonly<{ title?: string; description?: string }>): Promise<Project> =>
+      async (id: string, patch: { title?: string; description?: string }): Promise<Project> =>
         project({ id, title: patch.title ?? "Roadmap", description: patch.description ?? "" }),
     );
     window.history.replaceState({}, "", "/?project=project-1");
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-        updateProject,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+      updateProject,
+    });
 
     await screen.findByRole("heading", { name: "Roadmap" });
     await userEvent.click(screen.getByRole("button", { name: "Edit project name" }));
@@ -131,15 +121,13 @@ describe("TaskApp", () => {
 
   it("saves, edits, and removes the Inbox description", async () => {
     let description = "";
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        getInboxDescription: async () => description,
-        updateInboxDescription: async (next) => {
-          description = next;
-        },
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      getInboxDescription: async () => description,
+      updateInboxDescription: async (next) => {
+        description = next;
+      },
+    });
 
     await userEvent.click(await screen.findByRole("button", { name: "Add description" }));
     await userEvent.type(screen.getByLabelText("Scope description"), "Inbox notes");
@@ -157,12 +145,10 @@ describe("TaskApp", () => {
   });
 
   it("closes an open project menu with Escape and outside click", async () => {
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+    });
     await screen.findByRole("button", { name: "Roadmap" });
     const menu = screen.getByLabelText("Project menu Roadmap").parentElement;
     if (menu === null) throw new Error("Missing project menu");
@@ -179,12 +165,10 @@ describe("TaskApp", () => {
   });
 
   it("opens the project menu upward when there is not enough room below", async () => {
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+    });
     const summary = await screen.findByLabelText("Project menu Roadmap");
     vi.spyOn(summary, "getBoundingClientRect").mockReturnValue({
       x: 0,
@@ -204,13 +188,10 @@ describe("TaskApp", () => {
   });
 
   it("hides project archiving controls by default and keeps archived projects visible", async () => {
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () =>
-          Object.freeze([project({ id: "archived-project", title: "Roadmap", archived: true })]),
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [project({ id: "archived-project", title: "Roadmap", archived: true })],
+    });
     const roadmap = await screen.findByRole("button", { name: "Roadmap" });
     const sidebar = screen.getByRole("complementary", { name: "Navigation" });
     expect(within(sidebar).queryByRole("link", { name: "Archived projects" })).not.toBeInTheDocument();
@@ -220,33 +201,29 @@ describe("TaskApp", () => {
   });
 
   it("opens a duplicated project and saves its description independently", async () => {
-    let projects: ReadonlyArray<Project> = Object.freeze([
+    let projects: Array<Project> = [
       project({ id: "source", title: "Source", description: "Original notes" }),
-    ]);
-    const updateProject = vi.fn(
-      async (id: string, patch: Readonly<{ description?: string }>): Promise<Project> => {
-        const existing = projects.find((item) => item.id === id);
-        if (existing === undefined) throw new Error("Unknown project");
-        const updated = project({ ...existing, ...patch });
-        projects = Object.freeze(projects.map((item) => (item.id === id ? updated : item)));
-        return updated;
-      },
-    );
+    ];
+    const updateProject = vi.fn(async (id: string, patch: { description?: string }): Promise<Project> => {
+      const existing = projects.find((item) => item.id === id);
+      if (existing === undefined) throw new Error("Unknown project");
+      const updated = project({ ...existing, ...patch });
+      projects = projects.map((item) => (item.id === id ? updated : item));
+      return updated;
+    });
     const duplicateProject = vi.fn(async (id: string): Promise<Project> => {
       const source = projects.find((item) => item.id === id);
       if (source === undefined) throw new Error("Unknown project");
       const duplicate = project({ ...source, id: "source-copy", title: "Source copy" });
-      projects = Object.freeze([...projects, duplicate]);
+      projects = [...projects, duplicate];
       return duplicate;
     });
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => projects,
-        updateProject,
-        duplicateProject,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => projects,
+      updateProject,
+      duplicateProject,
+    });
 
     await userEvent.click(await screen.findByRole("button", { name: /^Source$/ }));
     await userEvent.click(screen.getByLabelText("Project menu Source"));
@@ -269,7 +246,7 @@ describe("TaskApp", () => {
   });
 
   it("creates inbox sections and moves inbox tasks into them", async () => {
-    let sections = Object.freeze([] as ReadonlyArray<Section>);
+    let sections = [] as Array<Section>;
     const moveTask = vi.fn(
       async (
         id: string,
@@ -279,19 +256,17 @@ describe("TaskApp", () => {
       ): Promise<Task> => task({ id, title: "Sort receipts", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Sort receipts" })])),
-        listSections: async () => sections,
-        createSection: async (title) => {
-          const created = section({ id: "section-1", title });
-          sections = Object.freeze([...sections, created]);
+    renderApp({
+      ...baseApi([task({ id: "task-1", title: "Sort receipts" })]),
+      listSections: async () => sections,
+      createSection: async (title) => {
+        const created = section({ id: "section-1", title });
+        sections = [...sections, created];
 
-          return created;
-        },
-        moveTask,
-      }),
-    );
+        return created;
+      },
+      moveTask,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Add section" }));
     await userEvent.type(screen.getByLabelText("Section title"), "Later");
@@ -308,13 +283,11 @@ describe("TaskApp", () => {
       async (title: string): Promise<Section> => section({ id: "section-1", title }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listSections: async () => Object.freeze([]),
-        createSection,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listSections: async () => [],
+      createSection,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Add section" }));
     await userEvent.type(screen.getByLabelText("Section title"), "Someday");
@@ -334,13 +307,11 @@ describe("TaskApp", () => {
       ): Promise<Task> => task({ id, title: "Plan launch", projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan launch", projectId: "project-1" })])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Launch" })]),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "task-1", title: "Plan launch", projectId: "project-1" })]),
+      listProjects: async () => [project({ id: "project-1", title: "Launch" })],
+      moveTask,
+    });
 
     await userEvent.click(await screen.findByRole("button", { name: "Launch" }));
 
@@ -351,12 +322,10 @@ describe("TaskApp", () => {
   });
 
   it("highlights a project while a task is dragged over it", async () => {
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan launch" })])),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Launch" })]),
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "task-1", title: "Plan launch" })]),
+      listProjects: async () => [project({ id: "project-1", title: "Launch" })],
+    });
 
     await screen.findByText("Plan launch");
     const dataTransfer = dragTask("Plan launch");
@@ -372,17 +341,14 @@ describe("TaskApp", () => {
       async (id: string, parentId: string | null): Promise<Project> =>
         project({ id, title: "Source", parentId }),
     );
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () =>
-          Object.freeze([
-            project({ id: "source", title: "Source" }),
-            project({ id: "target", title: "Target" }),
-          ]),
-        moveProject,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => [
+        project({ id: "source", title: "Source" }),
+        project({ id: "target", title: "Target" }),
+      ],
+      moveProject,
+    });
 
     const sourceHandle = await screen.findByRole("button", { name: "Drag project Source" });
     const targetButton = screen.getByRole("button", { name: "Target" });

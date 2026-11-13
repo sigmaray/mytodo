@@ -8,11 +8,11 @@ import { tablesQueryKey } from "../queryKeys";
 
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
-export const ToolsPage = ({ api, sidebar }: Readonly<{ api: ToolsApi; sidebar?: ReactNode }>) => {
+export const ToolsPage = ({ api, sidebar }: { api: ToolsApi; sidebar?: ReactNode }) => {
   useQuickAddShortcut();
   const [selectedTable, setSelectedTable] = useState("");
   const [sql, setSql] = useState("SELECT * FROM tasks ORDER BY lexical_order;");
-  const [result, setResult] = useState<unknown>(Object.freeze({ ready: true }));
+  const [result, setResult] = useState<unknown>({ ready: true });
   const [recordsLimit, setRecordsLimit] = useState<"10" | "100" | "all">("10");
   const queryClient = useQueryClient();
   const tables = useQuery({
@@ -56,7 +56,7 @@ export const ToolsPage = ({ api, sidebar }: Readonly<{ api: ToolsApi; sidebar?: 
     );
   }
 
-  const tableOptions = tables.data ?? Object.freeze([]);
+  const tableOptions = tables.data ?? [];
   const tableValue = selectedTable || tableOptions[0] || "";
 
   return (

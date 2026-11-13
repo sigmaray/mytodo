@@ -21,7 +21,7 @@ import { createTaskAppExportModel } from "./taskAppExportModel";
 import type { useTaskAppActions } from "./useTaskAppActions";
 import type { useTaskAppState } from "./useTaskAppState";
 
-type TaskAppViewModelInput = Readonly<{
+type TaskAppViewModelInput = {
   api: ApplicationApi;
   queryClient: QueryClient;
   state: ReturnType<typeof useTaskAppState>;
@@ -29,7 +29,7 @@ type TaskAppViewModelInput = Readonly<{
   currentPath: string;
   attachmentsEnabled: boolean;
   inboxDescription: string | undefined;
-}>;
+};
 
 export const useTaskAppViewModel = ({
   api,
@@ -205,7 +205,7 @@ export const useTaskAppViewModel = ({
     </button>
   );
 
-  const taskActions = Object.freeze({
+  const taskActions = {
     toggleTask: toggleMutation.mutate,
     startEditing,
     openDetails,
@@ -218,13 +218,11 @@ export const useTaskAppViewModel = ({
       event.preventDefault();
       const width = 196;
       const height = 176;
-      setTaskContextMenu(
-        Object.freeze({
-          task,
-          left: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
-          top: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8)),
-        }),
-      );
+      setTaskContextMenu({
+        task,
+        left: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
+        top: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8)),
+      });
     },
     startSubtask,
     startDragging,
@@ -263,7 +261,7 @@ export const useTaskAppViewModel = ({
     setEditTitle,
     setEditPlacement,
     setSubtaskTitle,
-  });
+  };
 
   const taskTargetLabel =
     targetSectionId !== null
@@ -327,7 +325,7 @@ export const useTaskAppViewModel = ({
           allTasks,
           (task) => task.labels.length > 0 && (!selectedLabel || task.labels.includes(selectedLabel)),
         );
-  const calendarTasks = Object.freeze(flatTasks.filter((task) => task.dueDate !== null));
+  const calendarTasks = flatTasks.filter((task) => task.dueDate !== null);
   const calendarDays = buildCalendarDays(calendarMonth);
   const calendarLabel = calendarMonthLabel(calendarMonth);
   const calendarTaskCount = calendarTasks.filter((task) => task.dueDate?.startsWith(calendarMonth)).length;
@@ -366,18 +364,14 @@ export const useTaskAppViewModel = ({
       toast.error("Could not update project name");
     }
   };
-  const taskAttachments = Object.freeze(
-    flatTasks.flatMap((task) =>
-      task.comments.flatMap((comment) =>
-        (comment.attachments ?? []).map((attachment) =>
-          Object.freeze({
-            ...attachment,
-            taskId: task.id,
-            taskTitle: task.title,
-            uploadedAt: comment.createdAt,
-          }),
-        ),
-      ),
+  const taskAttachments = flatTasks.flatMap((task) =>
+    task.comments.flatMap((comment) =>
+      (comment.attachments ?? []).map((attachment) => ({
+        ...attachment,
+        taskId: task.id,
+        taskTitle: task.title,
+        uploadedAt: comment.createdAt,
+      })),
     ),
   );
   const markdown = currentMarkdown(taskTargetLabel, inboxRootTasks, allSections, allTasks, targetProjectId);
@@ -386,9 +380,9 @@ export const useTaskAppViewModel = ({
     setAddTaskBeforeId(beforeId);
     setAddTaskTitle("");
     setAddTaskDescription("");
-    setAddTaskFiles(Object.freeze([]));
+    setAddTaskFiles([]);
     setAddTaskDate("");
-    setAddTaskLabels(Object.freeze([]));
+    setAddTaskLabels([]);
     setAddTaskLabelInput("");
     setShowAddTaskDescription(false);
     setShowAddTaskDate(false);
@@ -415,14 +409,12 @@ export const useTaskAppViewModel = ({
       )
     )
       return;
-    selectedDeleteMutation.mutate(Object.freeze(selectedRootTasks.map((task) => task.id)));
+    selectedDeleteMutation.mutate(selectedRootTasks.map((task) => task.id));
   };
   const moveSelectedTasks = () => {
     if (selectedRootTasks.length === 0) return;
     const placement = parsePlacement(selectedMovePlacement, allSections);
-    selectedMoveMutation.mutate(
-      Object.freeze({ taskIds: Object.freeze(selectedRootTasks.map((task) => task.id)), ...placement }),
-    );
+    selectedMoveMutation.mutate({ taskIds: selectedRootTasks.map((task) => task.id), ...placement });
   };
   const selectionToolbar = selectionMode ? (
     <div className="selection-toolbar" role="group" aria-label="Selected task actions">
@@ -470,7 +462,7 @@ export const useTaskAppViewModel = ({
     taskTargetLabel,
     inboxDescription,
   });
-  return Object.freeze({
+  return {
     inboxSections,
     projectSections,
     inboxRootTasks,
@@ -497,5 +489,5 @@ export const useTaskAppViewModel = ({
     selectionToolbar,
     finishDndDrag,
     ...exportModel,
-  });
+  };
 };

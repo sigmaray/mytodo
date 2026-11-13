@@ -10,23 +10,22 @@ import {
 } from "./pure";
 import type { Task } from "./types";
 
-const task = (values: Partial<Task> & Pick<Task, "id" | "title" | "lexicalOrder">): Task =>
-  Object.freeze({
-    description: "",
-    dueDate: null,
-    labels: Object.freeze([]),
-    comments: Object.freeze([]),
-    completed: false,
-    parentId: null,
-    projectId: null,
-    sectionId: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    ...values,
-  });
+const task = (values: Partial<Task> & Pick<Task, "id" | "title" | "lexicalOrder">): Task => ({
+  description: "",
+  dueDate: null,
+  labels: [],
+  comments: [],
+  completed: false,
+  parentId: null,
+  projectId: null,
+  sectionId: null,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  ...values,
+});
 
 describe("buildTaskTree", () => {
-  it("builds an immutable sorted task tree", () => {
+  it("builds a sorted task tree", () => {
     const tree = buildTaskTree([
       task({ id: "child-b", title: "Child B", parentId: "root", lexicalOrder: "b" }),
       task({ id: "root", title: "Root", lexicalOrder: "a" }),
@@ -35,9 +34,6 @@ describe("buildTaskTree", () => {
 
     expect(tree).toHaveLength(1);
     expect(tree[0]?.children.map((child) => child.id)).toEqual(["child-a", "child-b"]);
-    expect(Object.isFrozen(tree)).toBe(true);
-    expect(Object.isFrozen(tree[0])).toBe(true);
-    expect(Object.isFrozen(tree[0]?.children)).toBe(true);
   });
 });
 
@@ -57,19 +53,27 @@ describe("generateLexicalOrder", () => {
 });
 
 describe("computeDropPlacement", () => {
-  const siblings = Object.freeze([
+  const siblings = [
     task({ id: "a", title: "A", lexicalOrder: "a" }),
     task({ id: "b", title: "B", lexicalOrder: "b" }),
     task({ id: "c", title: "C", lexicalOrder: "c" }),
-  ]);
+  ];
 
   it("places the moved task before or after the target", () => {
-    expect(computeDropPlacement(siblings, siblings[1] as Task, siblings[0] as Task, "before")).toEqual(
-      Object.freeze({ parentId: null, projectId: null, sectionId: null, beforeId: "a", afterId: null }),
-    );
-    expect(computeDropPlacement(siblings, siblings[0] as Task, siblings[2] as Task, "after")).toEqual(
-      Object.freeze({ parentId: null, projectId: null, sectionId: null, beforeId: null, afterId: "c" }),
-    );
+    expect(computeDropPlacement(siblings, siblings[1] as Task, siblings[0] as Task, "before")).toEqual({
+      parentId: null,
+      projectId: null,
+      sectionId: null,
+      beforeId: "a",
+      afterId: null,
+    });
+    expect(computeDropPlacement(siblings, siblings[0] as Task, siblings[2] as Task, "after")).toEqual({
+      parentId: null,
+      projectId: null,
+      sectionId: null,
+      beforeId: null,
+      afterId: "c",
+    });
   });
 
   it("returns null for no-op drops next to the current position", () => {
@@ -79,10 +83,10 @@ describe("computeDropPlacement", () => {
   });
 
   it("returns null when the target is a descendant of the moved task", () => {
-    const tree = Object.freeze([
+    const tree = [
       task({ id: "root", title: "Root", lexicalOrder: "a" }),
       task({ id: "child", title: "Child", parentId: "root", lexicalOrder: "a" }),
-    ]);
+    ];
 
     expect(computeDropPlacement(tree, tree[0] as Task, tree[1] as Task, "before")).toBeNull();
     expect(computeDropPlacement(tree, tree[0] as Task, tree[1] as Task, "after")).toBeNull();
@@ -91,18 +95,22 @@ describe("computeDropPlacement", () => {
 
 describe("computeIndentPlacement", () => {
   it("makes the task a child of the sibling above it", () => {
-    const tasks = Object.freeze([
+    const tasks = [
       task({ id: "a", title: "A", lexicalOrder: "a" }),
       task({ id: "b", title: "B", lexicalOrder: "b" }),
-    ]);
+    ];
 
-    expect(computeIndentPlacement(tasks, tasks[1] as Task)).toEqual(
-      Object.freeze({ parentId: "a", projectId: null, sectionId: null, beforeId: null, afterId: null }),
-    );
+    expect(computeIndentPlacement(tasks, tasks[1] as Task)).toEqual({
+      parentId: "a",
+      projectId: null,
+      sectionId: null,
+      beforeId: null,
+      afterId: null,
+    });
   });
 
   it("returns null for the first sibling", () => {
-    const tasks = Object.freeze([task({ id: "a", title: "A", lexicalOrder: "a" })]);
+    const tasks = [task({ id: "a", title: "A", lexicalOrder: "a" })];
 
     expect(computeIndentPlacement(tasks, tasks[0] as Task)).toBeNull();
   });
@@ -110,7 +118,7 @@ describe("computeIndentPlacement", () => {
 
 describe("computeOutdentPlacement", () => {
   it("moves the task below its parent as a sibling", () => {
-    const tasks = Object.freeze([
+    const tasks = [
       task({ id: "parent", title: "Parent", lexicalOrder: "a" }),
       task({
         id: "child",
@@ -120,15 +128,19 @@ describe("computeOutdentPlacement", () => {
         sectionId: null,
         lexicalOrder: "a",
       }),
-    ]);
+    ];
 
-    expect(computeOutdentPlacement(tasks, tasks[1] as Task)).toEqual(
-      Object.freeze({ parentId: null, projectId: null, sectionId: null, beforeId: null, afterId: "parent" }),
-    );
+    expect(computeOutdentPlacement(tasks, tasks[1] as Task)).toEqual({
+      parentId: null,
+      projectId: null,
+      sectionId: null,
+      beforeId: null,
+      afterId: "parent",
+    });
   });
 
   it("returns null for root tasks", () => {
-    const tasks = Object.freeze([task({ id: "a", title: "A", lexicalOrder: "a" })]);
+    const tasks = [task({ id: "a", title: "A", lexicalOrder: "a" })];
 
     expect(computeOutdentPlacement(tasks, tasks[0] as Task)).toBeNull();
   });
@@ -167,14 +179,14 @@ describe("renderAdvancedMarkdownDocument", () => {
         lexicalOrder: "a",
         description: "Mention the new search\nand export formats",
         dueDate: "2026-11-12",
-        labels: Object.freeze(["release", "writing"]),
-        comments: Object.freeze([
-          Object.freeze({
+        labels: ["release", "writing"],
+        comments: [
+          {
             id: "comment-1",
             body: "Include screenshots",
             createdAt: "2026-11-01T12:00:00.000Z",
-          }),
-        ]),
+          },
+        ],
       }),
     ]);
 

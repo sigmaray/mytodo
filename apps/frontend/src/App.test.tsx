@@ -25,18 +25,18 @@ beforeEach(() => {
 
 describe("ToolsPage", () => {
   it("runs database tool actions", async () => {
-    const clearTable = vi.fn(async () => Object.freeze({ cleared: true }));
-    const runQuery = vi.fn(async () => Object.freeze({ rows: Object.freeze([{ id: "1" }]) }));
-    const api: ToolsApi = Object.freeze({
-      listTables: async () => Object.freeze(["tasks"]),
-      listRecords: async (table, limit) => Object.freeze({ table, limit, rows: [Object.freeze({ id: 1 })] }),
+    const clearTable = vi.fn(async () => ({ cleared: true }));
+    const runQuery = vi.fn(async () => ({ rows: [{ id: "1" }] }));
+    const api: ToolsApi = {
+      listTables: async () => ["tasks"],
+      listRecords: async (table, limit) => ({ table, limit, rows: [{ id: 1 }] }),
       clearTable,
-      dropAllTables: async () => Object.freeze({ dropped: true }),
-      migrate: async () => Object.freeze({ migrated: true }),
-      clearAllTables: async () => Object.freeze({ cleared: true }),
-      seed: async () => Object.freeze({ seeded: true }),
+      dropAllTables: async () => ({ dropped: true }),
+      migrate: async () => ({ migrated: true }),
+      clearAllTables: async () => ({ cleared: true }),
+      seed: async () => ({ seeded: true }),
       runQuery,
-    });
+    };
 
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -78,18 +78,16 @@ describe("Dates and Labels task views", () => {
       id: "dated",
       title: "Dated note",
       dueDate: overdueDate,
-      labels: Object.freeze(["work"]),
-      children: Object.freeze([task({ id: "undated-child", title: "Undated child", parentId: "dated" })]),
+      labels: ["work"],
+      children: [task({ id: "undated-child", title: "Undated child", parentId: "dated" })],
     });
     renderApp(
-      baseApi(
-        Object.freeze([
-          datedParent,
-          task({ id: "today-task", title: "Today task", dueDate: todayDate }),
-          task({ id: "upcoming-task", title: "Upcoming task", dueDate: upcomingDate }),
-          task({ id: "plain", title: "No date" }),
-        ]),
-      ),
+      baseApi([
+        datedParent,
+        task({ id: "today-task", title: "Today task", dueDate: todayDate }),
+        task({ id: "upcoming-task", title: "Upcoming task", dueDate: upcomingDate }),
+        task({ id: "plain", title: "No date" }),
+      ]),
     );
 
     expect(await screen.findByRole("button", { name: "Dated note" })).toBeInTheDocument();
@@ -115,10 +113,10 @@ describe("Dates and Labels task views", () => {
       `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-    let storedTasks: ReadonlyArray<TaskNode> = Object.freeze([]);
+    let storedTasks: Array<TaskNode> = [];
     let nextTaskId = 0;
-    const api = Object.freeze({
-      ...baseApi(Object.freeze([])),
+    const api = {
+      ...baseApi([]),
       listTasks: async () => storedTasks,
       createTask: async (
         title: string,
@@ -127,7 +125,7 @@ describe("Dates and Labels task views", () => {
         parentId: string | null,
       ) => {
         const created = task({ id: `date-filter-${nextTaskId++}`, title, projectId, sectionId, parentId });
-        storedTasks = Object.freeze([...storedTasks, created]);
+        storedTasks = [...storedTasks, created];
         return created;
       },
       updateTask: async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]) => {
@@ -139,10 +137,10 @@ describe("Dates and Labels task views", () => {
           ...fields,
           ...(comments === undefined ? {} : { comments: savedComments(comments) }),
         });
-        storedTasks = Object.freeze(storedTasks.map((item) => (item.id === id ? updated : item)));
+        storedTasks = storedTasks.map((item) => (item.id === id ? updated : item));
         return updated;
       },
-    });
+    };
     renderApp(api);
 
     const createTaskInApp = async (title: string, dueDate: string | null) => {
@@ -166,9 +164,9 @@ describe("Dates and Labels task views", () => {
     const datesTasks = screen.getByRole("region", { name: "Dates tasks" });
     const taskButton = (title: string) =>
       within(datesTasks).getByRole("button", { name: new RegExp(`^${title}$`) });
-    const expectVisibleTasks = (...titles: ReadonlyArray<string>) =>
+    const expectVisibleTasks = (...titles: Array<string>) =>
       titles.forEach((title) => expect(taskButton(title)).toBeInTheDocument());
-    const expectHiddenTasks = (...titles: ReadonlyArray<string>) =>
+    const expectHiddenTasks = (...titles: Array<string>) =>
       titles.forEach((title) =>
         expect(
           within(datesTasks).queryByRole("button", { name: new RegExp(`^${title}$`) }),
@@ -209,7 +207,7 @@ describe("Dates and Labels task views", () => {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const currentMonth = today.slice(0, 7);
-    renderApp(baseApi(Object.freeze([task({ id: "today-task", title: "Scheduled today", dueDate: today })])));
+    renderApp(baseApi([task({ id: "today-task", title: "Scheduled today", dueDate: today })]));
 
     await userEvent.click(await screen.findByRole("button", { name: "Calendar" }));
     fireEvent.change(screen.getByLabelText("Calendar month"), { target: { value: currentMonth } });
@@ -243,24 +241,17 @@ describe("Dates and Labels task views", () => {
       id: "match",
       title: "Project task",
       projectId: "p1",
-      labels: Object.freeze(["work"]),
-      children: Object.freeze([
+      labels: ["work"],
+      children: [
         task({
           id: "other-child",
           title: "Other label child",
           parentId: "match",
-          labels: Object.freeze(["home"]),
+          labels: ["home"],
         }),
-      ]),
+      ],
     });
-    renderApp(
-      baseApi(
-        Object.freeze([
-          labeledParent,
-          task({ id: "other", title: "Other label", labels: Object.freeze(["home"]) }),
-        ]),
-      ),
-    );
+    renderApp(baseApi([labeledParent, task({ id: "other", title: "Other label", labels: ["home"] })]));
 
     expect(await screen.findByRole("button", { name: "Project task" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Other label child" })).toBeInTheDocument();
@@ -271,16 +262,14 @@ describe("Dates and Labels task views", () => {
 describe("SearchPalette", () => {
   it("searches task descriptions and labels, and opens matching destinations", async () => {
     renderApp(
-      baseApi(
-        Object.freeze([
-          task({
-            id: "search-task",
-            title: "Prepare launch",
-            description: "needle phrase in notes",
-            labels: Object.freeze(["work"]),
-          }),
-        ]),
-      ),
+      baseApi([
+        task({
+          id: "search-task",
+          title: "Prepare launch",
+          description: "needle phrase in notes",
+          labels: ["work"],
+        }),
+      ]),
     );
 
     await userEvent.click(await screen.findByRole("button", { name: /Search/ }));
@@ -298,14 +287,12 @@ describe("SearchPalette", () => {
 
 describe("SettingsPage", () => {
   it("saves the current user's deletion preference", async () => {
-    const updateSettings = vi.fn(async (settings: Parameters<ApplicationApi["updateSettings"]>[0]) =>
-      Object.freeze({
-        confirmDelete: settings.confirmDelete,
-        accessMode: "password" as const,
-        username: "admin",
-      }),
-    );
-    const api = Object.freeze({ ...baseApi(Object.freeze([])), updateSettings });
+    const updateSettings = vi.fn(async (settings: Parameters<ApplicationApi["updateSettings"]>[0]) => ({
+      confirmDelete: settings.confirmDelete,
+      accessMode: "password" as const,
+      username: "admin",
+    }));
+    const api = { ...baseApi([]), updateSettings };
 
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -325,10 +312,12 @@ describe("SettingsPage", () => {
   });
 
   it("lets a signed-in user update their own account without user administration", async () => {
-    const updateOwnAccount = vi.fn(async (account: Parameters<ApplicationApi["updateOwnAccount"]>[0]) =>
-      Object.freeze({ id: "admin", username: account.username, isAdmin: true }),
-    );
-    const api = Object.freeze({ ...baseApi(Object.freeze([])), updateOwnAccount });
+    const updateOwnAccount = vi.fn(async (account: Parameters<ApplicationApi["updateOwnAccount"]>[0]) => ({
+      id: "admin",
+      username: account.username,
+      isAdmin: true,
+    }));
+    const api = { ...baseApi([]), updateOwnAccount };
     render(
       <QueryClientProvider client={createQueryClient()}>
         <BrowserRouter>
@@ -350,10 +339,12 @@ describe("SettingsPage", () => {
   });
 
   it("lets administrators create a user on the user management page", async () => {
-    const createUser = vi.fn(async (user: Parameters<ApplicationApi["createUser"]>[0]) =>
-      Object.freeze({ id: "created", username: user.username, isAdmin: user.isAdmin }),
-    );
-    const api = Object.freeze({ ...baseApi(Object.freeze([])), createUser });
+    const createUser = vi.fn(async (user: Parameters<ApplicationApi["createUser"]>[0]) => ({
+      id: "created",
+      username: user.username,
+      isAdmin: user.isAdmin,
+    }));
+    const api = { ...baseApi([]), createUser };
     render(
       <QueryClientProvider client={createQueryClient()}>
         <BrowserRouter>
@@ -428,8 +419,8 @@ describe("createTaskApi", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    await createTaskApi("http://api.test").updateProject("project-1", Object.freeze({ title: "Launch" }));
-    await createTaskApi("http://api.test").updateTask("task-1", Object.freeze({ title: "Renamed" }));
+    await createTaskApi("http://api.test").updateProject("project-1", { title: "Launch" });
+    await createTaskApi("http://api.test").updateTask("task-1", { title: "Renamed" });
 
     expect(fetchMock).toHaveBeenCalledWith(
       "http://api.test/projects/project-1",

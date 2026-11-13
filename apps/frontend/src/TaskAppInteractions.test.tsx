@@ -34,14 +34,12 @@ describe("TaskApp", () => {
     const savedTask = task({
       id: "task-1",
       title: "Plan release",
-      labels: Object.freeze(["work"]),
-      comments: Object.freeze([
-        Object.freeze({ id: "comment-1", body: "Saved note", createdAt: "2026-01-01T00:00:00.000Z" }),
-      ]),
-      children: Object.freeze([child]),
+      labels: ["work"],
+      comments: [{ id: "comment-1", body: "Saved note", createdAt: "2026-01-01T00:00:00.000Z" }],
+      children: [child],
     });
     vi.spyOn(window, "confirm").mockReturnValue(false);
-    renderApp(Object.freeze({ ...baseApi(Object.freeze([savedTask])), updateTask, deleteTask }));
+    renderApp({ ...baseApi([savedTask]), updateTask, deleteTask });
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
 
@@ -63,7 +61,7 @@ describe("TaskApp", () => {
 
   it("closes the mobile sidebar after each route selection", async () => {
     const user = userEvent.setup();
-    renderApp(baseApi(Object.freeze([])));
+    renderApp(baseApi([]));
     const sidebar = screen.getByRole("complementary", { name: "Navigation" });
     const menuToggle = screen.getByRole("button", { name: "Open navigation" });
 
@@ -79,7 +77,7 @@ describe("TaskApp", () => {
   });
 
   it("renders a task list", async () => {
-    renderApp(baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])));
+    renderApp(baseApi([task({ id: "1", title: "Plan MVP" })]));
 
     expect(await screen.findByText("Plan MVP")).toBeInTheDocument();
   });
@@ -87,19 +85,17 @@ describe("TaskApp", () => {
   it("shows a task description and comment count in the task list", async () => {
     const description = "A detailed description that is available directly from the task list.";
     renderApp(
-      baseApi(
-        Object.freeze([
-          task({
-            id: "task-with-details",
-            title: "Plan release",
-            description,
-            comments: Object.freeze([
-              Object.freeze({ id: "comment-1", body: "First", createdAt: "2026-01-01T00:00:00.000Z" }),
-              Object.freeze({ id: "comment-2", body: "Second", createdAt: "2026-01-02T00:00:00.000Z" }),
-            ]),
-          }),
-        ]),
-      ),
+      baseApi([
+        task({
+          id: "task-with-details",
+          title: "Plan release",
+          description,
+          comments: [
+            { id: "comment-1", body: "First", createdAt: "2026-01-01T00:00:00.000Z" },
+            { id: "comment-2", body: "Second", createdAt: "2026-01-02T00:00:00.000Z" },
+          ],
+        }),
+      ]),
     );
 
     const title = await screen.findByRole("button", { name: "Plan release" });
@@ -114,17 +110,13 @@ describe("TaskApp", () => {
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
         task({ id, title: "Plan release", labels: patch.labels ?? [] }),
     );
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({ id: "task-1", title: "Plan release", labels: Object.freeze(["work"]) }),
-            task({ id: "task-2", title: "Review notes", labels: Object.freeze(["review"]) }),
-          ]),
-        ),
-        updateTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({ id: "task-1", title: "Plan release", labels: ["work"] }),
+        task({ id: "task-2", title: "Review notes", labels: ["review"] }),
+      ]),
+      updateTask,
+    });
 
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
@@ -148,9 +140,7 @@ describe("TaskApp", () => {
           comments: savedComments(patch.comments),
         }),
     );
-    renderApp(
-      Object.freeze({ ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])), updateTask }),
-    );
+    renderApp({ ...baseApi([task({ id: "task-1", title: "Plan MVP" })]), updateTask });
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
     const editTitleButton = within(dialog).getByRole("button", { name: "Edit task title" });
@@ -207,24 +197,20 @@ describe("TaskApp", () => {
     const parent = task({
       id: "parent-1",
       title: "Parent task",
-      children: Object.freeze([task({ id: "child-1", title: "Child task", parentId: "parent-1" })]),
+      children: [task({ id: "child-1", title: "Child task", parentId: "parent-1" })],
     });
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([parent])),
-        listProjects: async () =>
-          Object.freeze([
-            project({ id: "project-1", title: "Roadmap" }),
-            project({ id: "project-2", title: "Alpha" }),
-          ]),
-        listSections: async () =>
-          Object.freeze([
-            section({ id: "section-1", title: "Next", projectId: "project-1" }),
-            section({ id: "section-2", title: "Back", projectId: "project-1" }),
-          ]),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([parent]),
+      listProjects: async () => [
+        project({ id: "project-1", title: "Roadmap" }),
+        project({ id: "project-2", title: "Alpha" }),
+      ],
+      listSections: async () => [
+        section({ id: "section-1", title: "Next", projectId: "project-1" }),
+        section({ id: "section-2", title: "Back", projectId: "project-1" }),
+      ],
+      moveTask,
+    });
 
     await userEvent.click(await screen.findByRole("button", { name: "Child task" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Child task" });
@@ -256,12 +242,10 @@ describe("TaskApp", () => {
   it("calls the create handler when a task is submitted", async () => {
     const createTask = vi.fn(async (title: string): Promise<Task> => task({ id: "created", title }));
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        createTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      createTask,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Add task Q" }));
     await userEvent.type(screen.getByLabelText("New task title"), "Write tests");
@@ -273,7 +257,7 @@ describe("TaskApp", () => {
   });
 
   it("creates projects and sends new tasks to the selected project", async () => {
-    let projects = Object.freeze([] as ReadonlyArray<Project>);
+    let projects = [] as Array<Project>;
     const createTask = vi.fn(
       async (
         title: string,
@@ -284,19 +268,17 @@ describe("TaskApp", () => {
     );
     const createProject = vi.fn(async (title: string): Promise<Project> => {
       const created = project({ id: "project-1", title });
-      projects = Object.freeze([...projects, created]);
+      projects = [...projects, created];
 
       return created;
     });
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([])),
-        listProjects: async () => projects,
-        createProject,
-        createTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([]),
+      listProjects: async () => projects,
+      createProject,
+      createTask,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Add project" }));
     await userEvent.type(screen.getByLabelText("Project title"), "Roadmap");
@@ -323,12 +305,10 @@ describe("TaskApp", () => {
       ): Promise<Task> => task({ id: "subtask-1", title, projectId, sectionId, parentId }),
     );
 
-    renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])),
-        createTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([task({ id: "task-1", title: "Plan MVP" })]),
+      createTask,
+    });
 
     await screen.findByText("Plan MVP");
     await userEvent.click(screen.getByRole("button", { name: "Add subtask to Plan MVP" }));
@@ -340,7 +320,7 @@ describe("TaskApp", () => {
   });
 
   it("opens task actions from the right-click menu in Inbox", async () => {
-    renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "1", title: "Plan MVP" })])) }));
+    renderApp({ ...baseApi([task({ id: "1", title: "Plan MVP" })]) });
 
     await screen.findByText("Plan MVP");
     fireEvent.contextMenu(taskRow("Plan MVP"), { clientX: 120, clientY: 90 });
@@ -357,28 +337,22 @@ describe("TaskApp", () => {
   });
 
   it("selects the root task when clicking anywhere in its subtree", async () => {
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
+    renderApp({
+      ...baseApi([
+        task({
+          id: "root",
+          title: "Parent",
+          children: [
             task({
-              id: "root",
-              title: "Parent",
-              children: Object.freeze([
-                task({
-                  id: "child",
-                  title: "Child",
-                  parentId: "root",
-                  children: Object.freeze([
-                    task({ id: "grandchild", title: "Grandchild", parentId: "child" }),
-                  ]),
-                }),
-              ]),
+              id: "child",
+              title: "Child",
+              parentId: "root",
+              children: [task({ id: "grandchild", title: "Grandchild", parentId: "child" })],
             }),
-          ]),
-        ),
-      }),
-    );
+          ],
+        }),
+      ]),
+    });
 
     await screen.findByText("Parent");
     await userEvent.click(screen.getByRole("button", { name: "Select tasks" }));
@@ -400,7 +374,7 @@ describe("TaskApp", () => {
   });
 
   it("toggles selection mode with the S key in any keyboard layout and exits with Escape", async () => {
-    renderApp(Object.freeze({ ...baseApi(Object.freeze([task({ id: "root", title: "Parent" })])) }));
+    renderApp({ ...baseApi([task({ id: "root", title: "Parent" })]) });
 
     await screen.findByText("Parent");
     fireEvent.keyDown(document, { key: "ы", code: "KeyS" });
@@ -422,21 +396,17 @@ describe("TaskApp", () => {
         parentId: string | null,
       ): Promise<Task> => task({ id, title: "Moved", projectId, sectionId, parentId }),
     );
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({
-              id: "root",
-              title: "Parent",
-              children: Object.freeze([task({ id: "child", title: "Child", parentId: "root" })]),
-            }),
-          ]),
-        ),
-        listProjects: async () => Object.freeze([project({ id: "project-1", title: "Roadmap" })]),
-        moveTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({
+          id: "root",
+          title: "Parent",
+          children: [task({ id: "child", title: "Child", parentId: "root" })],
+        }),
+      ]),
+      listProjects: async () => [project({ id: "project-1", title: "Roadmap" })],
+      moveTask,
+    });
 
     await screen.findByText("Parent");
     await userEvent.click(screen.getByRole("button", { name: "Select tasks" }));

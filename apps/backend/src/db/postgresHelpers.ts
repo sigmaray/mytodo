@@ -17,47 +17,41 @@ type SectionRow = typeof sectionsTable.$inferSelect;
 export const normalizeDate = (value: Date | string): string =>
   typeof value === "string" ? new Date(value).toISOString() : value.toISOString();
 
-export const toTask = (
-  row: TaskRow,
-  comments: ReadonlyArray<Task["comments"][number]> = Object.freeze([]),
-): Task =>
-  Object.freeze({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    dueDate: row.dueDate,
-    labels: Object.freeze(row.labels),
-    comments: Object.freeze([...comments]),
-    completed: row.completed,
-    parentId: row.parentId,
-    projectId: row.projectId,
-    sectionId: row.sectionId,
-    lexicalOrder: row.lexicalOrder,
-    createdAt: normalizeDate(row.createdAt),
-    updatedAt: normalizeDate(row.updatedAt),
-  });
+export const toTask = (row: TaskRow, comments: Array<Task["comments"][number]> = []): Task => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  dueDate: row.dueDate,
+  labels: row.labels,
+  comments: [...comments],
+  completed: row.completed,
+  parentId: row.parentId,
+  projectId: row.projectId,
+  sectionId: row.sectionId,
+  lexicalOrder: row.lexicalOrder,
+  createdAt: normalizeDate(row.createdAt),
+  updatedAt: normalizeDate(row.updatedAt),
+});
 
-export const toProject = (row: ProjectRow): Project =>
-  Object.freeze({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    archived: row.archived,
-    parentId: row.parentId,
-    lexicalOrder: row.lexicalOrder,
-    createdAt: normalizeDate(row.createdAt),
-    updatedAt: normalizeDate(row.updatedAt),
-  });
+export const toProject = (row: ProjectRow): Project => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  archived: row.archived,
+  parentId: row.parentId,
+  lexicalOrder: row.lexicalOrder,
+  createdAt: normalizeDate(row.createdAt),
+  updatedAt: normalizeDate(row.updatedAt),
+});
 
-export const toSection = (row: SectionRow): Section =>
-  Object.freeze({
-    id: row.id,
-    title: row.title,
-    projectId: row.projectId,
-    lexicalOrder: row.lexicalOrder,
-    createdAt: normalizeDate(row.createdAt),
-    updatedAt: normalizeDate(row.updatedAt),
-  });
+export const toSection = (row: SectionRow): Section => ({
+  id: row.id,
+  title: row.title,
+  projectId: row.projectId,
+  lexicalOrder: row.lexicalOrder,
+  createdAt: normalizeDate(row.createdAt),
+  updatedAt: normalizeDate(row.updatedAt),
+});
 
 export const rowOrder = asc(sql`${tasksTable.lexicalOrder} COLLATE "C"`);
 export const projectOrder = asc(sql`${projectsTable.lexicalOrder} COLLATE "C"`);
@@ -119,7 +113,7 @@ export const collectDescendantIds = async (
   db: ReturnType<typeof drizzle>,
   id: TaskId,
   userId: string,
-): Promise<ReadonlyArray<TaskId>> => {
+): Promise<Array<TaskId>> => {
   const children = await db
     .select({ id: tasksTable.id })
     .from(tasksTable)
@@ -128,22 +122,19 @@ export const collectDescendantIds = async (
     children.map((child) => collectDescendantIds(db, child.id, userId)),
   );
 
-  return Object.freeze([id, ...descendantIds.flat()]);
+  return [id, ...descendantIds.flat()];
 };
 
-export const firstTask = (rows: ReadonlyArray<TaskRow>) => (rows[0] === undefined ? null : toTask(rows[0]));
-export const toComment = (row: TaskCommentRow): Task["comments"][number] =>
-  Object.freeze({
-    id: row.id,
-    body: row.body,
-    createdAt: normalizeDate(row.createdAt),
-    ...(Array.isArray(row.attachments) && row.attachments.length > 0
-      ? {
-          attachments: Object.freeze(row.attachments as NonNullable<Task["comments"][number]["attachments"]>),
-        }
-      : {}),
-  });
-export const firstProject = (rows: ReadonlyArray<ProjectRow>) =>
-  rows[0] === undefined ? null : toProject(rows[0]);
-export const firstSection = (rows: ReadonlyArray<SectionRow>) =>
-  rows[0] === undefined ? null : toSection(rows[0]);
+export const firstTask = (rows: Array<TaskRow>) => (rows[0] === undefined ? null : toTask(rows[0]));
+export const toComment = (row: TaskCommentRow): Task["comments"][number] => ({
+  id: row.id,
+  body: row.body,
+  createdAt: normalizeDate(row.createdAt),
+  ...(Array.isArray(row.attachments) && row.attachments.length > 0
+    ? {
+        attachments: row.attachments as NonNullable<Task["comments"][number]["attachments"]>,
+      }
+    : {}),
+});
+export const firstProject = (rows: Array<ProjectRow>) => (rows[0] === undefined ? null : toProject(rows[0]));
+export const firstSection = (rows: Array<SectionRow>) => (rows[0] === undefined ? null : toSection(rows[0]));

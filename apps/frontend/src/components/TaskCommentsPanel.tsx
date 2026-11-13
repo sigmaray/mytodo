@@ -7,7 +7,7 @@ import { taskQueryKey } from "../queryKeys";
 import { CommentAttachment, renderCommentMarkdown } from "./CommentAttachment";
 import { AutoGrowTextarea } from "./TaskFormFields";
 
-type TaskCommentsPanelProps = Readonly<{
+type TaskCommentsPanelProps = {
   task: TaskNode;
   api: ApplicationApi;
   attachmentsEnabled: boolean;
@@ -19,12 +19,12 @@ type TaskCommentsPanelProps = Readonly<{
   setEditingCommentBody: Dispatch<SetStateAction<string>>;
   detailComment: string;
   setDetailComment: Dispatch<SetStateAction<string>>;
-  detailCommentFiles: ReadonlyArray<File>;
-  setDetailCommentFiles: Dispatch<SetStateAction<ReadonlyArray<File>>>;
+  detailCommentFiles: Array<File>;
+  setDetailCommentFiles: Dispatch<SetStateAction<Array<File>>>;
   removeCommentAttachment: (commentId: string, attachmentId: string) => Promise<void>;
   confirmDeletion: (message: string) => boolean;
-  notifyAttachedFiles: (files: ReadonlyArray<File>) => void;
-}>;
+  notifyAttachedFiles: (files: Array<File>) => void;
+};
 
 export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) => {
   const {
@@ -86,9 +86,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   className="btn-primary"
                   onClick={async () => {
                     const comments = task.comments.map((item) =>
-                      item.id === comment.id
-                        ? Object.freeze({ ...item, body: editingCommentBody.trim() })
-                        : item,
+                      item.id === comment.id ? { ...item, body: editingCommentBody.trim() } : item,
                     );
                     await api.updateTask(task.id, { comments });
                     setEditingCommentId(null);
@@ -169,7 +167,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   await api.updateTask(task.id, { comments });
                 }
                 setDetailComment("");
-                setDetailCommentFiles(Object.freeze([]));
+                setDetailCommentFiles([]);
                 await queryClient.invalidateQueries({ queryKey: taskQueryKey });
               }
             }}
@@ -187,7 +185,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                 onChange={(event) => {
                   const files = Array.from(event.currentTarget.files ?? []);
                   const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length));
-                  setDetailCommentFiles(Object.freeze([...detailCommentFiles, ...acceptedFiles]));
+                  setDetailCommentFiles([...detailCommentFiles, ...acceptedFiles]);
                   notifyAttachedFiles(acceptedFiles);
                   event.currentTarget.value = "";
                 }}
@@ -200,9 +198,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   type="button"
                   aria-label={`Remove ${file.name}`}
                   onClick={() =>
-                    setDetailCommentFiles(
-                      Object.freeze(detailCommentFiles.filter((_, itemIndex) => itemIndex !== index)),
-                    )
+                    setDetailCommentFiles(detailCommentFiles.filter((_, itemIndex) => itemIndex !== index))
                   }
                 >
                   ×
@@ -228,7 +224,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
               await api.updateTask(task.id, { comments });
             }
             setDetailComment("");
-            setDetailCommentFiles(Object.freeze([]));
+            setDetailCommentFiles([]);
             await queryClient.invalidateQueries({ queryKey: taskQueryKey });
           }}
         >

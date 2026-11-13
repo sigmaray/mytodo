@@ -18,21 +18,13 @@ beforeEach(() => {
 
 describe("TaskApp", () => {
   it("hides stored attachments in task details when attachments are disabled", async () => {
-    const attachmentComment = Object.freeze({
+    const attachmentComment = {
       id: "comment-attachment",
       body: "File",
       createdAt: "2026-01-01T00:00:00.000Z",
-      attachments: Object.freeze([
-        Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }),
-      ]),
-    });
-    renderApp(
-      baseApi(
-        Object.freeze([
-          task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) }),
-        ]),
-      ),
-    );
+      attachments: [{ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }],
+    };
+    renderApp(baseApi([task({ id: "task-1", title: "Plan MVP", comments: [attachmentComment] })]));
     expect(
       within(screen.getByRole("complementary", { name: "Navigation" })).queryByRole("link", {
         name: "Attachments",
@@ -49,22 +41,13 @@ describe("TaskApp", () => {
   });
 
   it("does not render an empty Markdown block for an attachment-only comment", async () => {
-    const attachmentComment = Object.freeze({
+    const attachmentComment = {
       id: "comment-attachment",
       body: "",
       createdAt: "2026-01-01T00:00:00.000Z",
-      attachments: Object.freeze([
-        Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }),
-      ]),
-    });
-    renderApp(
-      baseApi(
-        Object.freeze([
-          task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) }),
-        ]),
-      ),
-      true,
-    );
+      attachments: [{ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }],
+    };
+    renderApp(baseApi([task({ id: "task-1", title: "Plan MVP", comments: [attachmentComment] })]), true);
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan MVP" });
     expect(dialog.querySelector(".comment-markdown")).not.toBeInTheDocument();
@@ -76,49 +59,33 @@ describe("TaskApp", () => {
   });
 
   it("shows a paperclip on tasks that have attachments", async () => {
-    const attachmentComment = Object.freeze({
+    const attachmentComment = {
       id: "comment-attachment",
       body: "File",
       createdAt: "2026-01-01T00:00:00.000Z",
-      attachments: Object.freeze([
-        Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }),
-      ]),
-    });
-    renderApp(
-      baseApi(
-        Object.freeze([
-          task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) }),
-        ]),
-      ),
-      true,
-    );
+      attachments: [{ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }],
+    };
+    renderApp(baseApi([task({ id: "task-1", title: "Plan MVP", comments: [attachmentComment] })]), true);
     expect(await screen.findByLabelText("Task has attachments")).toBeVisible();
   });
 
   it("lists attachments with previews, task links, size, and upload date", async () => {
     window.history.replaceState({}, "", "/attachments");
-    const attachmentComment = Object.freeze({
+    const attachmentComment = {
       id: "comment-attachment",
       body: "",
       createdAt: "2026-01-01T00:00:00.000Z",
-      attachments: Object.freeze([
-        Object.freeze({ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }),
-      ]),
-    });
-    const api = Object.freeze({
-      ...baseApi(
-        Object.freeze([
-          task({ id: "task-1", title: "Plan MVP", comments: Object.freeze([attachmentComment]) }),
-        ]),
-      ),
-      getAuthStatus: async () =>
-        Object.freeze({
-          accessMode: "password" as const,
-          authenticated: true,
-          user: Object.freeze({ id: "admin", username: "admin", isAdmin: true }),
-          attachmentsEnabled: true,
-        }),
-    });
+      attachments: [{ id: "attachment-1", name: "photo.png", mimeType: "image/png", size: 5 }],
+    };
+    const api = {
+      ...baseApi([task({ id: "task-1", title: "Plan MVP", comments: [attachmentComment] })]),
+      getAuthStatus: async () => ({
+        accessMode: "password" as const,
+        authenticated: true,
+        user: { id: "admin", username: "admin", isAdmin: true },
+        attachmentsEnabled: true,
+      }),
+    };
     renderApp(api, true);
     expect(await screen.findByRole("heading", { name: "Attachments" })).toBeVisible();
     expect(await screen.findByRole("img", { name: "photo.png" })).toBeVisible();
@@ -143,33 +110,29 @@ describe("TaskApp", () => {
   });
 
   it("removes individual attachments and deletes an empty attachment-only comment", async () => {
-    const comments = Object.freeze([
-      Object.freeze({
+    const comments = [
+      {
         id: "comment-only",
         body: "",
         createdAt: "2026-01-01T00:00:00.000Z",
-        attachments: Object.freeze([
-          Object.freeze({ id: "attachment-only", name: "only.png", mimeType: "image/png", size: 5 }),
-        ]),
-      }),
-      Object.freeze({
+        attachments: [{ id: "attachment-only", name: "only.png", mimeType: "image/png", size: 5 }],
+      },
+      {
         id: "comment-text",
         body: "Keep this note",
         createdAt: "2026-01-02T00:00:00.000Z",
-        attachments: Object.freeze([
-          Object.freeze({ id: "attachment-text", name: "note.png", mimeType: "image/png", size: 6 }),
-        ]),
-      }),
-    ]);
+        attachments: [{ id: "attachment-text", name: "note.png", mimeType: "image/png", size: 6 }],
+      },
+    ];
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
         task({ id, title: "Plan MVP", comments: savedComments(patch.comments) }),
     );
     renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP", comments })])),
+      {
+        ...baseApi([task({ id: "task-1", title: "Plan MVP", comments })]),
         updateTask,
-      }),
+      },
       true,
     );
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
@@ -187,10 +150,10 @@ describe("TaskApp", () => {
   it("allows submitting an attachment without comment text", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])),
+      {
+        ...baseApi([task({ id: "task-1", title: "Plan MVP" })]),
         createComment,
-      }),
+      },
       true,
     );
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
@@ -216,10 +179,10 @@ describe("TaskApp", () => {
   it("immediately saves a pasted clipboard image as a comment on an existing task", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(
-      Object.freeze({
-        ...baseApi(Object.freeze([task({ id: "task-1", title: "Plan MVP" })])),
+      {
+        ...baseApi([task({ id: "task-1", title: "Plan MVP" })]),
         createComment,
-      }),
+      },
       true,
     );
     await userEvent.click(await screen.findByRole("button", { name: "Plan MVP" }));
@@ -236,7 +199,7 @@ describe("TaskApp", () => {
 
   it("pastes clipboard images into the task creation dialog without an initial comment field", async () => {
     const createComment = vi.fn(async () => undefined);
-    renderApp(Object.freeze({ ...baseApi(Object.freeze([])), createComment }), true);
+    renderApp({ ...baseApi([]), createComment }, true);
     await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
     const dialog = screen.getByRole("dialog", { name: "Add task" });
     expect(within(dialog).queryByLabelText("Initial task comment")).not.toBeInTheDocument();
@@ -253,7 +216,7 @@ describe("TaskApp", () => {
   });
 
   it("reveals optional Add task fields from mobile shortcuts and focuses their inputs", async () => {
-    renderApp(baseApi(Object.freeze([])));
+    renderApp(baseApi([]));
     await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
     const dialog = screen.getByRole("dialog", { name: "Add task" });
     const shortcuts = within(dialog.querySelector(".add-task-mobile-shortcuts") as HTMLElement);
@@ -276,7 +239,7 @@ describe("TaskApp", () => {
   });
 
   it("reveals and focuses the subtask editor from the Subtasks shortcut", async () => {
-    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan release" })])));
+    renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
     const shortcutButtons = within(
@@ -302,16 +265,16 @@ describe("TaskApp", () => {
   it("deletes existing subtasks when their mobile section is closed", async () => {
     let childDeleted = false;
     const child = task({ id: "child-1", title: "Write tests", parentId: "task-1" });
-    const parentWithChild = task({ id: "task-1", title: "Plan release", children: Object.freeze([child]) });
+    const parentWithChild = task({ id: "task-1", title: "Plan release", children: [child] });
     const parentWithoutChild = task({ id: "task-1", title: "Plan release" });
     const deleteTask = vi.fn(async () => {
       childDeleted = true;
     });
-    const api = Object.freeze({
-      ...baseApi(Object.freeze([parentWithChild])),
-      listTasks: async () => Object.freeze([childDeleted ? parentWithoutChild : parentWithChild]),
+    const api = {
+      ...baseApi([parentWithChild]),
+      listTasks: async () => [childDeleted ? parentWithoutChild : parentWithChild],
       deleteTask,
-    });
+    };
     renderApp(api);
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
@@ -323,7 +286,7 @@ describe("TaskApp", () => {
   });
 
   it("focuses the label input when Add labels reveals the editor", async () => {
-    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan release" })])));
+    renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
     await userEvent.click(
@@ -335,7 +298,7 @@ describe("TaskApp", () => {
   });
 
   it("focuses the comment input when Add comments reveals the editor", async () => {
-    renderApp(baseApi(Object.freeze([task({ id: "task-1", title: "Plan release" })])));
+    renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
     await userEvent.click(
@@ -355,29 +318,23 @@ describe("TaskApp", () => {
           labels: patch.labels ?? ["work"],
           comments:
             patch.comments === undefined
-              ? [Object.freeze({ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" })]
+              ? [{ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" }]
               : savedComments(patch.comments),
           dueDate: patch.dueDate === null ? null : "2026-01-03",
         }),
     );
-    renderApp(
-      Object.freeze({
-        ...baseApi(
-          Object.freeze([
-            task({
-              id: "task-1",
-              title: "Plan release",
-              labels: Object.freeze(["work"]),
-              comments: Object.freeze([
-                Object.freeze({ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" }),
-              ]),
-              dueDate: "2026-01-03",
-            }),
-          ]),
-        ),
-        updateTask,
-      }),
-    );
+    renderApp({
+      ...baseApi([
+        task({
+          id: "task-1",
+          title: "Plan release",
+          labels: ["work"],
+          comments: [{ id: "comment-1", body: "Note", createdAt: "2026-01-01T00:00:00.000Z" }],
+          dueDate: "2026-01-03",
+        }),
+      ]),
+      updateTask,
+    });
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
     const dialog = screen.getByRole("dialog", { name: "Task details: Plan release" });
 

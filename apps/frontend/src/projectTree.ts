@@ -1,6 +1,6 @@
 import type { Project, ProjectId } from "@todoist-clone/domain";
 
-export const projectDepth = (projects: ReadonlyArray<Project>, project: Project): number => {
+export const projectDepth = (projects: Array<Project>, project: Project): number => {
   let depth = 0;
   let parentId = project.parentId;
   while (parentId !== null && depth < projects.length) {
@@ -13,7 +13,7 @@ export const projectDepth = (projects: ReadonlyArray<Project>, project: Project)
 };
 
 export const isProjectWithinTree = (
-  projects: ReadonlyArray<Project>,
+  projects: Array<Project>,
   projectId: ProjectId | null,
   ancestorId: ProjectId,
 ): boolean => {
@@ -27,7 +27,7 @@ export const isProjectWithinTree = (
   return false;
 };
 
-export const projectTreeOrder = (projects: ReadonlyArray<Project>): ReadonlyArray<Project> => {
+export const projectTreeOrder = (projects: Array<Project>): Array<Project> => {
   const byParent = (parentId: ProjectId | null) =>
     projects
       .filter(
@@ -38,7 +38,7 @@ export const projectTreeOrder = (projects: ReadonlyArray<Project>): ReadonlyArra
             !projects.some((parent) => parent.id === item.parentId)),
       )
       .toSorted((a, b) => (a.lexicalOrder < b.lexicalOrder ? -1 : a.lexicalOrder > b.lexicalOrder ? 1 : 0));
-  const visit = (parentId: ProjectId | null): ReadonlyArray<Project> =>
+  const visit = (parentId: ProjectId | null): Array<Project> =>
     byParent(parentId).flatMap((project) => [project, ...visit(project.id)]);
-  return Object.freeze(visit(null));
+  return visit(null);
 };

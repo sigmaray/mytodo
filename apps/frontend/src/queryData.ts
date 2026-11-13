@@ -1,17 +1,14 @@
-export const appendById = <TItem extends Readonly<{ id: string }>>(
-  items: ReadonlyArray<TItem> | undefined,
+export const appendById = <TItem extends { id: string }>(
+  items: Array<TItem> | undefined,
   item: TItem,
-): ReadonlyArray<TItem> =>
-  Object.freeze([...(items ?? Object.freeze([])).filter((existing) => existing.id !== item.id), item]);
+): Array<TItem> => [...(items ?? []).filter((existing) => existing.id !== item.id), item];
 
-export const removeById = <TItem extends Readonly<{ id: string }>>(
-  items: ReadonlyArray<TItem> | undefined,
+export const removeById = <TItem extends { id: string }>(
+  items: Array<TItem> | undefined,
   id: string,
-): ReadonlyArray<TItem> =>
-  Object.freeze((items ?? Object.freeze([])).filter((existing) => existing.id !== id));
+): Array<TItem> => (items ?? []).filter((existing) => existing.id !== id);
 
-export const replaceById = <TItem extends Readonly<{ id: string }>>(
-  items: ReadonlyArray<TItem> | undefined,
+export const replaceById = <TItem extends { id: string }>(
+  items: Array<TItem> | undefined,
   item: TItem,
-): ReadonlyArray<TItem> =>
-  Object.freeze((items ?? Object.freeze([])).map((existing) => (existing.id === item.id ? item : existing)));
+): Array<TItem> => (items ?? []).map((existing) => (existing.id === item.id ? item : existing));

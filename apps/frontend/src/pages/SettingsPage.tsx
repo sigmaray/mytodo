@@ -6,7 +6,7 @@ import type { ApplicationApi } from "../api";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 
-export const SettingsPage = ({ api, sidebar }: Readonly<{ api: ApplicationApi; sidebar?: ReactNode }>) => {
+export const SettingsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: ReactNode }) => {
   useQuickAddShortcut();
   const queryClient = useQueryClient();
   const settings = useQuery({ queryKey: settingsQueryKey, queryFn: api.getSettings });
