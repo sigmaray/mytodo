@@ -2,35 +2,60 @@ import { Paperclip } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatAttachmentSize } from "../components/CommentAttachment";
 
-/** Представление вложения в общей библиотеке файлов. */
+/**
+ * Представление вложения в общей библиотеке файлов.
+ *
+ * @typedef {Object} AttachmentLibraryItem
+ * @property {string} id - Идентификатор сущности, с которой работает модуль.
+ * @property {string} name - Данные «name», используемые типом «AttachmentLibraryItem».
+ * @property {string} mimeType - Данные «mime type», используемые типом «AttachmentLibraryItem».
+ * @property {number} size - Данные «size», используемые типом «AttachmentLibraryItem».
+ * @property {string} taskId - Данные «задача id», используемые типом «AttachmentLibraryItem».
+ * @property {string} taskTitle - Название задачи.
+ * @property {string} uploadedAt - Время загрузки файла.
+ */
 export type AttachmentLibraryItem = {
-  /** UUID файла для URL просмотра и скачивания. */
   id: string;
-  /** Имя файла, выбранное при загрузке. */
+
   name: string;
-  /** MIME-тип файла для выбора способа предварительного просмотра. */
+
   mimeType: string;
-  /** Размер файла в байтах. */
+
   size: number;
-  /** Задача, к комментарию которой приложен файл. */
+
   taskId: string;
-  /** Название связанной задачи. */
+
   taskTitle: string;
-  /** Время загрузки, показываемое в карточке файла. */
+
   uploadedAt: string;
 };
 
-/** Данные и обработчики страницы библиотеки вложений. */
+/**
+ * @callback AttachmentsPagePropsOnTaskOpen
+ * @param {string} taskId
+ * @returns {void}
+ */
+/**
+ * Данные и обработчики страницы библиотеки вложений.
+ *
+ * @typedef {Object} AttachmentsPageProps
+ * @property {Array<AttachmentLibraryItem>} attachments - Список вложения.
+ * @property {boolean} loading - Признак или настройка «загрузка».
+ * @property {AttachmentsPagePropsOnTaskOpen} onTaskOpen - Открывает подробности задачи.
+ */
 export type AttachmentsPageProps = {
-  /** Файлы, извлечённые из комментариев текущего пользователя. */
   attachments: Array<AttachmentLibraryItem>;
-  /** Показывает состояние ожидания данных. */
+
   loading: boolean;
-  /** Открывает подробности задачи, связанной с файлом. */
+
   onTaskOpen: (taskId: string) => void;
 };
 
-/** Отображает файлы пользователя и ссылки на комментарии/задачи, где они используются. */
+/**
+ * Отображает файлы пользователя и ссылки на комментарии/задачи, где они используются.
+ *
+ * @param {AttachmentsPageProps} parameter1
+ */
 export const AttachmentsPage = ({ attachments, loading, onTaskOpen }: AttachmentsPageProps) => (
   <section className="attachments-page" aria-label="Attachments list">
     {attachments.length > 0 ? (

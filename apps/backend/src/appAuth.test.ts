@@ -9,8 +9,8 @@ import { createMemoryUserRepository } from "./users";
 afterEach(cleanupTestResources);
 
 describe("settings and session authentication", () => {
-  // Защищённый флаг cookie включён в production-среде, но может быть отключён локально.
-  // Cookie сессии использует флаг Secure в production-среде и позволяет отключить его для локального HTTP.
+  /** Защищённый флаг cookie включён в production-среде, но может быть отключён локально. */
+  /** Cookie сессии использует флаг Secure в production-среде и позволяет отключить его для локального HTTP. */
   it("keeps production session cookies secure unless explicitly disabled for local HTTP", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -46,8 +46,8 @@ describe("settings and session authentication", () => {
     expect(httpLogin.headers["set-cookie"][0]).not.toMatch(/; Secure/i);
   });
 
-  // Тестовый reset API закрыт вне явно разрешённой non-production конфигурации.
-  // Тестовый API сброса доступен только при явном разрешении вне production.
+  /** Тестовый reset API закрыт вне явно разрешённой non-production конфигурации. */
+  /** Тестовый API сброса доступен только при явном разрешении вне production. */
   it("keeps the Playwright reset API unavailable unless explicitly enabled outside production", async () => {
     const agent = await createTestAgent();
     await agent.post("/api/playwright/reset").expect(404);
@@ -63,8 +63,8 @@ describe("settings and session authentication", () => {
     );
   });
 
-  // API ожидает, что пароль администратора будет настроен до обычной работы.
-  // Приложение закрывает защищённые маршруты, пока администратор не задаст пароль.
+  /** API ожидает, что пароль администратора будет настроен до обычной работы. */
+  /** Приложение закрывает защищённые маршруты, пока администратор не задаст пароль. */
   it("blocks API access until the administrator configures a password", async () => {
     const server = await createTestServer(createApp());
     const agent = request(server);
@@ -84,8 +84,8 @@ describe("settings and session authentication", () => {
     await agent.post("/tasks").send({ title: "Anonymous task" }).expect(503);
   });
 
-  // Проверяем значение настройки по умолчанию и её сохранение через API.
-  // Подтверждение удаления включено по умолчанию и сохраняется в настройках пользователя.
+  /** Проверяем значение настройки по умолчанию и её сохранение через API. */
+  /** Подтверждение удаления включено по умолчанию и сохраняется в настройках пользователя. */
   it("defaults to delete confirmations and allows updating that preference", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -115,8 +115,8 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.settings.confirmDelete).toBe(false));
   });
 
-  // Описание Входящих сохраняется отдельно для текущего пользователя.
-  // Описание Входящих сохраняется между запросами.
+  /** Описание Входящих сохраняется отдельно для текущего пользователя. */
+  /** Описание Входящих сохраняется между запросами. */
   it("persists the Inbox description", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -144,8 +144,8 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.description).toBe("Inbox notes"));
   });
 
-  // Приватные маршруты доступны по HttpOnly cookie конкретного пользователя.
-  // HttpOnly cookie даёт доступ только к данным владельца текущей сессии.
+  /** Приватные маршруты доступны по HttpOnly cookie конкретного пользователя. */
+  /** HttpOnly cookie даёт доступ только к данным владельца текущей сессии. */
   it("protects app routes with a user-specific HttpOnly session cookie", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -176,8 +176,8 @@ describe("settings and session authentication", () => {
     await agent.get("/tasks").expect(401);
   });
 
-  // Пользователь может изменить свои данные, но имя входа остаётся уникальным.
-  // Пользователь может изменить собственное имя и пароль при соблюдении уникальности.
+  /** Пользователь может изменить свои данные, но имя входа остаётся уникальным. */
+  /** Пользователь может изменить собственное имя и пароль при соблюдении уникальности. */
   it("allows users to update their own username and password with unique usernames", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -233,8 +233,8 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.settings.username).toBe("newadmin"));
   });
 
-  // Управление аккаунтами разрешено администраторам, и последний администратор защищён от удаления.
-  // Управление аккаунтами доступно администраторам и не позволяет удалить последнего.
+  /** Управление аккаунтами разрешено администраторам, и последний администратор защищён от удаления. */
+  /** Управление аккаунтами доступно администраторам и не позволяет удалить последнего. */
   it("allows only administrators to manage accounts and preserves an administrator", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -261,8 +261,8 @@ describe("settings and session authentication", () => {
     await agent.delete("/users/00000000-0000-4000-8000-000000000001").expect(409);
   });
 
-  // Проверяем приём непустого пароля во всех операциях с аккаунтом и при входе.
-  // Создание пользователя, смена пароля и вход принимают любой непустой пароль.
+  /** Проверяем приём непустого пароля во всех операциях с аккаунтом и при входе. */
+  /** Создание пользователя, смена пароля и вход принимают любой непустой пароль. */
   it("accepts any non-empty password when creating users, updating passwords, and logging in", async () => {
     const passwordHash = await hashPassword("administrator-password");
     const userRepository = createMemoryUserRepository([
@@ -296,8 +296,8 @@ describe("settings and session authentication", () => {
     await updatedPasswordLogin.get("/tasks").expect(200);
   });
 
-  // Задачи одного аккаунта не должны быть видны другому.
-  // Запросы одного пользователя не раскрывают и не изменяют задачи другого.
+  /** Задачи одного аккаунта не должны быть видны другому. */
+  /** Запросы одного пользователя не раскрывают и не изменяют задачи другого. */
   it("keeps task data isolated by user", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([

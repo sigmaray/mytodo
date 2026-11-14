@@ -2,20 +2,28 @@ import type { Page } from "@playwright/test";
 import { createE2eApi } from "./api";
 import { expect } from "./fixtures";
 
-/** Создаёт задачу через подготовительный API и проверяет, что она появилась в UI. */
+/**
+ * Создаёт задачу через подготовительный API и проверяет, что она появилась в UI.
+ *
+ * @param {Page} page
+ */
 export const createTask = (page: Page) => async (title: string) => {
-  // Сохраняем текущий проект из URL, чтобы helper создавал задачу в открытой области.
+  /** Сохраняем текущий проект из URL, чтобы helper создавал задачу в открытой области. */
   const projectId = await page.evaluate(() => new URLSearchParams(window.location.search).get("project"));
   await createE2eApi(page.request).createTask(title, { projectId });
   await page.reload();
   await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
 };
 
-/** Создаёт несколько задач за одну подготовку API и одну перезагрузку страницы. */
+/**
+ * Создаёт несколько задач за одну подготовку API и одну перезагрузку страницы.
+ *
+ * @param {Page} page
+ */
 export const createTasks = (page: Page) => async (titles: Array<string>) => {
   const projectId = await page.evaluate(() => new URLSearchParams(window.location.search).get("project"));
   const api = createE2eApi(page.request);
-  // Создаём данные через API без повторного открытия страницы после каждой задачи.
+  /** Создаём данные через API без повторного открытия страницы после каждой задачи. */
   for (const title of titles) await api.createTask(title, { projectId });
   await page.reload();
   await Promise.all(
@@ -23,7 +31,11 @@ export const createTasks = (page: Page) => async (titles: Array<string>) => {
   );
 };
 
-/** Создаёт задачу через форму интерфейса для проверки пользовательского потока. */
+/**
+ * Создаёт задачу через форму интерфейса для проверки пользовательского потока.
+ *
+ * @param {Page} page
+ */
 export const createTaskThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add task Q" }).click();
   await expect(page.getByLabel("Initial task comment")).toHaveCount(0);
@@ -32,14 +44,22 @@ export const createTaskThroughUi = (page: Page) => async (title: string) => {
   await expect(page.getByRole("button", { name: title, exact: true })).toBeVisible();
 };
 
-/** Создаёт проект через тестовый API и открывает его страницу. */
+/**
+ * Создаёт проект через тестовый API и открывает его страницу.
+ *
+ * @param {Page} page
+ */
 export const createProject = (page: Page) => async (title: string) => {
   const created = await createE2eApi(page.request).createProject(title);
   await page.goto(`/?project=${encodeURIComponent(created.id)}`);
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
 };
 
-/** Создаёт несколько проектов и проверяет, что их ссылки отображаются в sidebar. */
+/**
+ * Создаёт несколько проектов и проверяет, что их ссылки отображаются в sidebar.
+ *
+ * @param {Page} page
+ */
 export const createProjects = (page: Page) => async (titles: Array<string>) => {
   const api = createE2eApi(page.request);
   for (const title of titles) await api.createProject(title);
@@ -49,7 +69,11 @@ export const createProjects = (page: Page) => async (titles: Array<string>) => {
   );
 };
 
-/** Создаёт проект через форму интерфейса и ждёт успешного ответа API. */
+/**
+ * Создаёт проект через форму интерфейса и ждёт успешного ответа API.
+ *
+ * @param {Page} page
+ */
 export const createProjectThroughUi = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add project" }).click();
   await page.getByLabel("Project title").fill(title);
@@ -60,7 +84,11 @@ export const createProjectThroughUi = (page: Page) => async (title: string) => {
   expect((await createdResponse).ok()).toBe(true);
 };
 
-/** Имитирует DOM drag events для переноса проекта в указанную часть строки-цели. */
+/**
+ * Имитирует DOM drag events для переноса проекта в указанную часть строки-цели.
+ *
+ * @param {Page} page
+ */
 export const dragProjectTo =
   (page: Page) => async (sourceTitle: string, targetTitle: string, yRatio: number) => {
     await page
@@ -68,13 +96,13 @@ export const dragProjectTo =
       .filter({ has: page.getByRole("button", { name: sourceTitle, exact: true }) })
       .evaluate(
         (source, data) => {
-          // Находим целевую строку внутри документа, так как callback выполняется в контексте браузера.
+          /** Находим целевую строку внутри документа, так как callback выполняется в контексте браузера. */
           const target = [...document.querySelectorAll<HTMLElement>(".project-nav-row")].find(
             (row) => row.querySelector("button.nav-button")?.textContent?.trim() === data.targetTitle,
           );
           if (!target) throw new Error("Project target not found");
           const rect = target.getBoundingClientRect();
-          // Позиция внутри строки выбирает before/inside/after в обработчике приложения.
+          /** Позиция внутри строки выбирает before/inside/after в обработчике приложения. */
           const y = rect.top + rect.height * data.yRatio;
           const transfer = new DataTransfer();
           transfer.setData("application/x-project-id", source.getAttribute("data-project-id") ?? "");
@@ -92,7 +120,11 @@ export const dragProjectTo =
       );
   };
 
-/** Перетаскивает проект мышью в заданную вертикальную область строки проекта. */
+/**
+ * Перетаскивает проект мышью в заданную вертикальную область строки проекта.
+ *
+ * @param {Page} page
+ */
 export const dragProjectWithMouse =
   (page: Page) => async (sourceTitle: string, targetTitle: string, yRatio: number) => {
     const source = page
@@ -103,7 +135,7 @@ export const dragProjectWithMouse =
       .filter({ has: page.getByRole("button", { name: targetTitle, exact: true }) });
     const box = await target.boundingBox();
     if (!box) throw new Error("Project target is not visible");
-    // Ограничиваем точку drop границами строки, включая очень узкие строки.
+    /** Ограничиваем точку drop границами строки, включая очень узкие строки. */
     await source.dragTo(target, {
       targetPosition: {
         x: Math.max(8, Math.min(box.width - 8, box.width / 2)),
@@ -112,7 +144,11 @@ export const dragProjectWithMouse =
     });
   };
 
-/** Показывает индикатор drop проекта, не завершая само перемещение. */
+/**
+ * Показывает индикатор drop проекта, не завершая само перемещение.
+ *
+ * @param {Page} page
+ */
 export const showProjectDropIndicator =
   (page: Page) => async (sourceTitle: string, targetTitle: string, yRatio: number) => {
     await page
@@ -125,7 +161,7 @@ export const showProjectDropIndicator =
           );
           if (!target) throw new Error("Project target not found");
           const rect = target.getBoundingClientRect();
-          // Один DataTransfer переносит ID проекта через всю последовательность drag-событий.
+          /** Один DataTransfer переносит ID проекта через всю последовательность drag-событий. */
           const transfer = new DataTransfer();
           transfer.setData("application/x-project-id", source.getAttribute("data-project-id") ?? "");
           const y = rect.top + rect.height * data.yRatio;
@@ -142,17 +178,25 @@ export const showProjectDropIndicator =
       );
   };
 
-/** Создаёт секцию через интерфейс открытого проекта или Входящих. */
+/**
+ * Создаёт секцию через интерфейс открытого проекта или Входящих.
+ *
+ * @param {Page} page
+ */
 export const createSection = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: "Add section" }).click();
   await page.getByLabel("Section title").fill(title);
   await page.getByRole("button", { name: "Save", exact: true }).click();
 };
 
-/** Имитирует перетаскивание задачи внутрь другой задачи для создания подзадачи. */
+/**
+ * Имитирует перетаскивание задачи внутрь другой задачи для создания подзадачи.
+ *
+ * @param {Page} page
+ */
 export const dragTaskOntoTask = (page: Page) => async (sourceTitle: string, targetTitle: string) => {
   await page.getByRole("button", { name: sourceTitle, exact: true }).evaluate((sourceElement, target) => {
-    // Из DOM извлекаются строка-источник и задача-цель, чтобы отправить события на правильные узлы.
+    /** Из DOM извлекаются строка-источник и задача-цель, чтобы отправить события на правильные узлы. */
     const sourceRow = sourceElement.closest(".task-row");
     const targetRow = [...document.querySelectorAll(".task-row")].find((row) =>
       row.textContent?.includes(target),
@@ -165,11 +209,11 @@ export const dragTaskOntoTask = (page: Page) => async (sourceTitle: string, targ
     }
 
     const rect = targetRow.getBoundingClientRect();
-    // Середина строки задаёт вложение задачи в цель.
+    /** Середина строки задаёт вложение задачи в цель. */
     const middleY = rect.top + rect.height / 2;
     const middleX = rect.left + Math.max(48, rect.width / 3);
 
-    // Все события используют один payload, как при настоящем перетаскивании браузером.
+    /** Все события используют один payload, как при настоящем перетаскивании браузером. */
     dataTransfer.setData("text/task-id", taskId);
     sourceRow?.dispatchEvent(
       new DragEvent("dragstart", { bubbles: true, dataTransfer, clientX: middleX, clientY: middleY }),
@@ -189,10 +233,14 @@ export const dragTaskOntoTask = (page: Page) => async (sourceTitle: string, targ
   }, targetTitle);
 };
 
-/** Имитирует перетаскивание задачи перед другой задачей в том же списке. */
+/**
+ * Имитирует перетаскивание задачи перед другой задачей в том же списке.
+ *
+ * @param {Page} page
+ */
 export const dragTaskBeforeTask = (page: Page) => async (sourceTitle: string, targetTitle: string) => {
   await page.getByRole("button", { name: sourceTitle, exact: true }).evaluate((sourceElement, target) => {
-    // Цель выбирается по тексту строки, затем точка drop задаётся возле её верхнего края.
+    /** Цель выбирается по тексту строки, затем точка drop задаётся возле её верхнего края. */
     const sourceRow = sourceElement.closest(".task-row");
     const targetRow = [...document.querySelectorAll(".task-row")].find((row) =>
       row.textContent?.includes(target),
@@ -205,7 +253,7 @@ export const dragTaskBeforeTask = (page: Page) => async (sourceTitle: string, ta
     }
 
     const rect = targetRow.getBoundingClientRect();
-    // Верхняя область целевой строки обозначает перестановку перед ней.
+    /** Верхняя область целевой строки обозначает перестановку перед ней. */
     const topY = rect.top + Math.max(1, rect.height * 0.1);
     const middleX = rect.left + Math.max(48, rect.width / 3);
 
@@ -228,10 +276,14 @@ export const dragTaskBeforeTask = (page: Page) => async (sourceTitle: string, ta
   }, targetTitle);
 };
 
-/** Перетаскивает задачу над проектом для проверки индикатора назначения. */
+/**
+ * Перетаскивает задачу над проектом для проверки индикатора назначения.
+ *
+ * @param {Page} page
+ */
 export const dragTaskOverProject = (page: Page) => async (sourceTitle: string, projectTitle: string) => {
   await page.getByRole("button", { name: sourceTitle, exact: true }).evaluate((sourceElement, title) => {
-    // Находим целевой проект в sidebar для проверки подсветки при наведении задачи.
+    /** Находим целевой проект в sidebar для проверки подсветки при наведении задачи. */
     const sourceRow = sourceElement.closest(".task-row");
     const projectButton = [...document.querySelectorAll(".project-nav-row > button.nav-button")].find(
       (button) => button.textContent?.trim() === title,
@@ -250,10 +302,14 @@ export const dragTaskOverProject = (page: Page) => async (sourceTitle: string, p
   }, projectTitle);
 };
 
-/** Сбрасывает задачу слева от себя, имитируя снятие одного уровня вложенности. */
+/**
+ * Сбрасывает задачу слева от себя, имитируя снятие одного уровня вложенности.
+ *
+ * @param {Page} page
+ */
 export const dragTaskLeftOnItself = (page: Page) => async (title: string) => {
   await page.getByRole("button", { name: title, exact: true }).evaluate((sourceElement) => {
-    // Повторный сброс на ту же строку с координатой слева имитирует снятие отступа.
+    /** Повторный сброс на ту же строку с координатой слева имитирует снятие отступа. */
     const sourceRow = sourceElement.closest<HTMLElement>(".task-row");
     const taskId = sourceRow?.getAttribute("data-task-id") ?? null;
     if (sourceRow === null) throw new Error("Unable to find task row");
@@ -279,10 +335,14 @@ export const dragTaskLeftOnItself = (page: Page) => async (title: string) => {
   });
 };
 
-/** Перетаскивает задачу в область по aria-label, например в Inbox или проект. */
+/**
+ * Перетаскивает задачу в область по aria-label, например в Inbox или проект.
+ *
+ * @param {Page} page
+ */
 export const dragTaskToRegion = (page: Page) => async (sourceTitle: string, regionLabel: string) => {
   await page.getByRole("button", { name: sourceTitle, exact: true }).evaluate((sourceElement, label) => {
-    // Ищем drop-цель по доступному имени, чтобы helper подходил Входящим и проектам.
+    /** Ищем drop-цель по доступному имени, чтобы helper подходил Входящим и проектам. */
     const sourceRow = sourceElement.closest(".task-row");
     const region = [...document.querySelectorAll("[aria-label]")].find(
       (element) => element.getAttribute("aria-label") === label,
@@ -294,7 +354,7 @@ export const dragTaskToRegion = (page: Page) => async (sourceTitle: string, regi
       throw new Error("Unable to drag task to region");
     }
 
-    // Переносим задачу на найденную область и завершаем drag-последовательность.
+    /** Переносим задачу на найденную область и завершаем drag-последовательность. */
     dataTransfer.setData("text/task-id", taskId);
     sourceRow?.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer }));
     region.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer }));

@@ -13,21 +13,30 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-/** Таблица учётных записей, владеющих задачами и настройками приложения. */
+/**
+ * Таблица учётных записей, владеющих задачами и настройками приложения.
+ *
+ * @typedef {Object} UsersTable
+ * @property {string} id - UUID пользователя служит ключом для данных и сессий.
+ * @property {string} username - Уникальное имя для входа; регистронезависимая уникальность закреплена индексом ниже.
+ * @property {string} passwordHash - Хеш пароля; сам пароль не хранится.
+ * @property {string} isAdmin - Разрешение управлять другими учётными записями.
+ * @property {string} confirmDelete - Настройка подтверждения перед удалением.
+ * @property {string} inboxDescription - Описание списка Входящие.
+ */
 export const users = pgTable(
   "users",
   {
-    /** UUID пользователя служит ключом для данных и сессий. */
     id: uuid("id").primaryKey(),
-    /** Уникальное имя для входа; регистронезависимая уникальность закреплена индексом ниже. */
+
     username: text("username").notNull().unique(),
-    /** Хеш пароля; NULL разрешён только до настройки первого пароля. */
+
     passwordHash: text("password_hash"),
-    /** Разрешение управлять другими учётными записями. */
+
     isAdmin: boolean("is_admin").notNull().default(false),
-    /** Настройка подтверждения разрушительных действий. */
+
     confirmDelete: boolean("confirm_delete").notNull().default(true),
-    /** Описание личного списка задач Входящие. */
+
     inboxDescription: text("inbox_description").notNull().default(""),
   },
   (table) => [
@@ -36,15 +45,21 @@ export const users = pgTable(
   ],
 );
 
-/** Таблица активных сессий; хранится только хеш выданного клиенту токена. */
+/**
+ * Таблица активных сессий; хранится только хеш выданного клиенту токена.
+ *
+ * @typedef {Object} SessionsTable
+ * @property {string} tokenHash - SHA-256 токена, используемый для поиска сессии без хранения секрета.
+ * @property {string} userId - Пользователь, которому принадлежит сессия.
+ * @property {string} expiresAt - Время истечения сессии, после которого токен больше не принимается.
+ */
 export const sessions = pgTable(
   "sessions",
   {
-    /** SHA-256 токена, используемый для поиска сессии без хранения секрета. */
     tokenHash: text("token_hash").primaryKey(),
-    /** Пользователь, которому принадлежит сессия. */
+
     userId: uuid("user_id").notNull(),
-    /** Время истечения сессии, после которого токен больше не принимается. */
+
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [
@@ -61,27 +76,39 @@ export const sessions = pgTable(
   ],
 );
 
-/** Таблица проектов пользователя с поддержкой иерархии и архива. */
+/**
+ * Таблица проектов пользователя с поддержкой иерархии и архива.
+ *
+ * @typedef {Object} ProjectsTable
+ * @property {string} id - Идентификатор проекта.
+ * @property {string} userId - Владелец проекта; все запросы к проектам ограничиваются этим UUID.
+ * @property {string} title - Название проекта.
+ * @property {string} description - Описание проекта, по умолчанию пустое.
+ * @property {string} archived - Признак, что проект помещён в архив.
+ * @property {string} parentId - Родительский проект для вложенных проектов.
+ * @property {string} lexicalOrder - Дробный ключ сортировки среди соседних проектов.
+ * @property {string} createdAt - Время создания записи.
+ * @property {string} updatedAt - Время последнего изменения записи.
+ */
 export const projects = pgTable(
   "projects",
   {
-    /** Идентификатор проекта. */
     id: text("id").primaryKey(),
-    /** Владелец проекта; все запросы к проектам ограничиваются этим UUID. */
+
     userId: uuid("user_id").notNull(),
-    /** Название проекта. */
+
     title: text("title").notNull(),
-    /** Описание проекта, по умолчанию пустое. */
+
     description: text("description").notNull().default(""),
-    /** Признак скрытия проекта из активного списка. */
+
     archived: boolean("archived").notNull().default(false),
-    /** Родительский проект для вложенных проектов. */
+
     parentId: text("parent_id"),
-    /** Дробный ключ сортировки среди соседних проектов. */
+
     lexicalOrder: text("lexical_order").notNull(),
-    /** Время создания записи. */
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    /** Время последнего изменения записи. */
+
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -106,23 +133,33 @@ export const projects = pgTable(
   ],
 );
 
-/** Таблица секций, сгруппированных внутри проектов одного пользователя. */
+/**
+ * Таблица секций, сгруппированных внутри проектов одного пользователя.
+ *
+ * @typedef {Object} SectionsTable
+ * @property {string} id - Идентификатор секции.
+ * @property {string} userId - Владелец секции, используемый для проверки доступа.
+ * @property {string} title - Заголовок секции.
+ * @property {string} projectId - Проект секции или NULL для секции во Входящих.
+ * @property {string} lexicalOrder - Дробный ключ порядка секций внутри проекта.
+ * @property {string} createdAt - Время создания секции.
+ * @property {string} updatedAt - Время последнего изменения секции.
+ */
 export const sections = pgTable(
   "sections",
   {
-    /** Идентификатор секции. */
     id: text("id").primaryKey(),
-    /** Владелец секции, используемый для проверки доступа. */
+
     userId: uuid("user_id").notNull(),
-    /** Заголовок секции. */
+
     title: text("title").notNull(),
-    /** Проект секции или NULL для секции во Входящих. */
+
     projectId: text("project_id"),
-    /** Дробный ключ порядка секций внутри проекта. */
+
     lexicalOrder: text("lexical_order").notNull(),
-    /** Время создания секции. */
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    /** Время последнего изменения секции. */
+
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -147,35 +184,51 @@ export const sections = pgTable(
   ],
 );
 
-/** Таблица задач с иерархией, размещением и лексикографическим порядком. */
+/**
+ * Таблица задач с иерархией, размещением и лексикографическим порядком.
+ *
+ * @typedef {Object} TasksTable
+ * @property {string} id - Идентификатор задачи.
+ * @property {string} userId - Владелец задачи, ограничивающий её видимость одним аккаунтом.
+ * @property {string} title - Краткое название задачи.
+ * @property {string} description - Подробное описание задачи.
+ * @property {string} dueDate - Срок задачи в SQL DATE, передаваемый приложению как строка.
+ * @property {string} labels - Метки задачи, хранящиеся в PostgreSQL-массиве строк.
+ * @property {string} completed - Признак завершения задачи.
+ * @property {string} parentId - Родительская задача либо NULL для корневой задачи.
+ * @property {string} projectId - Проект задачи либо NULL для Входящих.
+ * @property {string} sectionId - Секция задачи либо NULL для корня проекта.
+ * @property {string} lexicalOrder - Строковый ключ порядка среди задач того же списка и родителя.
+ * @property {string} createdAt - Время создания задачи.
+ * @property {string} updatedAt - Время последнего изменения задачи.
+ */
 export const tasks = pgTable(
   "tasks",
   {
-    /** Идентификатор задачи. */
     id: text("id").primaryKey(),
-    /** Владелец задачи, ограничивающий её видимость одним аккаунтом. */
+
     userId: uuid("user_id").notNull(),
-    /** Краткое название задачи. */
+
     title: text("title").notNull(),
-    /** Подробное описание задачи. */
+
     description: text("description").notNull().default(""),
-    /** Срок задачи в SQL DATE, передаваемый приложению как строка. */
+
     dueDate: date("due_date", { mode: "string" }),
-    /** Метки задачи, хранящиеся в PostgreSQL-массиве строк. */
+
     labels: text("labels").array().notNull().default([]),
-    /** Признак завершения задачи. */
+
     completed: boolean("completed").notNull().default(false),
-    /** Родительская задача либо NULL для корневой задачи. */
+
     parentId: text("parent_id"),
-    /** Проект задачи либо NULL для Входящих. */
+
     projectId: text("project_id"),
-    /** Секция задачи либо NULL для корня проекта. */
+
     sectionId: text("section_id"),
-    /** Строковый ключ порядка среди задач того же списка и родителя. */
+
     lexicalOrder: text("lexical_order").notNull(),
-    /** Время создания задачи. */
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    /** Время последнего изменения задачи. */
+
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -228,21 +281,30 @@ export const tasks = pgTable(
   ],
 );
 
-/** Таблица комментариев, принадлежащих задаче и тому же пользователю. */
+/**
+ * Таблица комментариев, принадлежащих задаче и тому же пользователю.
+ *
+ * @typedef {Object} TaskCommentsTable
+ * @property {string} id - Идентификатор комментария.
+ * @property {string} taskId - Задача, к обсуждению которой относится комментарий.
+ * @property {string} userId - Владелец комментария; составной FK связывает его с владельцем задачи.
+ * @property {string} body - Текст сообщения.
+ * @property {string} createdAt - Время создания комментария.
+ * @property {string} attachments - JSON-массив метаданных прикреплённых файлов.
+ */
 export const taskComments = pgTable(
   "task_comments",
   {
-    /** Идентификатор комментария. */
     id: text("id").primaryKey(),
-    /** Задача, к обсуждению которой относится комментарий. */
+
     taskId: text("task_id").notNull(),
-    /** Владелец комментария; составной FK связывает его с владельцем задачи. */
+
     userId: uuid("user_id").notNull(),
-    /** Текст сообщения. */
+
     body: text("body").notNull(),
-    /** Время создания комментария. */
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-    /** JSON-массив метаданных прикреплённых файлов. */
+
     attachments: jsonb("attachments").notNull().default([]),
   },
   (table) => [

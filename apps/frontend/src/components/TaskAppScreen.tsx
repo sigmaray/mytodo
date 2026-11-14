@@ -36,33 +36,63 @@ import {
   sectionPlacement,
 } from "../taskAppUtils";
 
-/** Props композиционного экрана workspace и его подключённых действий. */
+/**
+ * @callback TaskAppScreenPropsPastedFiles
+ * @param {DataTransfer} data
+ * @returns {Array<File>}
+ */
+
+/**
+ * @callback TaskAppScreenPropsNotifyAttachedFiles
+ * @param {Array<File>} files
+ * @returns {void}
+ */
+/**
+ * Props композиционного экрана workspace и его подключённых действий.
+ *
+ * @typedef {Object} TaskAppScreenProps
+ * @property {ApplicationApi} api - Набор API-операций для серверных данных.
+ * @property {boolean} attachmentsEnabled - Разрешено ли приложению загружать и выдавать вложения.
+ * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
+ * @property {boolean} tasksLoading - Признак загрузки задач.
+ * @property {boolean} tasksError - Ошибка загрузки задач, если запрос завершился неудачно.
+ * @property {TaskAppScreenState} state - Состояние приложения или компонента.
+ * @property {ReturnType<typeof useTaskAppActions>} actions - Функции действий, доступные интерфейсу.
+ * @property {ReturnType<typeof useTaskAppViewModel>} viewModel - Подготовленные данные для отображения.
+ * @property {TaskAppPageModel} pageModel - Данные выбранной страницы.
+ * @property {TaskAppScreenPropsPastedFiles} pastedFiles - Файлы, вставленные из буфера обмена.
+ * @property {TaskAppScreenPropsNotifyAttachedFiles} notifyAttachedFiles - Сообщает о выбранных файлах.
+ */
 type TaskAppScreenProps = {
-  /** API, вызываемый обработчиками экрана. */
   api: ApplicationApi;
-  /** Разрешено ли работать с вложениями. */
+
   attachmentsEnabled: boolean;
-  /** Кэш серверного состояния React Query. */
+
   queryClient: QueryClient;
-  /** Выполняется ли загрузка задач. */
+
   tasksLoading: boolean;
-  /** Завершилась ли загрузка задач ошибкой. */
+
   tasksError: boolean;
-  /** Состояние локальных полей и диалогов. */
+
   state: TaskAppScreenState;
-  /** Обработчики пользовательских действий. */
+
   actions: ReturnType<typeof useTaskAppActions>;
-  /** Вычисленные заголовки и элементы для отображения. */
+
   viewModel: ReturnType<typeof useTaskAppViewModel>;
-  /** Модель текущей страницы. */
+
   pageModel: TaskAppPageModel;
-  /** Извлекает файлы, вставленные из буфера обмена. */
+
   pastedFiles: (data: DataTransfer) => Array<File>;
-  /** Показывает уведомления о прикреплённых файлах. */
+
   notifyAttachedFiles: (files: Array<File>) => void;
 };
 
-/** Композитный экран: подключает sidebar, доску, диалоги и drag-and-drop. */
+/**
+ * Композитный экран: подключает sidebar, доску, диалоги и drag-and-drop.
+ *
+ * @param {TaskAppScreenProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const TaskAppScreen = ({
   api,
   attachmentsEnabled,
@@ -448,12 +478,12 @@ export const TaskAppScreen = ({
           notifyAttachedFiles={notifyAttachedFiles}
           onSubmit={async (event) => {
             event.preventDefault();
-            // Не создаём задачу с пустым названием и не отправляем лишние запросы.
+            /** Не создаём задачу с пустым названием и не отправляем лишние запросы. */
             const taskTitle = addTaskTitle.trim();
             if (!taskTitle) return;
             const placement = parsePlacement(addTaskPlacement, allSections);
             const created = await api.createTask(taskTitle, placement.projectId, placement.sectionId, null);
-            // Для вставки перед выбранным соседом отдельно задаём порядок после создания.
+            /** Для вставки перед выбранным соседом отдельно задаём порядок после создания. */
             if (addTaskBeforeId !== null)
               await api.moveTask(
                 created.id,
@@ -467,7 +497,7 @@ export const TaskAppScreen = ({
               try {
                 await api.createComment(created.id, "", addTaskFiles);
               } catch (error) {
-                // Откатываем создание, если файл не сохранился и задачу нельзя оставить полной.
+                /** Откатываем создание, если файл не сохранился и задачу нельзя оставить полной. */
                 await api.deleteTask(created.id);
                 throw error;
               }
@@ -478,7 +508,7 @@ export const TaskAppScreen = ({
               dueDate: addTaskDate || null,
               labels,
             };
-            // Обновление отправляется только при наличии дополнительных значений.
+            /** Обновление отправляется только при наличии дополнительных значений. */
             if (patch.description || patch.dueDate || patch.labels?.length)
               await api.updateTask(created.id, patch);
             await queryClient.invalidateQueries({ queryKey: taskQueryKey });
@@ -551,7 +581,7 @@ export const TaskAppScreen = ({
         left={taskContextMenu?.left ?? 0}
         top={taskContextMenu?.top ?? 0}
         onOpen={() => {
-          // Скрываем меню до открытия подробностей выбранной задачи.
+          /** Скрываем меню до открытия подробностей выбранной задачи. */
           if (taskContextMenu === null) return;
           setTaskContextMenu(null);
           openDetails(taskContextMenu.task);

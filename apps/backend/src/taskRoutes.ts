@@ -51,13 +51,13 @@ const patchTaskSchema = z.object({
       }),
     )
     .refine(
-      // Комментарий без текста разрешён только при наличии хотя бы одного вложения.
+      /** Комментарий без текста разрешён только при наличии хотя бы одного вложения. */
       (comments) =>
         comments.every((comment) => comment.body.trim().length > 0 || (comment.attachments?.length ?? 0) > 0),
       "Comment text or at least one attachment is required",
     )
     .refine(
-      // Повторный ID мог бы неоднозначно обновить или удалить один комментарий.
+      /** Повторный ID мог бы неоднозначно обновить или удалить один комментарий. */
       (comments) =>
         new Set(comments.flatMap((comment) => (comment.id === undefined ? [] : [comment.id]))).size ===
         comments.filter((comment) => comment.id !== undefined).length,
@@ -129,12 +129,33 @@ const patchSectionSchema = z.object({
   title: z.string().trim().min(1),
 });
 
-/** Тип Hono-приложения с данными аутентифицированного пользователя. */
+/**
+ * Тип Hono-приложения с данными аутентифицированного пользователя.
+ *
+ * @typedef {Object} ApplicationHono
+ * @property {{ userId: string; authenticated: boolean }} Variables - Данные «variables», используемые типом «ApplicationHono».
+ * @property {string} Variables.userId - Данные «variables пользователь id», используемые типом «ApplicationHono».
+ * @property {boolean} Variables.authenticated - Признак или настройка «variables аутентификация».
+ */
 type ApplicationHono = Hono<{ Variables: { userId: string; authenticated: boolean } }>;
-/** Фабрика репозитория, привязанного к идентификатору текущего пользователя. */
+/**
+ * Фабрика репозитория, привязанного к идентификатору текущего пользователя.
+ *
+ * @typedef {(userId: string) => TaskRepository} RepositoryForUser
+ */
 type RepositoryForUser = (userId: string) => TaskRepository;
 
-/** Регистрирует HTTP-адаптеры задач, проектов и секций. */
+/**
+ * Регистрирует HTTP-адаптеры задач, проектов и секций.
+ *
+ * @param {ApplicationHono} app
+ * @param {RepositoryForUser} repositoryFor
+ * @param {(request: Request) => Promise<unknown>} parseJson
+ * @param {boolean} projectArchivingEnabled
+ * @param {boolean} attachmentStorageAvailable
+ * @param {(ids: Array<string>) => Promise<unknown>} removeAttachments
+ * @returns {void}
+ */
 export const registerTaskRoutes = (
   app: ApplicationHono,
   repositoryFor: RepositoryForUser,
@@ -143,14 +164,14 @@ export const registerTaskRoutes = (
   attachmentStorageAvailable: boolean,
   removeAttachments: (ids: Array<string>) => Promise<unknown>,
 ): void => {
-  // Возвращаем плоские задачи вместе с построенным доменной функцией деревом.
+  /** Возвращаем плоские задачи вместе с построенным доменной функцией деревом. */
   app.get("/tasks", async (context) => {
     const tasks = await repositoryFor(context.get("userId")).list();
 
     return context.json({ tasks, tree: buildTaskTree(tasks) });
   });
 
-  // Проекты и секции отдаются отдельными коллекциями для загрузки workspace.
+  /** Проекты и секции отдаются отдельными коллекциями для загрузки workspace. */
   app.get("/projects", async (context) => {
     const projects = await repositoryFor(context.get("userId")).listProjects();
 
@@ -158,7 +179,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/projects", async (context) => {
-    // Проверка схемы отделяет неверный HTTP-ввод от вызовов репозитория.
+    /** Проверка схемы отделяет неверный HTTP-ввод от вызовов репозитория. */
     const result = createProjectSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -259,7 +280,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/sections", async (context) => {
-    // До создания секции проверяем, что указанный проект принадлежит пользователю.
+    /** До создания секции проверяем, что указанный проект принадлежит пользователю. */
     const result = createSectionSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -315,7 +336,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/tasks", async (context) => {
-    // Проверяем ссылки на родителя, проект и секцию в данных текущего пользователя.
+    /** Проверяем ссылки на родителя, проект и секцию в данных текущего пользователя. */
     const result = createTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -356,7 +377,7 @@ export const registerTaskRoutes = (
   });
 
   app.patch("/tasks/:id", async (context) => {
-    // Сохраняем прежнюю задачу для проверки связей и очистки удалённых вложений.
+    /** Сохраняем прежнюю задачу для проверки связей и очистки удалённых вложений. */
     const result = patchTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -374,7 +395,7 @@ export const registerTaskRoutes = (
         nextProjectId
     )
       return context.json({ error: "Section does not belong to project" }, 400);
-    // Клиент может переиспользовать только метаданные вложений из прежних комментариев.
+    /** Клиент может переиспользовать только метаданные вложений из прежних комментариев. */
     if (previous !== undefined && result.data.comments !== undefined) {
       const allowed = new Map(previous.comments.map((comment) => [comment.id, comment.attachments ?? []]));
       const hasForgedAttachment = result.data.comments.some((comment) =>
@@ -394,7 +415,7 @@ export const registerTaskRoutes = (
     }
     const task = await taskRepository.patch(context.req.param("id"), result.data);
 
-    // После успешного обновления удаляем файлы вложений, больше не связанные с комментариями.
+    /** После успешного обновления удаляем файлы вложений, больше не связанные с комментариями. */
     if (
       task !== null &&
       previous !== undefined &&
@@ -414,7 +435,7 @@ export const registerTaskRoutes = (
   });
 
   app.put("/tasks/:id/move", async (context) => {
-    // Секция должна принадлежать тому же проекту, в который перемещается задача.
+    /** Секция должна принадлежать тому же проекту, в который перемещается задача. */
     const result = moveTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {

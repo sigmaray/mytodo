@@ -20,7 +20,11 @@ const TaskAppWorkspace = lazy(() =>
   import("./components/TaskAppWorkspace").then((page) => ({ default: page.TaskAppWorkspace })),
 );
 
-/** Выбирает страницы по URL и загружает крупные разделы приложения лениво. */
+/**
+ * Выбирает страницы по URL и загружает крупные разделы приложения лениво.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const AppRouter = () => {
   const api = createTaskApi();
   const authStatus = useQuery({ queryKey: authStatusQueryKey, queryFn: api.getAuthStatus });

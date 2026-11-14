@@ -43,7 +43,7 @@ export const updateSettingsSchema = z.object({
 /** Проверяет изменение имени или пароля и запрещает пустое обновление. */
 export const updateAccountSchema = z
   .object({ username: z.string().trim().min(1).max(64).optional(), password: z.string().min(1).optional() })
-  // Требуем хотя бы одно поле, иначе запрос не изменил бы аккаунт.
+  /** Требуем хотя бы одно поле, иначе запрос не изменил бы аккаунт. */
   .refine((patch) => Object.keys(patch).length > 0);
 /** Проверяет новую учётную запись, которую создаёт администратор. */
 export const createUserSchema = z.object({
@@ -64,7 +64,7 @@ export const updateUserSchema = z
     /** Новая роль пользователя, если администратор её меняет. */
     isAdmin: z.boolean().optional(),
   })
-  // Запрещаем пустой PATCH, чтобы каждый принятый запрос менял хотя бы одно поле.
+  /** Запрещаем пустой PATCH, чтобы каждый принятый запрос менял хотя бы одно поле. */
   .refine((patch) => Object.keys(patch).length > 0);
 /** Проверяет описание Входящих и ограничивает объём хранимого текста. */
 export const inboxDescriptionSchema = z.object({
@@ -72,9 +72,14 @@ export const inboxDescriptionSchema = z.object({
   description: z.string().max(20000),
 });
 
-/** Читает JSON-тело запроса, а при другом типе содержимого возвращает пустой объект. */
+/**
+ * Читает JSON-тело запроса, а при другом типе содержимого возвращает пустой объект.
+ *
+ * @param {Request} request
+ * @returns Результат выполнения функции.
+ */
 export const parseJson = async (request: Request) => {
-  // Маршруты могут принимать запросы без тела, поэтому сначала проверяем заголовок.
+  /** Маршруты могут принимать запросы без тела, поэтому сначала проверяем заголовок. */
   const contentType = request.headers.get("content-type") ?? "";
 
   if (!contentType.includes("application/json")) {

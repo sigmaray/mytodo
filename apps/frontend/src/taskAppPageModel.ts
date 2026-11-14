@@ -12,54 +12,76 @@ import { copyText, downloadBlob, findTaskNode } from "./taskAppUtils";
 import { shiftCalendarMonth } from "./components/TaskFormFields";
 import { toLocalIsoDate } from "./dateUtils";
 
-/** Дискриминируемая модель маршрута и props, необходимых конкретной странице workspace. */
+/**
+ * Дискриминируемая модель маршрута и props, необходимых конкретной странице workspace.
+ *
+ * @typedef {Object} TaskAppPageModel
+ * @property {"dates"} mode - Идентификатор выбранного типа страницы.
+ * @property {DatesPageProps} props - Параметры, необходимые выбранной странице.
+ * @property {"labels"} mode - Идентификатор выбранного типа страницы.
+ * @property {LabelsPageProps} props - Параметры, необходимые выбранной странице.
+ * @property {"attachments"} mode - Идентификатор выбранного типа страницы.
+ * @property {AttachmentsPageProps} props - Параметры, необходимые выбранной странице.
+ * @property {"export"} mode - Идентификатор выбранного типа страницы.
+ * @property {ExportPageProps} props - Параметры, необходимые выбранной странице.
+ * @property {"inbox"} mode - Идентификатор выбранного типа страницы.
+ * @property {TaskAppBoardProps} props - Параметры, необходимые выбранной странице.
+ */
 export type TaskAppPageModel =
   | {
-      /** Показывает, что активна страница дат и календаря. */
       mode: "dates";
-      /** Props страницы дат. */
+
       props: DatesPageProps;
     }
   | {
-      /** Показывает, что активна страница меток. */
       mode: "labels";
-      /** Props страницы меток. */
+
       props: LabelsPageProps;
     }
   | {
-      /** Показывает, что активна библиотека вложений. */
       mode: "attachments";
-      /** Props страницы вложений. */
+
       props: AttachmentsPageProps;
     }
   | {
-      /** Показывает, что открыт экспорт данных. */
       mode: "export";
-      /** Props страницы экспорта. */
+
       props: ExportPageProps;
     }
   | {
-      /** Показывает, что открыт основной список задач. */
       mode: "inbox";
-      /** Props доски задач. */
+
       props: TaskAppBoardProps;
     };
 
-/** Состояние и обработчики, из которых собирается модель активной страницы. */
+/**
+ * Состояние и обработчики, из которых собирается модель активной страницы.
+ *
+ * @typedef {Object} TaskAppPageModelInput
+ * @property {boolean} attachmentsEnabled - Разрешено ли работать с вложениями.
+ * @property {boolean} tasksLoading - Загружается ли список задач.
+ * @property {TaskAppPageModelState} state - Данные текущего рабочего пространства.
+ * @property {ReturnType<typeof useTaskAppActions>} actions - Функции действий, доступные интерфейсу.
+ * @property {ReturnType<typeof useTaskAppViewModel>} viewModel - Подготовленные данные для отображения.
+ */
 type TaskAppPageModelInput = {
-  /** Разрешено ли показывать маршруты и элементы управления файлами. */
   attachmentsEnabled: boolean;
-  /** Показывает, что запрос задач ещё выполняется. */
+
   tasksLoading: boolean;
-  /** Текущее состояние экранов, диалогов и локальных форм. */
+
   state: TaskAppPageModelState;
-  /** Обработчики действий пользователя и мутаций. */
+
   actions: ReturnType<typeof useTaskAppActions>;
-  /** Вычисленные заголовки, списки и отображаемые задачи. */
+
   viewModel: ReturnType<typeof useTaskAppViewModel>;
 };
 
-/** Собирает узкий контракт props для страницы, соответствующей текущему маршруту. */
+/**
+ * Собирает узкий контракт props для страницы, соответствующей текущему маршруту.
+ *
+ * @param {TaskAppPageModelInput} parameter1
+ * @returns {TaskAppPageModel}
+ */
 export const createTaskAppPageModel = ({
   attachmentsEnabled,
   tasksLoading,
@@ -67,7 +89,7 @@ export const createTaskAppPageModel = ({
   actions,
   viewModel,
 }: TaskAppPageModelInput): TaskAppPageModel => {
-  // Разделяем общий state/actions/view model на нужные конкретной странице значения.
+  /** Разделяем общий state/actions/view model на нужные конкретной странице значения. */
   const {
     dateView,
     setDateView,

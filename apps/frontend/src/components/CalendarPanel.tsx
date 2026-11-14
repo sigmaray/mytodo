@@ -3,59 +3,148 @@ import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DragEvent } from "react";
 
-/** День календарной сетки и признаки его визуального состояния. */
+/**
+ * День календарной сетки и признаки его визуального состояния.
+ *
+ * @typedef {Object} CalendarDay
+ * @property {string} date - Дата календарного дня.
+ * @property {number} day - Номер дня месяца.
+ * @property {boolean} isCurrentMonth - Признак: is текущие месяц.
+ * @property {boolean} isToday - Признак: is today.
+ * @property {boolean} isWeekend - Признак: is weekend.
+ */
 type CalendarDay = {
-  /** ISO-дата ячейки. */
   date: string;
-  /** Число месяца для подписи ячейки. */
+
   day: number;
-  /** Входит ли дата в отображаемый месяц. */
+
   isCurrentMonth: boolean;
-  /** Является ли дата текущим днём. */
+
   isToday: boolean;
-  /** Попадает ли день на выходные. */
+
   isWeekend: boolean;
 };
 
-/** Данные календарной сетки и обработчики навигации, выбора и drag-and-drop. */
+/**
+ * @callback CalendarPanelPropsLocationForTask
+ * @param {Task} task
+ * @returns {string}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnMonthChange
+ * @param {string} month
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnShiftMonth
+ * @param {number} amount
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnToday
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnMarkDate
+ * @param {string} date
+ * @returns {(event: DragEvent<HTMLElement>) => void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnDropDate
+ * @param {string} date
+ * @returns {(event: DragEvent<HTMLElement>) => void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnLeaveDate
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnTaskDragStart
+ * @param {Task} task
+ * @param {DragEvent<HTMLButtonElement>} event
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnTaskDragEnd
+ * @returns {void}
+ */
+
+/**
+ * @callback CalendarPanelPropsOnTaskOpen
+ * @param {Task} task
+ * @returns {void}
+ */
+/**
+ * Данные календарной сетки и обработчики навигации, выбора и drag-and-drop.
+ *
+ * @typedef {Object} CalendarPanelProps
+ * @property {string} month - Месяц календаря.
+ * @property {string} label - Данные «метка», используемые типом «CalendarPanelProps».
+ * @property {Array<CalendarDay>} days - Ячейки календарной сетки.
+ * @property {Array<string>} weekdays - Краткие названия дней недели.
+ * @property {Array<Task>} tasks - Список задачи.
+ * @property {number} taskCount - Количество задач.
+ * @property {string | null} activeDate - Дата, выбранная в календаре.
+ * @property {CalendarPanelPropsLocationForTask} locationForTask - Определяет положение задачи в списке.
+ * @property {CalendarPanelPropsOnMonthChange} onMonthChange - Обрабатывает выбор другого месяца.
+ * @property {CalendarPanelPropsOnShiftMonth} onShiftMonth - Переключает календарь на соседний месяц.
+ * @property {CalendarPanelPropsOnToday} onToday - Выбирает текущую дату.
+ * @property {CalendarPanelPropsOnMarkDate} onMarkDate - Помечает дату в календаре.
+ * @property {CalendarPanelPropsOnDropDate} onDropDate - Обрабатывает перенос задачи на дату.
+ * @property {CalendarPanelPropsOnLeaveDate} onLeaveDate - Обрабатывает завершение перетаскивания над датой.
+ * @property {CalendarPanelPropsOnTaskDragStart} onTaskDragStart - Начинает перетаскивание задачи.
+ * @property {CalendarPanelPropsOnTaskDragEnd} onTaskDragEnd - Завершает перетаскивание задачи.
+ * @property {CalendarPanelPropsOnTaskOpen} onTaskOpen - Открывает подробности задачи.
+ */
 export type CalendarPanelProps = {
-  /** Месяц в формате `YYYY-MM`. */
   month: string;
-  /** Текстовая подпись месяца. */
+
   label: string;
-  /** Ячейки календаря. */
+
   days: Array<CalendarDay>;
-  /** Подписи столбцов дней недели. */
+
   weekdays: Array<string>;
-  /** Задачи, сроки которых показаны в календаре. */
+
   tasks: Array<Task>;
-  /** Количество задач в активном представлении. */
+
   taskCount: number;
-  /** Дата выбранной или наведённой ячейки. */
+
   activeDate: string | null;
-  /** Формирует подпись места задачи рядом с её названием. */
+
   locationForTask: (task: Task) => string;
-  /** Выбирает месяц из поля календаря. */
+
   onMonthChange: (month: string) => void;
-  /** Сдвигает календарь на заданное число месяцев. */
+
   onShiftMonth: (amount: number) => void;
-  /** Переключает календарь на текущий месяц. */
+
   onToday: () => void;
-  /** Запускает изменение срока задачи для даты. */
+
   onMarkDate: (date: string) => (event: DragEvent<HTMLElement>) => void;
-  /** Принимает перетащенную задачу на календарную дату. */
+
   onDropDate: (date: string) => (event: DragEvent<HTMLElement>) => void;
-  /** Сбрасывает активную календарную дату. */
+
   onLeaveDate: () => void;
-  /** Начинает перетаскивание задачи из календаря. */
+
   onTaskDragStart: (task: Task, event: DragEvent<HTMLButtonElement>) => void;
-  /** Завершает перетаскивание задачи из календаря. */
+
   onTaskDragEnd: () => void;
-  /** Открывает задачу из календаря. */
+
   onTaskOpen: (task: Task) => void;
 };
 
-/** Отрисовывает календарную сетку, сроки задач и список выбранного дня. */
+/**
+ * Отрисовывает календарную сетку, сроки задач и список выбранного дня.
+ *
+ * @param {CalendarPanelProps} parameter1
+ */
 export const CalendarPanel = ({
   month,
   label,
@@ -100,7 +189,7 @@ export const CalendarPanel = ({
             type="month"
             value={month}
             onChange={(event) => {
-              // Пустой ввод month не заменяет последнее валидное отображение календаря.
+              /** Пустой ввод month не заменяет последнее валидное отображение календаря. */
               if (event.target.value) onMonthChange(event.target.value);
             }}
           />
@@ -133,7 +222,7 @@ export const CalendarPanel = ({
                 aria-label={`Tasks for ${day.date}`}
                 onDragOver={onMarkDate(day.date)}
                 onDragLeave={(event) => {
-                  // Не сбрасываем подсветку, пока указатель перемещается между дочерними элементами ячейки.
+                  /** Не сбрасываем подсветку, пока указатель перемещается между дочерними элементами ячейки. */
                   if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onLeaveDate();
                 }}
                 onDrop={onDropDate(day.date)}

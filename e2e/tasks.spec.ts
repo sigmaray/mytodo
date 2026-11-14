@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 });
 
-// Проверяем доступность контекстных действий задачи во Входящих и проекте.
+/** Проверяем доступность контекстных действий задачи во Входящих и проекте. */
 test("shows task context actions in Inbox and projects", async ({ page }, testInfo) => {
   const inboxTitle = `Inbox context ${testInfo.workerIndex}-${Date.now()}`;
   const projectTitle = `Project context ${testInfo.workerIndex}-${Date.now()}`;
@@ -36,7 +36,7 @@ test("shows task context actions in Inbox and projects", async ({ page }, testIn
   await expect(projectMenu.getByRole("menuitem")).toHaveText(["Open", "Quick edit", "Add subtask", "Delete"]);
 });
 
-// Тестовый API должен создавать сущности и выборочно очищать поддерживаемые таблицы.
+/** Тестовый API должен создавать сущности и выборочно очищать поддерживаемые таблицы. */
 test("Playwright API creates and clears individual data tables", async ({ page }, testInfo) => {
   const api = createE2eApi(page.request);
   const project = await api.createProject(`API project ${testInfo.workerIndex}-${Date.now()}`);
@@ -69,7 +69,7 @@ test("Playwright API creates and clears individual data tables", async ({ page }
   expect((await api.clearTable("projects")).deleted).toBe(1);
 });
 
-// PostgreSQL сохраняет дерево, параллельные комментарии и ссылки только в пределах владельца.
+/** PostgreSQL сохраняет дерево, параллельные комментарии и ссылки только в пределах владельца. */
 test("PostgreSQL preserves task tree, concurrent comments, and tenant links", async ({ page }, testInfo) => {
   const suffix = `${testInfo.workerIndex}-${Date.now()}`;
   const api = createE2eApi(page.request);
@@ -156,7 +156,7 @@ test("PostgreSQL preserves task tree, concurrent comments, and tenant links", as
   }
 });
 
-// Выбранная группа задач переносится в проект одним drag-and-drop действием.
+/** Выбранная группа задач переносится в проект одним drag-and-drop действием. */
 test("moves a selected task group to a project with drag and drop", async ({ page }, testInfo) => {
   const sourceTitle = `Group source ${testInfo.workerIndex}-${Date.now()}`;
   const secondTitle = `Group second ${testInfo.workerIndex}-${Date.now()}`;
@@ -201,7 +201,7 @@ test("moves a selected task group to a project with drag and drop", async ({ pag
   await expect(page.getByRole("button", { name: secondTitle, exact: true })).toBeVisible();
 });
 
-// Режим выбора включается клавишей S в любой раскладке и закрывается клавишей Escape.
+/** Режим выбора включается клавишей S в любой раскладке и закрывается клавишей Escape. */
 test("toggles task selection with S in any layout and exits with Escape", async ({ page }, testInfo) => {
   const title = `Selection shortcut ${testInfo.workerIndex}-${Date.now()}`;
   await createE2eApi(page.request).createTask(title);

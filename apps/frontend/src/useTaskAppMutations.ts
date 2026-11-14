@@ -7,37 +7,60 @@ import { projectQueryKey, sectionQueryKey, taskQueryKey } from "./queryKeys";
 import { inboxPlacement, parsePlacement, taskPlacement } from "./taskAppUtils";
 import type { TaskAppMutationsState } from "./useTaskAppState";
 
-/** Поля назначения для перемещения задачи через API. */
+/**
+ * Поля назначения для перемещения задачи через API.
+ *
+ * @typedef {Object} MoveInput
+ * @property {TaskId} taskId - Данные «задача id», используемые типом «MoveInput».
+ * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «MoveInput».
+ * @property {SectionId | null} sectionId - Данные «секция id», используемые типом «MoveInput».
+ * @property {TaskId | null} parentId - Данные «родитель id», используемые типом «MoveInput».
+ * @property {TaskId | null} beforeId - Данные «предыдущего id», используемые типом «MoveInput».
+ * @property {TaskId | null} afterId - Данные «следующего id», используемые типом «MoveInput».
+ */
 type MoveInput = {
-  /** Идентификатор перемещаемой задачи. */
   taskId: TaskId;
-  /** Проект назначения или `null` для Входящих. */
+
   projectId: ProjectId | null;
-  /** Секция назначения или `null` для корня проекта. */
+
   sectionId: SectionId | null;
-  /** Новый родитель или `null` для корневого уровня. */
+
   parentId: TaskId | null;
-  /** ID соседа, перед которым нужно расположить задачу. */
+
   beforeId: TaskId | null;
-  /** ID соседа, после которого нужно расположить задачу. */
+
   afterId: TaskId | null;
 };
 
-/** Аргументы для создания набора React Query мутаций workspace. */
+/**
+ * Аргументы для создания набора React Query мутаций workspace.
+ *
+ * @typedef {Object} TaskAppMutationInput
+ * @property {ApplicationApi} api - Набор API-операций для серверных данных.
+ * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
+ * @property {TaskAppMutationsState} state - Данные текущего рабочего пространства.
+ * @property {Array<Section> | undefined} sectionData - Секции, полученные из серверного запроса.
+ * @property {{ confirmDelete: boolean } | undefined} settings - Обновляет значение соответствующего состояния.
+ * @property {boolean} settings.confirmDelete - Настройка, определяющая необходимость подтверждать удаление.
+ */
 type TaskAppMutationInput = {
-  /** HTTP-клиент доменных операций. */
   api: ApplicationApi;
-  /** Кэш запросов для синхронизации серверного состояния. */
+
   queryClient: QueryClient;
-  /** Локальное состояние форм, drag-and-drop и массовых действий. */
+
   state: TaskAppMutationsState;
-  /** Загруженные секции для разбора выбранного места задачи. */
+
   sectionData: Array<Section> | undefined;
-  /** Настройки пользователя для подтверждения опасных действий. */
+
   settings: { confirmDelete: boolean } | undefined;
 };
 
-/** Создаёт мутации и оптимистичные обновления для задач, проектов и секций. */
+/**
+ * Создаёт мутации и оптимистичные обновления для задач, проектов и секций.
+ *
+ * @param {TaskAppMutationInput} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const useTaskAppMutations = ({
   api,
   queryClient,
@@ -66,7 +89,11 @@ export const useTaskAppMutations = ({
     setSelectedMoveOpen,
   } = state;
 
-  // Отсутствующая настройка сохраняет безопасное поведение и требует подтверждения.
+  /**
+   * Отсутствующая настройка сохраняет безопасное поведение и требует подтверждения.
+   *
+   * @param {string} message
+   */
   const confirmDeletion = (message: string) => settings?.confirmDelete === false || window.confirm(message);
 
   const createSubtaskMutation = useMutation({
@@ -146,11 +173,16 @@ export const useTaskAppMutations = ({
   const toggleMutation = useMutation({
     mutationFn: (task: TaskNode) => api.patchTask(task.id, !task.completed),
     onMutate: async (task) => {
-      // Отменяем устаревший запрос, чтобы он не перезаписал оптимистичное состояние.
+      /** Отменяем устаревший запрос, чтобы он не перезаписал оптимистичное состояние. */
       await queryClient.cancelQueries({ queryKey: taskQueryKey });
       const previousTasks = queryClient.getQueryData<Array<TaskNode>>(taskQueryKey);
 
-      // Обновляем выбранную задачу в дереве, не меняя состояние её потомков.
+      /**
+       * Обновляем выбранную задачу в дереве, не меняя состояние её потомков.
+       *
+       * @param {Array<TaskNode>} nodes
+       * @returns {Array<TaskNode>}
+       */
       const toggleNodes = (nodes: Array<TaskNode>): Array<TaskNode> =>
         nodes.map((node) => ({
           ...node,
@@ -163,7 +195,7 @@ export const useTaskAppMutations = ({
       return { previousTasks };
     },
     onError: (_error, _task, context) => {
-      // Восстанавливаем снимок кэша, если сервер отклонил переключение.
+      /** Восстанавливаем снимок кэша, если сервер отклонил переключение. */
       queryClient.setQueryData(taskQueryKey, context?.previousTasks);
     },
     onSettled: async () => {
@@ -173,7 +205,7 @@ export const useTaskAppMutations = ({
 
   const editMutation = useMutation({
     mutationFn: async (task: TaskNode) => {
-      // Сначала обновляем текст; перемещение вызывается отдельно только при смене списка.
+      /** Сначала обновляем текст; перемещение вызывается отдельно только при смене списка. */
       const placement = parsePlacement(editPlacement, allSections);
       const titleTask = await api.updateTask(task.id, { title: editTitle.trim() });
 
@@ -226,7 +258,7 @@ export const useTaskAppMutations = ({
       projectId: ProjectId | null;
       sectionId: SectionId | null;
     }) => {
-      // Последовательность сохраняет предсказуемый порядок и изолирует ошибки каждого переноса.
+      /** Последовательность сохраняет предсказуемый порядок и изолирует ошибки каждого переноса. */
       for (const taskId of input.taskIds) {
         await api.moveTask(taskId, input.projectId, input.sectionId, null, null, null);
       }
@@ -241,7 +273,7 @@ export const useTaskAppMutations = ({
 
   const selectedDeleteMutation = useMutation({
     mutationFn: async (taskIds: Array<TaskId>) =>
-      // Все выбранные корни удаляются, а состояние интерфейса очищается после успеха.
+      /** Все выбранные корни удаляются, а состояние интерфейса очищается после успеха. */
       Promise.all(taskIds.map((taskId) => api.deleteTask(taskId))),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });

@@ -7,7 +7,7 @@ import { getDatabaseUrl } from "./database-url";
 import { createPostgresTaskRepositoryFactory } from "./db/repository";
 import { createPostgresUserRepository } from "./db/users-repository";
 
-// Порт, на котором backend принимает HTTP-запросы.
+/** Порт, на котором backend принимает HTTP-запросы. */
 /** TCP-порт backend-сервера, по умолчанию 3000. */
 const port = Number(process.env.PORT ?? 3000);
 /** Строка подключения, собранная из переменных окружения. */
@@ -37,7 +37,7 @@ if (attachmentsEnabled && attachmentsDir !== undefined) {
     throw new Error(`MYTODO_ATTACHMENTS_DIR is not writable: ${attachmentsDir}`);
   }
 }
-// Фабрика выдаёт каждому вошедшему пользователю репозиторий с его собственным UUID.
+/** Фабрика выдаёт каждому вошедшему пользователю репозиторий с его собственным UUID. */
 const taskRepositoryFor = createPostgresTaskRepositoryFactory(databaseUrl);
 
 serve({

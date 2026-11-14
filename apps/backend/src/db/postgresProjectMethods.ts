@@ -6,7 +6,14 @@ import type { TaskRepository } from "../repository";
 import { firstProject, nullableEq, projectOrder, rowOrder, sectionOrder, toProject } from "./postgresHelpers";
 import { projects as projectsTable, sections as sectionsTable, tasks as tasksTable } from "./schema";
 
-/** Создаёт набор запросов проектов, ограниченный UUID текущего пользователя. */
+/**
+ * Создаёт набор запросов проектов, ограниченный UUID текущего пользователя.
+ *
+ * @param {ReturnType<typeof drizzle>} db
+ * @param {postgres.Sql} client
+ * @param {string} userId
+ * @returns {Pick< TaskRepository, | "listProjects" | "createProject" | "createSubproject" | "moveProject" | "reorderProject" | "updateProject" | "deleteProject" | "duplicateProject" | "setProjectArchived" >}
+ */
 export const createPostgresProjectMethods = (
   db: ReturnType<typeof drizzle>,
   client: postgres.Sql,

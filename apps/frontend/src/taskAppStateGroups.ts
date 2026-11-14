@@ -4,14 +4,34 @@ import type { TaskAppMarkdownModal } from "./components/TaskAppOverlays";
 import type { ActiveDragTarget } from "./components/TaskTreeView";
 import { inboxPlacement } from "./taskAppUtils";
 
-/** Минимальные данные перетаскиваемого элемента для мобильного интерфейса. */
+/**
+ * Минимальные данные перетаскиваемого элемента для мобильного интерфейса.
+ *
+ * @typedef {Object} MobileDragItem
+ * @property {string} id - Идентификатор сущности, с которой работает модуль.
+ */
 type MobileDragItem = { id: string };
-/** Идентификатор списка или секции, принимающих задачу при сбросе. */
+/**
+ * Идентификатор списка или секции, принимающих задачу при сбросе.
+ *
+ * @typedef {"inbox" | `project:${ProjectId}` | `section:${SectionId}`} DropZoneId
+ */
 export type DropZoneId = "inbox" | `project:${ProjectId}` | `section:${SectionId}`;
-/** Задача и экранные координаты открытого контекстного меню. */
+/**
+ * Задача и экранные координаты открытого контекстного меню.
+ *
+ * @typedef {Object} TaskContextMenuState
+ * @property {TaskNode} task - Данные «задача», используемые типом «TaskContextMenuState».
+ * @property {number} left - Горизонтальная координата меню.
+ * @property {number} top - Вертикальная координата меню.
+ */
 type TaskContextMenuState = { task: TaskNode; left: number; top: number };
 
-/** Хранит режим календаря, текущий месяц и выбранную дату. */
+/**
+ * Хранит режим календаря, текущий месяц и выбранную дату.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useCalendarState = () => {
   const [dateView, setDateView] = useState<"list" | "calendar">("list");
   const [dateListFilter, setDateListFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
@@ -31,7 +51,11 @@ export const useCalendarState = () => {
   };
 };
 
-/** Хранит значения полей и раскрытых секций диалога создания задачи. */
+/**
+ * Хранит значения полей и раскрытых секций диалога создания задачи.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useAddTaskState = () => {
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addTaskTitle, setAddTaskTitle] = useState("");
@@ -79,7 +103,11 @@ export const useAddTaskState = () => {
   };
 };
 
-/** Хранит локальное состояние создания, сортировки и редактирования секций. */
+/**
+ * Хранит локальное состояние создания, сортировки и редактирования секций.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useSectionsState = () => {
   const [sectionTitle, setSectionTitle] = useState("");
   const [addingSection, setAddingSection] = useState(false);
@@ -99,14 +127,22 @@ export const useSectionsState = () => {
   };
 };
 
-/** Хранит состояние раскрытых подзадач и их локального редактирования. */
+/**
+ * Хранит состояние раскрытых подзадач и их локального редактирования.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useSubtasksState = () => {
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [subtaskParentId, setSubtaskParentId] = useState<string | null>(null);
   return { subtaskTitle, subtaskParentId, setSubtaskTitle, setSubtaskParentId };
 };
 
-/** Хранит состояние текущего drag-and-drop взаимодействия. */
+/**
+ * Хранит состояние текущего drag-and-drop взаимодействия.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useDragState = () => {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [activeDragTarget, setActiveDragTarget] = useState<ActiveDragTarget | null>(null);
@@ -132,7 +168,11 @@ export const useDragState = () => {
   };
 };
 
-/** Хранит локальные формы и временные данные управления проектами. */
+/**
+ * Хранит локальные формы и временные данные управления проектами.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useProjectsState = () => {
   const [targetProjectId, setTargetProjectId] = useState<ProjectId | null>(() =>
     new URLSearchParams(window.location.search).get("project"),
@@ -155,7 +195,11 @@ export const useProjectsState = () => {
   };
 };
 
-/** Хранит значения форм редактирования задачи и её деталей. */
+/**
+ * Хранит значения форм редактирования задачи и её деталей.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useTaskEditingState = () => {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -163,7 +207,11 @@ export const useTaskEditingState = () => {
   return { editTaskId, editTitle, editPlacement, setEditTaskId, setEditTitle, setEditPlacement };
 };
 
-/** Хранит состояние копирования и предпросмотра экспортируемых данных. */
+/**
+ * Хранит состояние копирования и предпросмотра экспортируемых данных.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useExportsState = () => {
   const [markdownModal, setMarkdownModal] = useState<TaskAppMarkdownModal | null>(null);
   const [scopeExportOpen, setScopeExportOpen] = useState(false);
@@ -171,7 +219,11 @@ export const useExportsState = () => {
   return { markdownModal, scopeExportOpen, copyStatus, setMarkdownModal, setScopeExportOpen, setCopyStatus };
 };
 
-/** Хранит выбранные задачи для пакетных операций. */
+/**
+ * Хранит выбранные задачи для пакетных операций.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useSelectionState = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRootTaskIds, setSelectedRootTaskIds] = useState<Array<TaskId>>([]);
@@ -189,7 +241,11 @@ export const useSelectionState = () => {
   };
 };
 
-/** Хранит состояние боковой панели, диалогов и контекстного меню задачи. */
+/**
+ * Хранит состояние боковой панели, диалогов и контекстного меню задачи.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useDetailsState = () => {
   const [detailsTaskId, setDetailsTaskId] = useState<TaskId | null>(null);
   const [taskContextMenu, setTaskContextMenu] = useState<TaskContextMenuState | null>(null);
@@ -259,7 +315,11 @@ export const useDetailsState = () => {
   };
 };
 
-/** Хранит состояние редактирования описания текущего списка или проекта. */
+/**
+ * Хранит состояние редактирования описания текущего списка или проекта.
+ *
+ * @returns Результат выполнения функции.
+ */
 export const useScopeDescriptionState = () => {
   const [editingScopeDescription, setEditingScopeDescription] = useState(false);
   const [scopeDescriptionDraft, setScopeDescriptionDraft] = useState("");

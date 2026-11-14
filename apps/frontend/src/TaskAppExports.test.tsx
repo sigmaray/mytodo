@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
-  // Изменение задачи и удаление секции вызывают соответствующие обработчики.
+  /** Изменение задачи и удаление секции вызывают соответствующие обработчики. */
   it("calls update and delete handlers", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: { title?: string }): Promise<Task> =>
@@ -45,7 +45,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteTask).toHaveBeenCalledWith("1"));
   });
 
-  // Отказ в подтверждении отменяет удаление задачи.
+  /** Отказ в подтверждении отменяет удаление задачи. */
   it("does not delete when the confirmation is declined", async () => {
     const deleteTask = vi.fn(async () => undefined);
     vi.mocked(window.confirm).mockReturnValue(false);
@@ -58,7 +58,7 @@ describe("TaskApp", () => {
     expect(deleteTask).not.toHaveBeenCalled();
   });
 
-  // При выключенной настройке интерфейс удаляет без дополнительного подтверждения.
+  /** При выключенной настройке интерфейс удаляет без дополнительного подтверждения. */
   it("skips delete confirmation when the preference is disabled", async () => {
     const deleteTask = vi.fn(async () => undefined);
     const api = {
@@ -75,7 +75,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteTask).toHaveBeenCalledWith("1"));
   });
 
-  // Форма редактирования позволяет перенести задачу в выбранный проект.
+  /** Форма редактирования позволяет перенести задачу в выбранный проект. */
   it("assigns a task to a project while editing", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: { title?: string }): Promise<Task> =>
@@ -106,7 +106,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("1", "project-1", null, null, null, null));
   });
 
-  // Секции Входящих можно переименовать и удалить, сохранив задачи.
+  /** Секции Входящих можно переименовать и удалить, сохранив задачи. */
   it("updates and deletes inbox sections", async () => {
     const updateSection = vi.fn(
       async (id: string, title: string): Promise<Section> => section({ id, title }),
@@ -139,7 +139,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteSection).toHaveBeenCalledWith("section-1"));
   });
 
-  // Кнопки секции создают задачу либо в её начале, либо в конце списка.
+  /** Кнопки секции создают задачу либо в её начале, либо в конце списка. */
   it("adds section tasks at the top or bottom from the matching button", async () => {
     const createTask = vi.fn(
       async (
@@ -184,7 +184,7 @@ describe("TaskApp", () => {
     expect(moveTask).toHaveBeenCalledTimes(1);
   });
 
-  // Предпросмотр Markdown содержит задачи текущей области.
+  /** Предпросмотр Markdown содержит задачи текущей области. */
   it("previews markdown for the current task list", async () => {
     renderApp(baseApi([task({ id: "1", title: "Plan MVP", completed: true })]));
 
@@ -202,7 +202,7 @@ describe("TaskApp", () => {
     await userEvent.click(screen.getByRole("button", { name: "Close export options" }));
   });
 
-  // JSON для текущей области содержит только данные открытого проекта.
+  /** JSON для текущей области содержит только данные открытого проекта. */
   it("previews JSON scoped to the currently open project with its complete task data", async () => {
     window.history.replaceState({}, "", "/?project=project-1");
     const projectTask = task({
@@ -283,7 +283,7 @@ describe("TaskApp", () => {
     expect(advancedMarkdown).toContain("Project comment");
   });
 
-  // Полный экспорт включает JSON и оба варианта Markdown со страницы экспорта.
+  /** Полный экспорт включает JSON и оба варианта Markdown со страницы экспорта. */
   it("exports a complete JSON document and previews all Markdown on the Export page", async () => {
     window.history.replaceState({}, "", "/export");
     const inboxTask = task({

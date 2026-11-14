@@ -1,9 +1,13 @@
 import { expect, test } from "./fixtures";
 
-// Добавляет временной суффикс, чтобы тестовые имена не пересекались между запусками.
+/**
+ * Добавляет временной суффикс, чтобы тестовые имена не пересекались между запусками.
+ *
+ * @param {string} prefix
+ */
 const unique = (prefix: string) => `${prefix} ${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
 
-// Проверяем общий клавиатурный поток диалога, редактирования, навигации, поиска и календаря.
+/** Проверяем общий клавиатурный поток диалога, редактирования, навигации, поиска и календаря. */
 test("task dialog, inline keyboard editing, navigation, search, and calendar work", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
   await page.goto("/");
@@ -216,7 +220,7 @@ test("task dialog, inline keyboard editing, navigation, search, and calendar wor
   await expect(page.getByRole("dialog", { name: "Add task" })).toBeVisible();
 });
 
-// После перестановки проекта подсветка всех зон перетаскивания должна сбрасываться.
+/** После перестановки проекта подсветка всех зон перетаскивания должна сбрасываться. */
 test("project reorder clears all drag highlight states", async ({ page }) => {
   await page.goto("/");
   const first = unique("Drag project first");

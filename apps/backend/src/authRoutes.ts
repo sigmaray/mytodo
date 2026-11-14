@@ -21,29 +21,52 @@ import {
 import type { UserRepository } from "./users";
 import { defaultAdminUserId } from "./users";
 
-/** Регистрирует вход, настройки аккаунта и административные маршруты пользователей. */
+/**
+ * Регистрирует вход, настройки аккаунта и административные маршруты пользователей.
+ *
+ * @param {AppHono} app
+ * @param {{ userRepository: UserRepository; repositoryFor: RepositoryForUser; secureCookies: boolean; attachmentsEnabled: boolean; projectArchivingEnabled: boolean; attachmentStorageAvailable: boolean; attachmentStorage: AttachmentStorage; requireAdmin: (userId: string) => Promise<boolean>; }} dependencies
+ * @param {UserRepository} dependencies.userRepository - Хранилище учётных записей и пользовательских сессий.
+ * @param {RepositoryForUser} dependencies.repositoryFor - Возвращает репозиторий данных, принадлежащих указанному пользователю.
+ * @param {boolean} dependencies.secureCookies - Включает Secure-флаг для выдаваемой сессионной cookie.
+ * @param {boolean} dependencies.attachmentsEnabled - Показывает клиенту, доступна ли загрузка файлов.
+ * @param {boolean} dependencies.projectArchivingEnabled - Показывает клиенту, доступно ли архивирование проектов.
+ * @param {boolean} dependencies.attachmentStorageAvailable - Указывает, готов ли файловый backend к работе с вложениями.
+ * @param {AttachmentStorage} dependencies.attachmentStorage - Выполняет файловые операции для вложений комментариев.
+ * @param {(userId: string) => Promise<boolean>} dependencies.requireAdmin - Проверяет административные права пользователя.
+ */
 export const registerAuthRoutes = (
   app: AppHono,
-  dependencies: {
-    /** Хранилище учётных записей и пользовательских сессий. */
+  dependencies: /**
+   * Поля этой структуры:
+   * - `userRepository`: Хранилище учётных записей и пользовательских сессий.
+   * - `repositoryFor`: Возвращает репозиторий данных, принадлежащих указанному пользователю.
+   * - `secureCookies`: Включает Secure-флаг для выдаваемой сессионной cookie.
+   * - `attachmentsEnabled`: Показывает клиенту, доступна ли загрузка файлов.
+   * - `projectArchivingEnabled`: Показывает клиенту, доступно ли архивирование проектов.
+   * - `attachmentStorageAvailable`: Указывает, готов ли файловый backend к работе с вложениями.
+   * - `attachmentStorage`: Выполняет файловые операции для вложений комментариев.
+   * - `requireAdmin`: Проверяет административные права пользователя.
+   */
+  {
     userRepository: UserRepository;
-    /** Возвращает репозиторий данных, принадлежащих указанному пользователю. */
+
     repositoryFor: RepositoryForUser;
-    /** Включает Secure-флаг для выдаваемой сессионной cookie. */
+
     secureCookies: boolean;
-    /** Показывает клиенту, доступна ли загрузка файлов. */
+
     attachmentsEnabled: boolean;
-    /** Показывает клиенту, доступно ли архивирование проектов. */
+
     projectArchivingEnabled: boolean;
-    /** Указывает, готов ли файловый backend к работе с вложениями. */
+
     attachmentStorageAvailable: boolean;
-    /** Выполняет файловые операции для вложений комментариев. */
+
     attachmentStorage: AttachmentStorage;
-    /** Проверяет административные права пользователя. */
+
     requireAdmin: (userId: string) => Promise<boolean>;
   },
 ) => {
-  // Общие зависимости дают маршрутам доступ к пользователям и их данным без прямого доступа к БД.
+  /** Общие зависимости дают маршрутам доступ к пользователям и их данным без прямого доступа к БД. */
   const {
     userRepository,
     repositoryFor,
@@ -55,7 +78,7 @@ export const registerAuthRoutes = (
     requireAdmin,
   } = dependencies;
   app.get("/auth/status", async (context) => {
-    // Возвращаем состояние входа и безопасные сведения о текущем пользователе.
+    /** Возвращаем состояние входа и безопасные сведения о текущем пользователе. */
     const token = getCookie(context, sessionCookieName);
     const requiresLogin = await userRepository.hasPasswordUsers();
     const userId =
@@ -81,7 +104,7 @@ export const registerAuthRoutes = (
   app.get("/features", (context) => context.json({ attachmentsEnabled, projectArchivingEnabled }));
 
   app.post("/auth/login", async (context) => {
-    // Проверяем введённые данные и создаём сессию только после успешной проверки пароля.
+    /** Проверяем введённые данные и создаём сессию только после успешной проверки пароля. */
     const result = loginSchema.safeParse(await parseJson(context.req.raw));
     if (!result.success) {
       return context.json({ error: "Invalid username or password" }, 401);
@@ -114,7 +137,7 @@ export const registerAuthRoutes = (
   });
 
   app.post("/auth/logout", async (context) => {
-    // Отзываем сессию на сервере и очищаем cookie в браузере.
+    /** Отзываем сессию на сервере и очищаем cookie в браузере. */
     const token = getCookie(context, sessionCookieName);
 
     if (token !== undefined) {
@@ -131,7 +154,7 @@ export const registerAuthRoutes = (
   });
 
   app.get("/settings", async (context) => {
-    // Настройки читаются только из записи вошедшего пользователя.
+    /** Настройки читаются только из записи вошедшего пользователя. */
     const user = await userRepository.getById(context.get("userId"));
     if (user === null) return context.json({ error: "User not found" }, 404);
     context.header("Cache-Control", "no-store");
@@ -142,7 +165,7 @@ export const registerAuthRoutes = (
   });
 
   app.put("/settings", async (context) => {
-    // Валидируем обновление настроек до записи в пользовательское хранилище.
+    /** Валидируем обновление настроек до записи в пользовательское хранилище. */
     const result = updateSettingsSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -160,7 +183,7 @@ export const registerAuthRoutes = (
   });
 
   app.patch("/auth/account", async (context) => {
-    // Изменение собственных учётных данных не требует административной роли.
+    /** Изменение собственных учётных данных не требует административной роли. */
     const result = updateAccountSchema.safeParse(await parseJson(context.req.raw));
     if (!result.success) return context.json({ error: "Invalid account payload" }, 400);
     const userId = context.get("userId");
@@ -179,13 +202,13 @@ export const registerAuthRoutes = (
   });
 
   app.get("/users", async (context) => {
-    // Список пользователей доступен только администратору.
+    /** Список пользователей доступен только администратору. */
     if (!context.get("authenticated") || !(await requireAdmin(context.get("userId"))))
       return context.json({ error: "Administrator access required" }, 403);
     return context.json({ users: await userRepository.list() });
   });
   app.post("/users", async (context) => {
-    // Администратор создаёт пользователя с проверенными данными и хешем пароля.
+    /** Администратор создаёт пользователя с проверенными данными и хешем пароля. */
     const administrator = await userRepository.getById(context.get("userId"));
     if (!context.get("authenticated") || administrator?.isAdmin !== true)
       return context.json({ error: "Administrator access required" }, 403);
@@ -205,7 +228,7 @@ export const registerAuthRoutes = (
     }
   });
   app.patch("/users/:id", async (context) => {
-    // Разрешаем менять только поля, предусмотренные схемой обновления пользователя.
+    /** Разрешаем менять только поля, предусмотренные схемой обновления пользователя. */
     if (!context.get("authenticated") || !(await requireAdmin(context.get("userId"))))
       return context.json({ error: "Administrator access required" }, 403);
     const result = updateUserSchema.safeParse(await parseJson(context.req.raw));
@@ -235,7 +258,7 @@ export const registerAuthRoutes = (
     }
   });
   app.delete("/users/:id", async (context) => {
-    // Не позволяем администратору удалить собственную текущую учётную запись.
+    /** Не позволяем администратору удалить собственную текущую учётную запись. */
     if (!context.get("authenticated") || !(await requireAdmin(context.get("userId"))))
       return context.json({ error: "Administrator access required" }, 403);
     const userId = context.req.param("id");
@@ -259,7 +282,7 @@ export const registerAuthRoutes = (
     }),
   );
   app.put("/inbox/description", async (context) => {
-    // Описание Входящих сохраняется отдельно от списка задач пользователя.
+    /** Описание Входящих сохраняется отдельно от списка задач пользователя. */
     const result = inboxDescriptionSchema.safeParse(await parseJson(context.req.raw));
     if (!result.success) return context.json({ error: "Invalid Inbox description" }, 400);
     const user = await userRepository.getById(context.get("userId"));

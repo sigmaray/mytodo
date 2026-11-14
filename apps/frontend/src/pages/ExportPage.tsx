@@ -1,29 +1,62 @@
 import { ClipboardCopy, Download, Eye } from "lucide-react";
 
-/** Форматы, которые интерфейс предлагает для экспорта и предпросмотра данных. */
+/**
+ * Форматы, которые интерфейс предлагает для экспорта и предпросмотра данных.
+ *
+ * @typedef {"markdown" | "advancedMarkdown" | "json"} ExportKind
+ */
 export type ExportKind = "markdown" | "advancedMarkdown" | "json";
 
-/** Подписи и обработчики одной карточки формата экспорта. */
+/**
+ * @callback ExportFormatCardPropsOnDownload
+ * @returns {void}
+ */
+
+/**
+ * @callback ExportFormatCardPropsOnCopy
+ * @returns {void}
+ */
+
+/**
+ * @callback ExportFormatCardPropsOnPreview
+ * @returns {void}
+ */
+/**
+ * Подписи и обработчики одной карточки формата экспорта.
+ *
+ * @typedef {Object} ExportFormatCardProps
+ * @property {string} title - Данные «заголовок», используемые типом «ExportFormatCardProps».
+ * @property {string} description - Данные «описание», используемые типом «ExportFormatCardProps».
+ * @property {string} downloadLabel - Подпись кнопки скачивания.
+ * @property {string} copyLabel - Подпись кнопки копирования.
+ * @property {string} previewLabel - Подпись кнопки предпросмотра.
+ * @property {ExportFormatCardPropsOnDownload} onDownload - Скачивает данные в выбранном формате.
+ * @property {ExportFormatCardPropsOnCopy} onCopy - Копирует данные в буфер обмена.
+ * @property {ExportFormatCardPropsOnPreview} onPreview - Открывает предпросмотр данных.
+ */
 type ExportFormatCardProps = {
-  /** Название формата. */
   title: string;
-  /** Краткое описание содержимого файла. */
+
   description: string;
-  /** Подпись кнопки скачивания. */
+
   downloadLabel: string;
-  /** Подпись кнопки копирования. */
+
   copyLabel: string;
-  /** Подпись кнопки предпросмотра. */
+
   previewLabel: string;
-  /** Запускает сохранение файла. */
+
   onDownload: () => void;
-  /** Копирует данные в буфер обмена. */
+
   onCopy: () => void;
-  /** Открывает предпросмотр данных. */
+
   onPreview: () => void;
 };
 
-/** Отображает набор действий для одного формата экспорта. */
+/**
+ * Отображает набор действий для одного формата экспорта.
+ *
+ * @param {ExportFormatCardProps} parameter1
+ */
 const ExportFormatCard = ({
   title,
   description,
@@ -56,19 +89,47 @@ const ExportFormatCard = ({
   </section>
 );
 
-/** Статус копирования и действия для экспорта всех данных. */
+/**
+ * @callback ExportPagePropsOnExport
+ * @param {ExportKind} kind
+ * @returns {void}
+ */
+
+/**
+ * @callback ExportPagePropsOnCopy
+ * @param {ExportKind} kind
+ * @returns {void}
+ */
+
+/**
+ * @callback ExportPagePropsOnPreview
+ * @param {ExportKind} kind
+ * @returns {void}
+ */
+/**
+ * Статус копирования и действия для экспорта всех данных.
+ *
+ * @typedef {Object} ExportPageProps
+ * @property {string} copyStatus - Результат последней операции копирования.
+ * @property {ExportPagePropsOnExport} onExport - Запускает экспорт данных.
+ * @property {ExportPagePropsOnCopy} onCopy - Копирует экспорт в буфер обмена.
+ * @property {ExportPagePropsOnPreview} onPreview - Показывает предпросмотр экспорта.
+ */
 export type ExportPageProps = {
-  /** Сообщение об успешном копировании или пустая строка. */
   copyStatus: string;
-  /** Скачивает данные в указанном формате. */
+
   onExport: (kind: ExportKind) => void;
-  /** Копирует данные указанного формата. */
+
   onCopy: (kind: ExportKind) => void;
-  /** Показывает предпросмотр выбранного формата. */
+
   onPreview: (kind: ExportKind) => void;
 };
 
-/** Показывает доступные форматы полного экспорта и их действия. */
+/**
+ * Показывает доступные форматы полного экспорта и их действия.
+ *
+ * @param {ExportPageProps} parameter1
+ */
 export const ExportPage = ({ copyStatus, onExport, onCopy, onPreview }: ExportPageProps) => (
   <section className="export-page" aria-label="Export data">
     <ExportFormatCard

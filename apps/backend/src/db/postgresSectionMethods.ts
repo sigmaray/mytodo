@@ -6,7 +6,14 @@ import type { TaskRepository } from "../repository";
 import { firstSection, nullableEq, sectionOrder, toSection } from "./postgresHelpers";
 import { projects as projectsTable, sections as sectionsTable } from "./schema";
 
-/** Создаёт операции с секциями, ограниченные владельцем репозитория. */
+/**
+ * Создаёт операции с секциями, ограниченные владельцем репозитория.
+ *
+ * @param {ReturnType<typeof drizzle>} db
+ * @param {postgres.Sql} client
+ * @param {string} userId
+ * @returns {Pick< TaskRepository, "listSections" | "reorderSection" | "createSection" | "updateSection" | "deleteSection" >}
+ */
 export const createPostgresSectionMethods = (
   db: ReturnType<typeof drizzle>,
   client: postgres.Sql,

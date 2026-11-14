@@ -4,14 +4,24 @@ import postgres from "postgres";
 import type { PublicUser, UserRecord, UserRepository } from "../users";
 import { sessions, users } from "./schema";
 
-/** Убирает пароль и настройки из записи перед возвратом пользователя клиенту. */
+/**
+ * Убирает пароль и настройки из записи перед возвратом пользователя клиенту.
+ *
+ * @param {Pick<UserRecord, "id" | "username" | "isAdmin">} user
+ * @returns {PublicUser}
+ */
 const toPublicUser = (user: Pick<UserRecord, "id" | "username" | "isAdmin">): PublicUser => ({
   id: user.id,
   username: user.username,
   isAdmin: user.isAdmin,
 });
 
-/** Создаёт PostgreSQL-хранилище пользователей, паролей, настроек и сессий. */
+/**
+ * Создаёт PostgreSQL-хранилище пользователей, паролей, настроек и сессий.
+ *
+ * @param {string} databaseUrl
+ * @returns {UserRepository}
+ */
 export const createPostgresUserRepository = (databaseUrl: string): UserRepository => {
   const client = postgres(databaseUrl, { max: 10 });
   const db = drizzle(client);
@@ -67,14 +77,14 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
     },
     /** Обновляет поля пользователя и отзывает сессии при смене пароля. */
     update: async (id, patch) => {
-      // Хеш пароля записывается отдельно от остальных изменяемых публичных полей.
+      /** Хеш пароля записывается отдельно от остальных изменяемых публичных полей. */
       const { passwordHash, ...publicPatch } = patch;
       const rows = await db
         .update(users)
         .set({ ...publicPatch, passwordHash })
         .where(eq(users.id, id))
         .returning({ id: users.id, username: users.username, isAdmin: users.isAdmin });
-      // Отзываем сессии только при смене пароля, чтобы обычные правки имени не разлогинивали.
+      /** Отзываем сессии только при смене пароля, чтобы обычные правки имени не разлогинивали. */
       if (passwordHash !== undefined) await db.delete(sessions).where(eq(sessions.userId, id));
       const row = rows[0];
       return row === undefined ? null : toPublicUser(row);
@@ -92,7 +102,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
     /** Удаляет принадлежащие пользователю данные и аккаунт в одной транзакции. */
     delete: async (id) =>
       client.begin(async (transaction) => {
-        // Удаление выполняется транзакционно, чтобы не оставить связанные данные при частичном сбое.
+        /** Удаление выполняется транзакционно, чтобы не оставить связанные данные при частичном сбое. */
         await transaction`DELETE FROM tasks WHERE user_id = ${id}`;
         await transaction`DELETE FROM sections WHERE user_id = ${id}`;
         await transaction`DELETE FROM projects WHERE user_id = ${id}`;

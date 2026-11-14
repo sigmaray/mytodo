@@ -6,15 +6,25 @@ import type { ApplicationApi } from "../api";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 
-/** API и общая навигация страницы пользовательских настроек. */
+/**
+ * API и общая навигация страницы пользовательских настроек.
+ *
+ * @typedef {Object} SettingsPageProps
+ * @property {ApplicationApi} api - Набор API-операций для серверных данных.
+ * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ */
 type SettingsPageProps = {
-  /** Клиент для чтения и изменения настроек и аккаунта. */
   api: ApplicationApi;
-  /** Sidebar приложения, отображаемый рядом с содержимым. */
+
   sidebar?: ReactNode;
 };
 
-/** Позволяет изменить пользовательские предпочтения, учётные данные и завершить сессию. */
+/**
+ * Позволяет изменить пользовательские предпочтения, учётные данные и завершить сессию.
+ *
+ * @param {SettingsPageProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   useQuickAddShortcut();
   const queryClient = useQueryClient();
@@ -24,7 +34,7 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   useEffect(() => {
-    // Серверные данные задают исходные значения формы после загрузки или смены пользователя.
+    /** Серверные данные задают исходные значения формы после загрузки или смены пользователя. */
     if (settings.data !== undefined) {
       setConfirmDelete(settings.data.confirmDelete);
       setAccountUsername(settings.data.username);
@@ -50,7 +60,9 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
     },
   });
 
-  /** Завершает текущую сессию и обновляет состояние аутентификации в кэше. */
+  /**
+   * Завершает текущую сессию и обновляет состояние аутентификации в кэше.
+   */
   const logOut = async () => {
     await api.logout();
     await queryClient.invalidateQueries({ queryKey: authStatusQueryKey });
@@ -121,7 +133,7 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
                 className="settings-credentials"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  // Пустой пароль исключается из patch, чтобы сохранить текущий пароль.
+                  /** Пустой пароль исключается из patch, чтобы сохранить текущий пароль. */
                   updateAccount.mutate({
                     username: accountUsername.trim().toLowerCase(),
                     ...(accountPassword.length > 0 ? { password: accountPassword } : {}),

@@ -4,15 +4,25 @@ import { useEffect, useState } from "react";
 import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 
-/** API и sidebar страницы администрирования учётных записей. */
+/**
+ * API и sidebar страницы администрирования учётных записей.
+ *
+ * @typedef {Object} AdminUsersPageProps
+ * @property {ApplicationApi} api - Набор API-операций для серверных данных.
+ * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ */
 type AdminUsersPageProps = {
-  /** Выполняет административные операции с пользователями. */
   api: ApplicationApi;
-  /** Sidebar приложения, отображаемый рядом с таблицей пользователей. */
+
   sidebar?: ReactNode;
 };
 
-/** Позволяет администратору создавать, менять и удалять учётные записи. */
+/**
+ * Позволяет администратору создавать, менять и удалять учётные записи.
+ *
+ * @param {AdminUsersPageProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
   const queryClient = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
@@ -22,18 +32,23 @@ export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
   const [userDrafts, setUserDrafts] = useState<
     Record<
       string,
+      /**
+       * Поля этой структуры:
+       * - `username`: Черновое имя входа строки пользователя.
+       * - `password`: Новый пароль или пустая строка для сохранения текущего.
+       * - `isAdmin`: Черновое значение административной роли.
+       */
       {
-        /** Черновое имя входа строки пользователя. */
         username: string;
-        /** Новый пароль или пустая строка для сохранения текущего. */
+
         password: string;
-        /** Черновое значение административной роли. */
+
         isAdmin: boolean;
       }
     >
   >({});
   useEffect(() => {
-    // Создаём отдельные редактируемые черновики для каждой строки пользователя.
+    /** Создаём отдельные редактируемые черновики для каждой строки пользователя. */
     if (users.data !== undefined)
       setUserDrafts(
         Object.fromEntries(
@@ -45,7 +60,9 @@ export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
       );
   }, [users.data]);
 
-  // Инвалидация обновляет и таблицу аккаунтов, и статус текущего пользователя.
+  /**
+   * Инвалидация обновляет и таблицу аккаунтов, и статус текущего пользователя.
+   */
   const refreshUsers = async () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["users"] }),
@@ -87,7 +104,7 @@ export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
             className="settings-credentials"
             onSubmit={(event) => {
               event.preventDefault();
-              // Нормализуем имя при отправке, чтобы уникальность не зависела от регистра.
+              /** Нормализуем имя при отправке, чтобы уникальность не зависела от регистра. */
               createUser.mutate({
                 username: newUsername.trim().toLowerCase(),
                 password: newPassword,
@@ -152,7 +169,7 @@ export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
                   key={user.id}
                   onSubmit={(event) => {
                     event.preventDefault();
-                    // Пустой пароль означает, что пароль аккаунта оставляют без изменений.
+                    /** Пустой пароль означает, что пароль аккаунта оставляют без изменений. */
                     updateUser.mutate({
                       id: user.id,
                       patch: {
@@ -209,13 +226,13 @@ export const AdminUsersPage = ({ api, sidebar }: AdminUsersPageProps) => {
                   <button type="submit" disabled={updateUser.isPending}>
                     Save
                   </button>
-                  {/* Не позволяет удалить последнюю административную учётную запись. */}
+                  {/** Не позволяет удалить последнюю административную учётную запись. */}
                   <button
                     type="button"
                     className="danger"
                     disabled={deleteUser.isPending || (user.isAdmin && adminCount < 2)}
                     onClick={() => {
-                      // Подтверждение требуется до каскадного удаления пользовательских данных.
+                      /** Подтверждение требуется до каскадного удаления пользовательских данных. */
                       if (window.confirm(`Delete user ${user.username} and all their task data?`))
                         deleteUser.mutate(user.id);
                     }}

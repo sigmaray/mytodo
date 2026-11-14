@@ -38,7 +38,11 @@ const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 /** Позиция прокрутки sidebar, сохраняемая при переходах между страницами. */
 let rememberedSidebarScrollTop = 0;
 
-/** Восстанавливает прокрутку панели навигации и запоминает её при изменении. */
+/**
+ * Восстанавливает прокрутку панели навигации и запоминает её при изменении.
+ *
+ * @returns Результат выполнения функции.
+ */
 const useSidebarScrollPosition = () => {
   const sidebarRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -50,41 +54,115 @@ const useSidebarScrollPosition = () => {
   return { ref: sidebarRef, onScroll: rememberScroll };
 };
 
-/** Навигационные данные и обработчики sidebar общего workspace. */
+/**
+ * @callback AppSidebarPropsOnInboxSelect
+ * @returns {void}
+ */
+
+/**
+ * @callback AppSidebarPropsOnProjectSelect
+ * @param {ProjectId} projectId
+ * @returns {void}
+ */
+
+/**
+ * @callback AppSidebarPropsOnTaskSelect
+ * @param {Task} task
+ * @returns {void}
+ */
+
+/**
+ * @callback AppSidebarPropsOnAddTask
+ * @returns {void}
+ */
+
+/**
+ * @callback AppSidebarPropsIsProjectDropActive
+ * @param {ProjectId | null} projectId
+ * @returns {boolean}
+ */
+
+/**
+ * @callback AppSidebarPropsOnProjectDragEnter
+ * @param {ProjectId} projectId
+ * @returns {React.DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback AppSidebarPropsOnProjectDragOver
+ * @param {ProjectId} projectId
+ * @returns {React.DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback AppSidebarPropsOnProjectDragLeave
+ * @param {ProjectId} projectId
+ * @returns {React.DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback AppSidebarPropsOnProjectDrop
+ * @param {ProjectId} projectId
+ * @returns {React.DragEventHandler<HTMLElement>}
+ */
+/**
+ * Навигационные данные и обработчики sidebar общего workspace.
+ *
+ * @typedef {Object} AppSidebarProps
+ * @property {ApplicationApi | null} api - Набор API-операций для серверных данных.
+ * @property {ProjectId | null} [selectedProjectId] - Данные «выбранные проект id», используемые типом «AppSidebarProps».
+ * @property {AppSidebarPropsOnInboxSelect} [onInboxSelect] - Переходит во Входящие.
+ * @property {AppSidebarPropsOnProjectSelect} [onProjectSelect] - Открывает проект.
+ * @property {AppSidebarPropsOnTaskSelect} [onTaskSelect] - Выбирает задачу.
+ * @property {AppSidebarPropsOnAddTask} [onAddTask] - Добавляет задачу.
+ * @property {AppSidebarPropsIsProjectDropActive} [isProjectDropActive] - Признак, что проект является активной целью перетаскивания.
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragEnter] - Обработчик события «Входящие drag enter».
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragOver] - Обработчик события «Входящие drag over».
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragLeave] - Обработчик события «Входящие drag leave».
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDrop] - Обработчик события «Входящие удаление».
+ * @property {AppSidebarPropsOnProjectDragEnter} [onProjectDragEnter] - Обрабатывает наведение при перетаскивании проекта.
+ * @property {AppSidebarPropsOnProjectDragOver} [onProjectDragOver] - Обновляет целевую область проекта при перетаскивании.
+ * @property {AppSidebarPropsOnProjectDragLeave} [onProjectDragLeave] - Сбрасывает состояние наведения проекта.
+ * @property {AppSidebarPropsOnProjectDrop} [onProjectDrop] - Обрабатывает сброс проекта.
+ */
 type AppSidebarProps = {
-  /** API-клиент или `null`, если действия приложения отключены. */
   api: ApplicationApi | null;
-  /** Выбранный проект для подсветки текущего маршрута. */
+
   selectedProjectId?: ProjectId | null;
-  /** Открывает страницу Входящих. */
+
   onInboxSelect?: () => void;
-  /** Открывает выбранный проект. */
+
   onProjectSelect?: (projectId: ProjectId) => void;
-  /** Открывает задачу, выбранную через навигационную панель. */
+
   onTaskSelect?: (task: Task) => void;
-  /** Открывает создание задачи. */
+
   onAddTask?: () => void;
-  /** Проверяет, подсвечивается ли проект как цель сброса. */
+
   isProjectDropActive?: (projectId: ProjectId | null) => boolean;
-  /** Обработчик входа курсора в зону Входящих. */
+
   onInboxDragEnter?: React.DragEventHandler<HTMLElement>;
-  /** Обработчик перемещения курсора над зоной Входящих. */
+
   onInboxDragOver?: React.DragEventHandler<HTMLElement>;
-  /** Обработчик выхода курсора из зоны Входящих. */
+
   onInboxDragLeave?: React.DragEventHandler<HTMLElement>;
-  /** Обработчик сброса задачи во Входящие. */
+
   onInboxDrop?: React.DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик входа в зону проекта. */
+
   onProjectDragEnter?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик перемещения курсора над проектом. */
+
   onProjectDragOver?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик выхода курсора из проекта. */
+
   onProjectDragLeave?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик сброса задачи в проект. */
+
   onProjectDrop?: (projectId: ProjectId) => React.DragEventHandler<HTMLElement>;
 };
 
-/** Отображает навигацию, поиск, Inbox и дерево проектов. */
+/**
+ * Отображает навигацию, поиск, Inbox и дерево проектов.
+ *
+ * @param {AppSidebarProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const AppSidebar = ({
   api,
   selectedProjectId = null,
@@ -163,7 +241,7 @@ export const AppSidebar = ({
   useEffect(() => {
     if (openProjectMenuId === null) return;
     const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
-      // Проверяем ближайший контейнер меню, чтобы клики по его кнопкам не закрывали его заранее.
+      /** Проверяем ближайший контейнер меню, чтобы клики по его кнопкам не закрывали его заранее. */
       if (event.target instanceof Element && event.target.closest(".project-menu") === null)
         setOpenProjectMenuId(null);
     };
@@ -178,7 +256,7 @@ export const AppSidebar = ({
     };
   }, [openProjectMenuId]);
 
-  // Вычисляем навигационный раздел для активной подсветки ссылок sidebar.
+  /** Вычисляем навигационный раздел для активной подсветки ссылок sidebar. */
   const activePage = location.pathname.startsWith("/tools")
     ? "tools"
     : location.pathname.startsWith("/settings")
@@ -200,7 +278,7 @@ export const AppSidebar = ({
                     : "";
   const handleTaskSelect = (task: Task) => {
     closeSidebar();
-    // Встраивание может обработать задачу самостоятельно; иначе открываем её через deep link.
+    /** Встраивание может обработать задачу самостоятельно; иначе открываем её через deep link. */
     if (onTaskSelect !== undefined) onTaskSelect(task);
     else navigate(`/?task=${encodeURIComponent(task.id)}`);
   };

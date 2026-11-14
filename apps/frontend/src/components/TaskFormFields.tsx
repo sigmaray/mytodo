@@ -4,31 +4,60 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toLocalIsoDate } from "../dateUtils";
 
-/** Параметры textarea, автоматически подстраивающей высоту под содержимое. */
+/**
+ * @callback AutoGrowTextareaPropsOnChange
+ * @param {string} value
+ * @returns {void}
+ */
+
+/**
+ * @callback AutoGrowTextareaPropsOnKeyDown
+ * @param {KeyboardEvent<HTMLTextAreaElement>} event
+ * @returns {void}
+ */
+/**
+ * Параметры textarea, автоматически подстраивающей высоту под содержимое.
+ *
+ * @typedef {Object} AutoGrowTextareaProps
+ * @property {string} value - Данные «value», используемые типом «AutoGrowTextareaProps».
+ * @property {AutoGrowTextareaPropsOnChange} onChange - Обрабатывает изменение поля.
+ * @property {string} ariaLabel - Доступное имя элемента интерфейса.
+ * @property {string} [id] - Идентификатор сущности, с которой работает модуль.
+ * @property {string} [placeholder] - Подсказка внутри поля ввода.
+ * @property {boolean} [autoFocus] - Переводит фокус в поле после отображения.
+ * @property {boolean} [required] - Признак обязательного поля.
+ * @property {string} [className] - Дополнительные CSS-классы элемента.
+ * @property {AutoGrowTextareaPropsOnKeyDown} [onKeyDown] - Обрабатывает нажатия клавиш.
+ * @property {React.ClipboardEventHandler<HTMLTextAreaElement>} [onPaste] - Обработчик события «paste».
+ */
 export type AutoGrowTextareaProps = {
-  /** Текст, отображаемый в поле. */
   value: string;
-  /** Передаёт новое значение форме-владельцу. */
+
   onChange: (value: string) => void;
-  /** Доступное имя поля для вспомогательных технологий. */
+
   ariaLabel: string;
-  /** DOM ID поля для связи с подписью. */
+
   id?: string;
-  /** Подсказка, отображаемая до ввода текста. */
+
   placeholder?: string;
-  /** Переводит фокус в поле после монтирования. */
+
   autoFocus?: boolean;
-  /** Делает поле обязательным в нативной форме. */
+
   required?: boolean;
-  /** Дополнительные CSS-классы. */
+
   className?: string;
-  /** Обработчик клавиатурных событий textarea. */
+
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
-  /** Обработчик вставки содержимого из буфера обмена. */
+
   onPaste?: React.ClipboardEventHandler<HTMLTextAreaElement>;
 };
 
-/** Отрисовывает textarea, высота которой следует за размером введённого текста. */
+/**
+ * Отрисовывает textarea, высота которой следует за размером введённого текста.
+ *
+ * @param {AutoGrowTextareaProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const AutoGrowTextarea = ({
   value,
   onChange,
@@ -42,7 +71,9 @@ export const AutoGrowTextarea = ({
   onPaste,
 }: AutoGrowTextareaProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Перед измерением сбрасываем прежнюю высоту, чтобы поле могло уменьшиться вместе с текстом.
+  /**
+   * Перед измерением сбрасываем прежнюю высоту, чтобы поле могло уменьшиться вместе с текстом.
+   */
   const resize = () => {
     const textarea = textareaRef.current;
     if (textarea === null) return;
@@ -75,25 +106,51 @@ export const AutoGrowTextarea = ({
   );
 };
 
-/** Входные данные и обработчики выбора меток. */
+/**
+ * @callback LabelPickerPropsOnInputChange
+ * @param {string} value
+ * @returns {void}
+ */
+
+/**
+ * @callback LabelPickerPropsOnChange
+ * @param {Array<string>} labels
+ * @returns {void | Promise<unknown>}
+ */
+/**
+ * Входные данные и обработчики выбора меток.
+ *
+ * @typedef {Object} LabelPickerProps
+ * @property {Array<string>} selected - Список выбранные.
+ * @property {Array<string>} options - Настройки, с которыми создаётся компонент.
+ * @property {string} inputLabel - Подпись поля ввода.
+ * @property {string} inputValue - Текущее значение поля ввода.
+ * @property {LabelPickerPropsOnInputChange} onInputChange - Обрабатывает изменение текста ввода.
+ * @property {LabelPickerPropsOnChange} onChange - Обрабатывает изменение поля.
+ * @property {boolean} [autoFocus] - Переводит фокус в поле после отображения.
+ */
 type LabelPickerProps = {
-  /** Уже выбранные метки. */
   selected: Array<string>;
-  /** Известные приложению метки для подсказок. */
+
   options: Array<string>;
-  /** Доступное имя текстового поля. */
+
   inputLabel: string;
-  /** Текущий текст поиска или новой метки. */
+
   inputValue: string;
-  /** Обновляет значение текстового поля. */
+
   onInputChange: (value: string) => void;
-  /** Сохраняет новый массив выбранных меток. */
+
   onChange: (labels: Array<string>) => void | Promise<unknown>;
-  /** Фокусирует поле сразу после показа компонента. */
+
   autoFocus?: boolean;
 };
 
-/** Удаляет пробелы по краям и дубли меток без учёта регистра. */
+/**
+ * Удаляет пробелы по краям и дубли меток без учёта регистра.
+ *
+ * @param {Array<string>} labels
+ * @returns {Array<string>}
+ */
 export const normalizeLabels = (labels: Array<string>): Array<string> =>
   labels.reduce<Array<string>>((result, label) => {
     const normalized = label.trim();
@@ -102,7 +159,12 @@ export const normalizeLabels = (labels: Array<string>): Array<string> =>
       : result;
   }, []);
 
-/** Позволяет редактировать метки и откатывает локальное изменение при ошибке сохранения. */
+/**
+ * Позволяет редактировать метки и откатывает локальное изменение при ошибке сохранения.
+ *
+ * @param {LabelPickerProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const LabelPicker = ({
   selected,
   options,
@@ -119,20 +181,24 @@ export const LabelPicker = ({
   useLayoutEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
-  // Обновление показывается сразу, но при ошибке API выбор восстанавливается.
+  /**
+   * Обновление показывается сразу, но при ошибке API выбор восстанавливается.
+   *
+   * @param {Array<string>} labels
+   */
   const commit = async (labels: Array<string>) => {
-    // Нормализация исключает пустые и регистронезависимые дубли до записи.
+    /** Нормализация исключает пустые и регистронезависимые дубли до записи. */
     const next = normalizeLabels(labels);
     setCurrent(next);
     try {
       await onChange(next);
     } catch {
-      // Если API отказал, восстанавливаем последнее подтверждённое значение props.
+      /** Если API отказал, восстанавливаем последнее подтверждённое значение props. */
       setCurrent(selected);
     }
   };
   const addLabel = async (label: string) => {
-    // Очищаем поле и подсказки сразу, а запрос отправляем только для новой метки.
+    /** Очищаем поле и подсказки сразу, а запрос отправляем только для новой метки. */
     const next = normalizeLabels([...current, label]);
     onInputChange("");
     setFocused(false);
@@ -150,7 +216,7 @@ export const LabelPicker = ({
       onInputChange(value);
       return;
     }
-    // Запятая завершает одну или несколько меток; последний фрагмент остаётся черновиком.
+    /** Запятая завершает одну или несколько меток; последний фрагмент остаётся черновиком. */
     const pieces = value.split(",");
     const next = normalizeLabels([...current, ...pieces.slice(0, -1)]);
     if (next.length !== current.length) void commit(next);
@@ -225,41 +291,68 @@ export const LabelPicker = ({
   );
 };
 
-/** День и признаки его положения для ячейки календарной сетки. */
+/**
+ * День и признаки его положения для ячейки календарной сетки.
+ *
+ * @typedef {Object} CalendarDay
+ * @property {string} date - Дата календарного дня.
+ * @property {number} day - Номер дня месяца.
+ * @property {boolean} isCurrentMonth - Признак: is текущие месяц.
+ * @property {boolean} isToday - Признак: is today.
+ * @property {boolean} isWeekend - Признак: is weekend.
+ */
 type CalendarDay = {
-  /** ISO-дата, используемая для выбора дня. */
   date: string;
-  /** Номер календарного дня. */
+
   day: number;
-  /** Находится ли дата в отображаемом месяце. */
+
   isCurrentMonth: boolean;
-  /** Совпадает ли дата с сегодняшним локальным днём. */
+
   isToday: boolean;
-  /** Попадает ли дата на субботу или воскресенье. */
+
   isWeekend: boolean;
 };
 
 /** Краткие подписи календарной сетки, начиная с понедельника. */
 export const calendarWeekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-/** Преобразует ISO-месяц `YYYY-MM` в числовые компоненты. */
+/**
+ * Преобразует ISO-месяц `YYYY-MM` в числовые компоненты.
+ *
+ * @param {string} month
+ */
 const calendarMonthParts = (month: string) => ({
   year: Number(month.slice(0, 4)),
   monthIndex: Number(month.slice(5, 7)) - 1,
 });
 
-/** Форматирует UTC дату как ISO-строку календарного дня. */
+/**
+ * Форматирует UTC дату как ISO-строку календарного дня.
+ *
+ * @param {Date} date
+ */
 const isoDateFromUtc = (date: Date) =>
   `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
 
-/** Сдвигает месяц вперёд или назад на указанное число месяцев. */
+/**
+ * Сдвигает месяц вперёд или назад на указанное число месяцев.
+ *
+ * @param {string} month
+ * @param {number} amount
+ * @returns Результат выполнения функции.
+ */
 export const shiftCalendarMonth = (month: string, amount: number) => {
   const { year, monthIndex } = calendarMonthParts(month);
   const shifted = new Date(Date.UTC(year, monthIndex + amount, 1));
   return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
-/** Формирует локализованную подпись месяца для календарного заголовка. */
+/**
+ * Формирует локализованную подпись месяца для календарного заголовка.
+ *
+ * @param {string} month
+ * @returns Результат выполнения функции.
+ */
 export const calendarMonthLabel = (month: string) => {
   const { year, monthIndex } = calendarMonthParts(month);
   return new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString(undefined, {
@@ -269,10 +362,15 @@ export const calendarMonthLabel = (month: string) => {
   });
 };
 
-/** Создаёт сетку из шести недель и дополняет месяц днями соседних месяцев. */
+/**
+ * Создаёт сетку из шести недель и дополняет месяц днями соседних месяцев.
+ *
+ * @param {string} month
+ * @returns {Array<CalendarDay>}
+ */
 export const buildCalendarDays = (month: string): Array<CalendarDay> => {
   const { year, monthIndex } = calendarMonthParts(month);
-  // Смещаем первую колонку на понедельник, а даты считаем в UTC без локального DST-сдвига.
+  /** Смещаем первую колонку на понедельник, а даты считаем в UTC без локального DST-сдвига. */
   const firstDay = new Date(Date.UTC(year, monthIndex, 1));
   const mondayOffset = (firstDay.getUTCDay() + 6) % 7;
   const today = toLocalIsoDate(new Date());
@@ -290,7 +388,12 @@ export const buildCalendarDays = (month: string): Array<CalendarDay> => {
   });
 };
 
-/** Преобразует быстрый выбор даты в ISO-дату для поля срока задачи. */
+/**
+ * Преобразует быстрый выбор даты в ISO-дату для поля срока задачи.
+ *
+ * @param {"Today" | "Tomorrow" | "This weekend" | "Next week"} shortcut
+ * @returns Результат выполнения функции.
+ */
 const getDateShortcut = (shortcut: "Today" | "Tomorrow" | "This weekend" | "Next week") => {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -300,26 +403,41 @@ const getDateShortcut = (shortcut: "Today" | "Tomorrow" | "This weekend" | "Next
   return toLocalIsoDate(date);
 };
 
-/** Показывает быстрые варианты срока и календарь для выбора даты задачи. */
+/**
+ * Показывает быстрые варианты срока и календарь для выбора даты задачи.
+ *
+ * @param {{ value: string; onChange: (value: string) => void; inputLabel: string; autoFocus?: boolean; }} parameter1
+ * @param {string} parameter1.value - Выбранный срок в ISO-формате или пустая строка.
+ * @param {(value: string) => void} parameter1.onChange - Передаёт новую дату владельцу формы.
+ * @param {string} parameter1.inputLabel - Доступное имя поля выбора даты.
+ * @param {boolean} parameter1.autoFocus - Переводит фокус на поле сразу после показа панели.
+ * @returns Результат выполнения функции.
+ */
 export const DatePickerPanel = ({
   value,
   onChange,
   inputLabel,
   autoFocus = false,
-}: {
-  /** Выбранный срок в ISO-формате или пустая строка. */
+}: /**
+ * Поля этой структуры:
+ * - `value`: Выбранный срок в ISO-формате или пустая строка.
+ * - `onChange`: Передаёт новую дату владельцу формы.
+ * - `inputLabel`: Доступное имя поля выбора даты.
+ * - `autoFocus`: Переводит фокус на поле сразу после показа панели.
+ */
+{
   value: string;
-  /** Передаёт новую дату владельцу формы. */
+
   onChange: (value: string) => void;
-  /** Доступное имя поля выбора даты. */
+
   inputLabel: string;
-  /** Переводит фокус на поле сразу после показа панели. */
+
   autoFocus?: boolean;
 }) => {
   const [month, setMonth] = useState(() => (value || getDateShortcut("Today")).slice(0, 7));
   const today = toLocalIsoDate(new Date());
   useEffect(() => {
-    // При внешнем изменении срока показываем месяц выбранной даты.
+    /** При внешнем изменении срока показываем месяц выбранной даты. */
     if (value) setMonth(value.slice(0, 7));
   }, [value]);
   const [yearText, monthText] = month.split("-");
@@ -334,7 +452,7 @@ export const DatePickerPanel = ({
   const firstDayOffset = (monthDate.getUTCDay() + 6) % 7;
   const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   const cellCount = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7;
-  // Сетка содержит только полные недели, чтобы колонки дней оставались выровненными.
+  /** Сетка содержит только полные недели, чтобы колонки дней оставались выровненными. */
   const days = Array.from({ length: cellCount }, (_, index) => {
     const day = index - firstDayOffset + 1;
     return day > 0 && day <= daysInMonth ? day : null;

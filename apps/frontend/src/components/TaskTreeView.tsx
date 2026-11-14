@@ -11,90 +11,178 @@ import type {
 import { isTaskDueToday, taskDueDateTone } from "../dateUtils";
 import { AutoGrowTextarea } from "./TaskFormFields";
 
-/** Положение перетаскиваемой задачи относительно другой строки дерева. */
+/**
+ * Положение перетаскиваемой задачи относительно другой строки дерева.
+ *
+ * @typedef {"before" | "inside" | "after" | "outdent"} DragPlacement
+ */
 type DragPlacement = "before" | "inside" | "after" | "outdent";
 
-/** Активная задача и вычисленное место, подсвечиваемое во время drag-and-drop. */
+/**
+ * Активная задача и вычисленное место, подсвечиваемое во время drag-and-drop.
+ *
+ * @typedef {Object} ActiveDragTarget
+ * @property {TaskId} taskId - Данные «задача id», используемые типом «ActiveDragTarget».
+ * @property {DragPlacement} placement - Позиция элемента в дереве или списке.
+ */
 export type ActiveDragTarget = {
-  /** Идентификатор задачи, над которой находится курсор. */
   taskId: TaskId;
-  /** Сторона сброса или вложение внутрь задачи. */
+
   placement: DragPlacement;
 };
 
-/** Рекурсивно отображает дерево задач и связывает элементы с действиями workspace. */
+/**
+ * Рекурсивно отображает дерево задач и связывает элементы с действиями workspace.
+ *
+ * @param {Array<TaskNode>} tasks
+ * @param {{ toggleTask: (task: TaskNode) => void; startEditing: (task: TaskNode) => void; openDetails: (task: TaskNode) => void; openContextMenu: (task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => void; selectionMode: boolean; attachmentsEnabled: boolean; selectedTaskIds: Array<TaskId>; toggleTaskSelection: (task: TaskNode) => void; deleteTask: (task: TaskNode) => void; startSubtask: (task: TaskNode) => void; submitSubtask: (task: TaskNode) => void; cancelSubtask: () => void; moveTaskOntoTask: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void; markDragTarget: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void; clearDragTarget: () => void; finishDragging: () => void; startDragging: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void; startMobileTaskDrag: (task: TaskNode) => (event: ReactPointerEvent<HTMLButtonElement>) => void; moveMobileDrag: (event: ReactPointerEvent<HTMLButtonElement>) => void; finishMobileDrag: (event: ReactPointerEvent<HTMLButtonElement>) => void; cancelMobileDrag: () => void; handleTaskKeys: (task: TaskNode) => (event: KeyboardEvent<HTMLElement>) => void; submitEdit: (task: TaskNode) => void; cancelEdit: () => void; editTaskId: string | null; editTitle: string; editPlacement: string; subtaskParentId: string | null; subtaskTitle: string; draggingTaskId: string | null; activeDragTarget: ActiveDragTarget | null; placementOptions: Array<{ value: string; label: string }>; setEditTitle: (title: string) => void; setEditPlacement: (placement: string) => void; setSubtaskTitle: (title: string) => void; }} actions
+ * @param {(task: TaskNode) => void} actions.toggleTask - Переключает состояние завершения задачи.
+ * @param {(task: TaskNode) => void} actions.startEditing - Открывает редактирование названия и размещения задачи.
+ * @param {(task: TaskNode) => void} actions.openDetails - Открывает подробности задачи.
+ * @param {(task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => void} actions.openContextMenu - Открывает меню действий у указателя.
+ * @param {boolean} actions.selectionMode - Включает множественный режим выбора строк.
+ * @param {boolean} actions.attachmentsEnabled - Разрешена ли загрузка вложений в приложении.
+ * @param {Array<TaskId>} actions.selectedTaskIds - Идентификаторы выбранных задач.
+ * @param {(task: TaskNode) => void} actions.toggleTaskSelection - Добавляет или убирает задачу из выбранных.
+ * @param {(task: TaskNode) => void} actions.deleteTask - Удаляет задачу и её потомков.
+ * @param {(task: TaskNode) => void} actions.startSubtask - Открывает форму подзадачи для указанной задачи.
+ * @param {(task: TaskNode) => void} actions.submitSubtask - Сохраняет вводимую подзадачу.
+ * @param {() => void} actions.cancelSubtask - Закрывает форму подзадачи без сохранения.
+ * @param {(task: TaskNode) => (event: DragEvent<HTMLElement>) => void} actions.moveTaskOntoTask - Обрабатывает HTML drag-and-drop сброс поверх задачи.
+ * @param {(task: TaskNode) => (event: DragEvent<HTMLElement>) => void} actions.markDragTarget - Отмечает позицию, на которую можно сбросить перетаскиваемую задачу.
+ * @param {() => void} actions.clearDragTarget - Снимает текущую подсветку места сброса.
+ * @param {() => void} actions.finishDragging - Завершает перетаскивание мышью.
+ * @param {(task: TaskNode) => (event: DragEvent<HTMLElement>) => void} actions.startDragging - Запускает перетаскивание мышью.
+ * @param {(task: TaskNode) => (event: ReactPointerEvent<HTMLButtonElement>) => void} actions.startMobileTaskDrag - Запускает мобильное перетаскивание через Pointer Events.
+ * @param {(event: ReactPointerEvent<HTMLButtonElement>) => void} actions.moveMobileDrag - Обновляет мобильную drop-zone при движении указателя.
+ * @param {(event: ReactPointerEvent<HTMLButtonElement>) => void} actions.finishMobileDrag - Завершает мобильный жест и выполняет назначенное перемещение.
+ * @param {() => void} actions.cancelMobileDrag - Отменяет незавершённый мобильный жест.
+ * @param {(task: TaskNode) => (event: KeyboardEvent<HTMLElement>) => void} actions.handleTaskKeys - Обрабатывает клавиатурные команды для строки задачи.
+ * @param {(task: TaskNode) => void} actions.submitEdit - Сохраняет изменения формы задачи.
+ * @param {() => void} actions.cancelEdit - Отменяет редактирование задачи.
+ * @param {string | null} actions.editTaskId - ID задачи, которая сейчас редактируется.
+ * @param {string} actions.editTitle - Текущее значение поля названия задачи.
+ * @param {string} actions.editPlacement - Текущий выбор проекта или секции формы редактирования.
+ * @param {string | null} actions.subtaskParentId - ID родителя открытой формы подзадачи.
+ * @param {string} actions.subtaskTitle - Текущее значение названия подзадачи.
+ * @param {string | null} actions.draggingTaskId - ID задачи, которую сейчас перетаскивают.
+ * @param {ActiveDragTarget | null} actions.activeDragTarget - Активная подсвеченная цель сброса.
+ * @param {Array<{ value: string; label: string }>} actions.placementOptions - Варианты мест, доступные в форме перемещения задачи.
+ * @param {(title: string) => void} actions.setEditTitle - Обновляет название в форме редактирования.
+ * @param {(placement: string) => void} actions.setEditPlacement - Обновляет целевой проект/секцию формы редактирования.
+ * @param {(title: string) => void} actions.setSubtaskTitle - Обновляет название новой подзадачи.
+ * @param [depth]
+ * @returns {ReactElement}
+ */
 export const renderTaskNodes = (
   tasks: Array<TaskNode>,
-  actions: {
-    /** Переключает состояние завершения задачи. */
+  actions: /**
+   * Поля этой структуры:
+   * - `toggleTask`: Переключает состояние завершения задачи.
+   * - `startEditing`: Открывает редактирование названия и размещения задачи.
+   * - `openDetails`: Открывает подробности задачи.
+   * - `openContextMenu`: Открывает меню действий у указателя.
+   * - `selectionMode`: Включает множественный режим выбора строк.
+   * - `attachmentsEnabled`: Разрешена ли загрузка вложений в приложении.
+   * - `selectedTaskIds`: Идентификаторы выбранных задач.
+   * - `toggleTaskSelection`: Добавляет или убирает задачу из выбранных.
+   * - `deleteTask`: Удаляет задачу и её потомков.
+   * - `startSubtask`: Открывает форму подзадачи для указанной задачи.
+   * - `submitSubtask`: Сохраняет вводимую подзадачу.
+   * - `cancelSubtask`: Закрывает форму подзадачи без сохранения.
+   * - `moveTaskOntoTask`: Обрабатывает HTML drag-and-drop сброс поверх задачи.
+   * - `markDragTarget`: Отмечает позицию, на которую можно сбросить перетаскиваемую задачу.
+   * - `clearDragTarget`: Снимает текущую подсветку места сброса.
+   * - `finishDragging`: Завершает перетаскивание мышью.
+   * - `startDragging`: Запускает перетаскивание мышью.
+   * - `startMobileTaskDrag`: Запускает мобильное перетаскивание через Pointer Events.
+   * - `moveMobileDrag`: Обновляет мобильную drop-zone при движении указателя.
+   * - `finishMobileDrag`: Завершает мобильный жест и выполняет назначенное перемещение.
+   * - `cancelMobileDrag`: Отменяет незавершённый мобильный жест.
+   * - `handleTaskKeys`: Обрабатывает клавиатурные команды для строки задачи.
+   * - `submitEdit`: Сохраняет изменения формы задачи.
+   * - `cancelEdit`: Отменяет редактирование задачи.
+   * - `editTaskId`: ID задачи, которая сейчас редактируется.
+   * - `editTitle`: Текущее значение поля названия задачи.
+   * - `editPlacement`: Текущий выбор проекта или секции формы редактирования.
+   * - `subtaskParentId`: ID родителя открытой формы подзадачи.
+   * - `subtaskTitle`: Текущее значение названия подзадачи.
+   * - `draggingTaskId`: ID задачи, которую сейчас перетаскивают.
+   * - `activeDragTarget`: Активная подсвеченная цель сброса.
+   * - `placementOptions`: Варианты мест, доступные в форме перемещения задачи.
+   * - `setEditTitle`: Обновляет название в форме редактирования.
+   * - `setEditPlacement`: Обновляет целевой проект/секцию формы редактирования.
+   * - `setSubtaskTitle`: Обновляет название новой подзадачи.
+   */
+  {
     toggleTask: (task: TaskNode) => void;
-    /** Открывает редактирование названия и размещения задачи. */
+
     startEditing: (task: TaskNode) => void;
-    /** Открывает подробности задачи. */
+
     openDetails: (task: TaskNode) => void;
-    /** Открывает меню действий у указателя. */
+
     openContextMenu: (task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => void;
-    /** Включает множественный режим выбора строк. */
+
     selectionMode: boolean;
-    /** Разрешена ли загрузка вложений в приложении. */
+
     attachmentsEnabled: boolean;
-    /** Идентификаторы выбранных задач. */
+
     selectedTaskIds: Array<TaskId>;
-    /** Добавляет или убирает задачу из выбранных. */
+
     toggleTaskSelection: (task: TaskNode) => void;
-    /** Удаляет задачу и её потомков. */
+
     deleteTask: (task: TaskNode) => void;
-    /** Открывает форму подзадачи для указанной задачи. */
+
     startSubtask: (task: TaskNode) => void;
-    /** Сохраняет вводимую подзадачу. */
+
     submitSubtask: (task: TaskNode) => void;
-    /** Закрывает форму подзадачи без сохранения. */
+
     cancelSubtask: () => void;
-    /** Обрабатывает HTML drag-and-drop сброс поверх задачи. */
+
     moveTaskOntoTask: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void;
-    /** Отмечает позицию, на которую можно сбросить перетаскиваемую задачу. */
+
     markDragTarget: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void;
-    /** Снимает текущую подсветку места сброса. */
+
     clearDragTarget: () => void;
-    /** Завершает перетаскивание мышью. */
+
     finishDragging: () => void;
-    /** Запускает перетаскивание мышью. */
+
     startDragging: (task: TaskNode) => (event: DragEvent<HTMLElement>) => void;
-    /** Запускает мобильное перетаскивание через Pointer Events. */
+
     startMobileTaskDrag: (task: TaskNode) => (event: ReactPointerEvent<HTMLButtonElement>) => void;
-    /** Обновляет мобильную drop-zone при движении указателя. */
+
     moveMobileDrag: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-    /** Завершает мобильный жест и выполняет назначенное перемещение. */
+
     finishMobileDrag: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-    /** Отменяет незавершённый мобильный жест. */
+
     cancelMobileDrag: () => void;
-    /** Обрабатывает клавиатурные команды для строки задачи. */
+
     handleTaskKeys: (task: TaskNode) => (event: KeyboardEvent<HTMLElement>) => void;
-    /** Сохраняет изменения формы задачи. */
+
     submitEdit: (task: TaskNode) => void;
-    /** Отменяет редактирование задачи. */
+
     cancelEdit: () => void;
-    /** ID задачи, которая сейчас редактируется. */
+
     editTaskId: string | null;
-    /** Текущее значение поля названия задачи. */
+
     editTitle: string;
-    /** Текущий выбор проекта или секции формы редактирования. */
+
     editPlacement: string;
-    /** ID родителя открытой формы подзадачи. */
+
     subtaskParentId: string | null;
-    /** Текущее значение названия подзадачи. */
+
     subtaskTitle: string;
-    /** ID задачи, которую сейчас перетаскивают. */
+
     draggingTaskId: string | null;
-    /** Активная подсвеченная цель сброса. */
+
     activeDragTarget: ActiveDragTarget | null;
-    /** Варианты мест, доступные в форме перемещения задачи. */
+
     placementOptions: Array<{ value: string; label: string }>;
-    /** Обновляет название в форме редактирования. */
+
     setEditTitle: (title: string) => void;
-    /** Обновляет целевой проект/секцию формы редактирования. */
+
     setEditPlacement: (placement: string) => void;
-    /** Обновляет название новой подзадачи. */
+
     setSubtaskTitle: (title: string) => void;
   },
   depth = 0,
@@ -125,7 +213,7 @@ export const renderTaskNodes = (
           onDrop={actions.moveTaskOntoTask(task)}
           onKeyDown={actions.handleTaskKeys(task)}
           onClick={() => {
-            // Клик по строке меняет выбор только в режиме массовых действий.
+            /** Клик по строке меняет выбор только в режиме массовых действий. */
             if (actions.selectionMode) actions.toggleTaskSelection(task);
           }}
           onContextMenu={actions.openContextMenu(task)}
@@ -142,13 +230,13 @@ export const renderTaskNodes = (
               className="edit-panel"
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
-                  // Escape закрывает встроенный редактор и не отправляет форму.
+                  /** Escape закрывает встроенный редактор и не отправляет форму. */
                   event.preventDefault();
                   actions.cancelEdit();
                 }
               }}
               onSubmit={(event) => {
-                // Запрещаем обычную навигацию формы и передаём сохранение action-хуку.
+                /** Запрещаем обычную навигацию формы и передаём сохранение action-хуку. */
                 event.preventDefault();
                 actions.submitEdit(task);
               }}
@@ -162,7 +250,7 @@ export const renderTaskNodes = (
                   onChange={actions.setEditTitle}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
-                      // Enter сохраняет название, а Shift+Enter позволяет перейти на новую строку.
+                      /** Enter сохраняет название, а Shift+Enter позволяет перейти на новую строку. */
                       event.preventDefault();
                       actions.submitEdit(task);
                     }
@@ -213,7 +301,7 @@ export const renderTaskNodes = (
                 className={task.completed ? "task-title completed" : "task-title"}
                 aria-pressed={actions.selectionMode ? actions.selectedTaskIds.includes(task.id) : undefined}
                 onClick={() => {
-                  // В режиме массового выбора заголовок не открывает боковую панель.
+                  /** В режиме массового выбора заголовок не открывает боковую панель. */
                   if (!actions.selectionMode) actions.openDetails(task);
                 }}
               >
@@ -298,7 +386,7 @@ export const renderTaskNodes = (
             className="subtask-form"
             style={{ marginLeft: `${depth * 1.25 + 2.1}rem` }}
             onSubmit={(event) => {
-              // Создание подзадачи обрабатывается без перезагрузки страницы.
+              /** Создание подзадачи обрабатывается без перезагрузки страницы. */
               event.preventDefault();
               actions.submitSubtask(task);
             }}
@@ -313,7 +401,7 @@ export const renderTaskNodes = (
               placeholder="Add a subtask"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
-                  // Сохраняем подзадачу по Enter и оставляем Shift+Enter для текста.
+                  /** Сохраняем подзадачу по Enter и оставляем Shift+Enter для текста. */
                   event.preventDefault();
                   actions.submitSubtask(task);
                 }

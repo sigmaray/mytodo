@@ -21,7 +21,14 @@ import {
   tasks as tasksTable,
 } from "./schema";
 
-/** Создаёт запросы задач и комментариев с изоляцией по UUID пользователя. */
+/**
+ * Создаёт запросы задач и комментариев с изоляцией по UUID пользователя.
+ *
+ * @param {ReturnType<typeof drizzle>} db
+ * @param {postgres.Sql} client
+ * @param {string} userId
+ * @returns {Pick<TaskRepository, "list" | "create" | "patch" | "addComment" | "move" | "delete">}
+ */
 export const createPostgresTaskMethods = (
   db: ReturnType<typeof drizzle>,
   client: postgres.Sql,

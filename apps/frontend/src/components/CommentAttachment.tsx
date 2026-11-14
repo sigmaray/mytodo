@@ -2,9 +2,9 @@ import type { Task } from "@todoist-clone/domain";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Расширения, для которых содержимое файла можно показать как текстовый предпросмотр.
+/** Расширения, для которых содержимое файла можно показать как текстовый предпросмотр. */
 const textPreviewExtensions = new Set([
-  // Только текстовые форматы показываются в pre, бинарные файлы остаются ссылками на скачивание.
+  /** Только текстовые форматы показываются в pre, бинарные файлы остаются ссылками на скачивание. */
   "md",
   "txt",
   "csv",
@@ -26,7 +26,12 @@ const textPreviewExtensions = new Set([
   "sh",
 ]);
 
-/** Форматирует размер файла в байтах, килобайтах, мегабайтах или гигабайтах. */
+/**
+ * Форматирует размер файла в байтах, килобайтах, мегабайтах или гигабайтах.
+ *
+ * @param {number} size
+ * @returns Результат выполнения функции.
+ */
 export const formatAttachmentSize = (size: number) => {
   if (size < 1024) return `${size} B`;
   const units = ["KB", "MB", "GB"];
@@ -39,7 +44,11 @@ export const formatAttachmentSize = (size: number) => {
   return `${Number(value.toFixed(1))} ${units[unitIndex]}`;
 };
 
-/** Преобразует поддерживаемый поднабор Markdown комментария в React-элементы. */
+/**
+ * Преобразует поддерживаемый поднабор Markdown комментария в React-элементы.
+ *
+ * @param {string} body
+ */
 export const renderCommentMarkdown = (body: string) =>
   body.split("\n").map((line, index) => {
     const heading = /^(#{1,3})\s+(.+)$/.exec(line);
@@ -71,7 +80,12 @@ export const renderCommentMarkdown = (body: string) =>
     return <p key={index}>{content}</p>;
   });
 
-/** Показывает вложение комментария и доступные операции с ним. */
+/**
+ * Показывает вложение комментария и доступные операции с ним.
+ *
+ * @param {{ attachment: NonNullable<Task["comments"][number]["attachments"]>[number]; onRemove?: () => void; }} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const CommentAttachment = ({
   attachment,
   onRemove,
@@ -90,16 +104,16 @@ export const CommentAttachment = ({
     attachment.mimeType === "application/json";
 
   useEffect(() => {
-    // Не загружаем содержимое, пока пользователь не открыл предпросмотр.
+    /** Не загружаем содержимое, пока пользователь не открыл предпросмотр. */
     if (!previewOpen || previewLoaded || previewError.length > 0) return;
     if (attachment.size > 512 * 1024) {
-      // Ограничение защищает браузер от загрузки больших файлов в DOM-предпросмотр.
+      /** Ограничение защищает браузер от загрузки больших файлов в DOM-предпросмотр. */
       setPreviewError("Preview is limited to files up to 512 KB.");
       return;
     }
     void fetch(`/attachments/${encodeURIComponent(attachment.id)}`)
       .then(async (response) => {
-        // HTTP-ошибка переводится в единое сообщение состояния предпросмотра.
+        /** HTTP-ошибка переводится в единое сообщение состояния предпросмотра. */
         if (!response.ok) throw new Error("Could not load preview.");
         return response.text();
       })

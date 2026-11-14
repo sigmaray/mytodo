@@ -1,11 +1,15 @@
 import { createE2eApi } from "./api";
 import { expect, test } from "./fixtures";
 
-// Преобразует дату в локальном часовом поясе в формат YYYY-MM-DD.
+/**
+ * Преобразует дату в локальном часовом поясе в формат YYYY-MM-DD.
+ *
+ * @param {Date} date
+ */
 const localIsoDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-// Календарь остаётся читабельным на мобильном экране и переносит задачи между датами.
+/** Календарь остаётся читабельным на мобильном экране и переносит задачи между датами. */
 test("month calendar stays readable on mobile and moves tasks between days", async ({ page }, testInfo) => {
   const request = page.request;
   const title = `Calendar task ${Date.now()}-${testInfo.workerIndex}`;
@@ -86,7 +90,7 @@ test("month calendar stays readable on mobile and moves tasks between days", asy
   }
 });
 
-// Вкладки списка дат показывают только задачи соответствующего временного диапазона.
+/** Вкладки списка дат показывают только задачи соответствующего временного диапазона. */
 test("Dates list tabs show only tasks in their date range", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const request = page.request;

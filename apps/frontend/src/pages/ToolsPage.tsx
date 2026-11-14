@@ -6,18 +6,28 @@ import type { ToolsApi } from "../api";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { tablesQueryKey } from "../queryKeys";
 
-/** API обслуживания базы и sidebar страницы инструментов. */
+/**
+ * API обслуживания базы и sidebar страницы инструментов.
+ *
+ * @typedef {Object} ToolsPageProps
+ * @property {ToolsApi} api - Набор API-операций для серверных данных.
+ * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ */
 type ToolsPageProps = {
-  /** Клиент административных запросов к backend. */
   api: ToolsApi;
-  /** Sidebar приложения, отображаемый рядом с инструментами. */
+
   sidebar?: ReactNode;
 };
 
 /** Ограничивает страницу инструментов средами разработки и тестирования. */
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
-/** Даёт администратору интерфейс просмотра таблиц, запросов и обслуживания базы. */
+/**
+ * Даёт администратору интерфейс просмотра таблиц, запросов и обслуживания базы.
+ *
+ * @param {ToolsPageProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
   useQuickAddShortcut();
   const [selectedTable, setSelectedTable] = useState("");
@@ -30,9 +40,13 @@ export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
     queryFn: api.listTables,
   });
 
-  /** Выполняет действие обслуживания и обновляет список таблиц после завершения. */
+  /**
+   * Выполняет действие обслуживания и обновляет список таблиц после завершения.
+   *
+   * @param {() => Promise<unknown>} action
+   */
   const runAction = (action: () => Promise<unknown>) => async () => {
-    // Отображаем результат операции и обновляем перечень таблиц после изменений базы.
+    /** Отображаем результат операции и обновляем перечень таблиц после изменений базы. */
     const data = await action();
 
     setResult(data);
@@ -58,7 +72,7 @@ export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
   });
 
   if (!toolsEnabled) {
-    // Не показываем инструменты в production даже при прямом переходе по URL.
+    /** Не показываем инструменты в production даже при прямом переходе по URL. */
     return (
       <main className="shell app-layout">
         {sidebar}

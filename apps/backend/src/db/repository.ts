@@ -6,7 +6,14 @@ import { createPostgresProjectMethods } from "./postgresProjectMethods";
 import { createPostgresSectionMethods } from "./postgresSectionMethods";
 import { createPostgresTaskMethods } from "./postgresTaskMethods";
 
-/** Создаёт PostgreSQL-репозиторий с методами работы с проектами, секциями и задачами. */
+/**
+ * Создаёт PostgreSQL-репозиторий с методами работы с проектами, секциями и задачами.
+ *
+ * @param {string} databaseUrl
+ * @param [userId]
+ * @param {postgres.Sql} [sharedClient]
+ * @returns {TaskRepository}
+ */
 export const createPostgresTaskRepository = (
   databaseUrl: string,
   userId = defaultAdminUserId,
@@ -22,11 +29,16 @@ export const createPostgresTaskRepository = (
   };
 };
 
-/** Создаёт фабрику репозиториев и переиспользует соединение для каждого пользователя. */
+/**
+ * Создаёт фабрику репозиториев и переиспользует соединение для каждого пользователя.
+ *
+ * @param {string} databaseUrl
+ * @returns Результат выполнения функции.
+ */
 export const createPostgresTaskRepositoryFactory = (databaseUrl: string) => {
   const sharedClient = postgres(databaseUrl, { max: 10 });
   let repositories = {} as Record<string, TaskRepository>;
-  // Кэшируем репозиторий по UUID, чтобы его методы всегда работали с тем же владельцем.
+  /** Кэшируем репозиторий по UUID, чтобы его методы всегда работали с тем же владельцем. */
   return (userId: string): TaskRepository => {
     const existing = repositories[userId];
     if (existing !== undefined) return existing;

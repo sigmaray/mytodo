@@ -1,6 +1,6 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-// Параметры scrypt задают вычислительную стоимость хеширования пароля.
+/** Параметры scrypt задают вычислительную стоимость хеширования пароля. */
 const scryptCost = 16_384;
 const scryptBlockSize = 8;
 const scryptParallelization = 1;
@@ -12,7 +12,12 @@ export const sessionCookieName = "todoist_session";
 /** Срок жизни сессии в секундах для cookie и записи в хранилище. */
 export const sessionLifetimeSeconds = sessionLifetimeMs / 1000;
 
-/** Асинхронно выводит ключ пароля заданной длины и параметров scrypt. */
+/**
+ * Асинхронно выводит ключ пароля заданной длины и параметров scrypt.
+ *
+ * @param {string} password
+ * @param {Buffer} salt
+ */
 const deriveKey = (password: string, salt: Buffer) =>
   new Promise<Buffer>((resolve, reject) => {
     scrypt(
@@ -24,7 +29,12 @@ const deriveKey = (password: string, salt: Buffer) =>
     );
   });
 
-/** Генерирует соль и возвращает запись хеша для последующей проверки пароля. */
+/**
+ * Генерирует соль и возвращает запись хеша для последующей проверки пароля.
+ *
+ * @param {string} password
+ * @returns Результат выполнения функции.
+ */
 export const hashPassword = async (password: string) => {
   const salt = randomBytes(16);
   const key = await deriveKey(password, salt);
@@ -32,12 +42,18 @@ export const hashPassword = async (password: string) => {
   return `scrypt$${scryptCost}$${scryptBlockSize}$${scryptParallelization}$${salt.toString("hex")}$${key.toString("hex")}`;
 };
 
-/** Сверяет пароль с сохранённым хешем постоянным по времени сравнением ключей. */
+/**
+ * Сверяет пароль с сохранённым хешем постоянным по времени сравнением ключей.
+ *
+ * @param {string} password
+ * @param {string} storedHash
+ * @returns Результат выполнения функции.
+ */
 export const verifyPassword = async (password: string, storedHash: string) => {
-  // Сначала отклоняем неизвестные алгоритмы и параметры формата хеша.
+  /** Сначала отклоняем неизвестные алгоритмы и параметры формата хеша. */
   const [algorithm, costText, blockSizeText, parallelizationText, saltText, keyText] = storedHash.split("$");
 
-  // Проверяем длину hex-полей перед преобразованием строки в байты.
+  /** Проверяем длину hex-полей перед преобразованием строки в байты. */
   if (
     algorithm !== "scrypt" ||
     costText !== String(scryptCost) ||
@@ -62,8 +78,14 @@ export const verifyPassword = async (password: string, storedHash: string) => {
   return timingSafeEqual(actual, expected);
 };
 
-/** Создаёт непредсказуемый токен, который сервер выдаёт клиенту как cookie. */
+/**
+ * Создаёт непредсказуемый токен, который сервер выдаёт клиенту как cookie.
+ */
 export const createSessionToken = () => randomBytes(32).toString("base64url");
 
-/** Хеширует токен перед сохранением, чтобы не хранить bearer-секрет открытым текстом. */
+/**
+ * Хеширует токен перед сохранением, чтобы не хранить bearer-секрет открытым текстом.
+ *
+ * @param {string} token
+ */
 export const hashSessionToken = (token: string) => createHash("sha256").update(token).digest("hex");

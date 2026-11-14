@@ -6,41 +6,99 @@ import type { ApplicationApi } from "../api";
 import { projectDepth } from "../projectTree";
 import type { useSidebarProjectManagement } from "./useSidebarProjectManagement";
 
-/** Состояние и обработчики, предоставляемые хуком управления проектами. */
+/**
+ * Состояние и обработчики, предоставляемые хуком управления проектами.
+ *
+ * @typedef {ReturnType<typeof useSidebarProjectManagement>} ProjectManagement
+ */
 type ProjectManagement = ReturnType<typeof useSidebarProjectManagement>;
 
-/** Данные, обработчики навигации и меню списка проектов. */
+/**
+ * @callback SidebarProjectsPropsIsProjectDropActive
+ * @param {ProjectId | null} projectId
+ * @returns {boolean}
+ */
+
+/**
+ * @callback SidebarProjectsPropsOnProjectDragEnter
+ * @param {ProjectId} projectId
+ * @returns {DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback SidebarProjectsPropsOnProjectDragOver
+ * @param {ProjectId} projectId
+ * @returns {DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback SidebarProjectsPropsOnProjectDragLeave
+ * @param {ProjectId} projectId
+ * @returns {DragEventHandler<HTMLElement>}
+ */
+
+/**
+ * @callback SidebarProjectsPropsOnProjectDrop
+ * @param {ProjectId} projectId
+ * @returns {DragEventHandler<HTMLElement>}
+ */
+/**
+ * Данные, обработчики навигации и меню списка проектов.
+ *
+ * @typedef {Object} SidebarProjectsProps
+ * @property {ApplicationApi | null} api - Набор API-операций для серверных данных.
+ * @property {Array<Project>} navigationProjects - Проекты, отображаемые в боковой панели.
+ * @property {Array<Project>} activeProjects - Активные проекты пользователя.
+ * @property {ProjectId | null} selectedProjectId - Данные «выбранные проект id», используемые типом «SidebarProjectsProps».
+ * @property {string} activePage - Текущая страница приложения.
+ * @property {boolean} projectArchivingEnabled - Разрешено ли архивирование проектов.
+ * @property {SidebarProjectsPropsIsProjectDropActive} [isProjectDropActive] - Признак, что проект является активной целью перетаскивания.
+ * @property {SidebarProjectsPropsOnProjectDragEnter} [onProjectDragEnter] - Обрабатывает наведение при перетаскивании проекта.
+ * @property {SidebarProjectsPropsOnProjectDragOver} [onProjectDragOver] - Обновляет целевую область проекта при перетаскивании.
+ * @property {SidebarProjectsPropsOnProjectDragLeave} [onProjectDragLeave] - Сбрасывает состояние наведения проекта.
+ * @property {SidebarProjectsPropsOnProjectDrop} [onProjectDrop] - Обрабатывает сброс проекта.
+ * @property {ProjectManagement} management - Обработчики управления проектами.
+ */
 type SidebarProjectsProps = {
-  /** API-клиент или `null`, когда операции недоступны. */
   api: ApplicationApi | null;
-  /** Проекты в порядке дерева sidebar. */
+
   navigationProjects: Array<Project>;
-  /** Активные проекты, доступные как цели перемещения. */
+
   activeProjects: Array<Project>;
-  /** ID открытого проекта или `null`, если проект не выбран. */
+
   selectedProjectId: ProjectId | null;
-  /** Текущий раздел приложения для подсветки навигации. */
+
   activePage: string;
-  /** Разрешено ли архивировать проекты. */
+
   projectArchivingEnabled: boolean;
-  /** Проверяет, является ли проект активной целью сброса. */
+
   isProjectDropActive?: (projectId: ProjectId | null) => boolean;
-  /** Создаёт обработчик входа курсора в drop-зону проекта. */
+
   onProjectDragEnter?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик движения курсора над drop-зоной проекта. */
+
   onProjectDragOver?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик выхода курсора из drop-зоны проекта. */
+
   onProjectDragLeave?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
-  /** Создаёт обработчик сброса задачи на проект. */
+
   onProjectDrop?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
-  /** Состояние и операции создания, редактирования и удаления проекта. */
+
   management: ProjectManagement;
 };
 
-/** Тип обработчика HTML drag event для указанного элемента. */
+/**
+ * Тип обработчика HTML drag event для указанного элемента.
+ *
+ * @typedef {(event: DragEvent<T>) => void} DragEventHandler
+ * @template T
+ */
 type DragEventHandler<T extends HTMLElement> = (event: DragEvent<T>) => void;
 
-/** Рисует дерево проектов с меню действий, редактированием и drag-and-drop. */
+/**
+ * Рисует дерево проектов с меню действий, редактированием и drag-and-drop.
+ *
+ * @param {SidebarProjectsProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const SidebarProjects = ({
   api,
   navigationProjects,
@@ -138,7 +196,7 @@ export const SidebarProjects = ({
               )}
               draggable
               onDragStart={(event) => {
-                // HTML drag сохраняет ID проекта в payload, чтобы drop работал и за пределами sidebar.
+                /** HTML drag сохраняет ID проекта в payload, чтобы drop работал и за пределами sidebar. */
                 draggedProjectRef.current = project.id;
                 setDraggingProjectId(project.id);
                 setActiveProjectDrop(null);
@@ -148,7 +206,7 @@ export const SidebarProjects = ({
               onDragEnd={cancelProjectDrag}
               onDragOver={markProjectDrop(project)}
               onDragLeave={(event) => {
-                // Переход между дочерними узлами строки не считается выходом из drop-цели.
+                /** Переход между дочерними узлами строки не считается выходом из drop-цели. */
                 if (!event.currentTarget.contains(event.relatedTarget as Node | null))
                   setActiveProjectDrop(null);
               }}

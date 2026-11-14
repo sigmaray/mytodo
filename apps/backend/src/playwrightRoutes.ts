@@ -4,28 +4,43 @@ import { createProjectSchema, createSectionSchema, createTaskSchema, parseJson }
 import type { AppHono, RepositoryForUser } from "./appTypes";
 import type { AttachmentStorage } from "./attachmentStorage";
 
-/** Регистрирует закрытые вспомогательные маршруты подготовки Playwright-сценариев. */
+/**
+ * Регистрирует закрытые вспомогательные маршруты подготовки Playwright-сценариев.
+ *
+ * @param {AppHono} app
+ * @param {{ database: ReturnType<typeof postgres>; attachmentStorage: AttachmentStorage; attachmentStorageAvailable: boolean; repositoryFor: RepositoryForUser; }} dependencies
+ * @param {ReturnType<typeof postgres>} dependencies.database - Соединение с отдельной базой, используемой только тестами Playwright.
+ * @param {AttachmentStorage} dependencies.attachmentStorage - Файловое хранилище, куда тесты сохраняют временные вложения.
+ * @param {boolean} dependencies.attachmentStorageAvailable - Признак, что создание и чтение тестовых вложений доступно.
+ * @param {RepositoryForUser} dependencies.repositoryFor - Возвращает доменный репозиторий для пользователя тестового запроса.
+ */
 export const registerPlaywrightRoutes = (
   app: AppHono,
-  dependencies: {
-    /** Соединение с отдельной базой, используемой только тестами Playwright. */
+  dependencies: /**
+   * Поля этой структуры:
+   * - `database`: Соединение с отдельной базой, используемой только тестами Playwright.
+   * - `attachmentStorage`: Файловое хранилище, куда тесты сохраняют временные вложения.
+   * - `attachmentStorageAvailable`: Признак, что создание и чтение тестовых вложений доступно.
+   * - `repositoryFor`: Возвращает доменный репозиторий для пользователя тестового запроса.
+   */
+  {
     database: ReturnType<typeof postgres>;
-    /** Файловое хранилище, куда тесты сохраняют временные вложения. */
+
     attachmentStorage: AttachmentStorage;
-    /** Признак, что создание и чтение тестовых вложений доступно. */
+
     attachmentStorageAvailable: boolean;
-    /** Возвращает доменный репозиторий для пользователя тестового запроса. */
+
     repositoryFor: RepositoryForUser;
   },
 ) => {
-  // Список таблиц и сущностей намеренно ограничен, чтобы тестовый API не стал произвольным SQL-интерфейсом.
+  /** Список таблиц и сущностей намеренно ограничен, чтобы тестовый API не стал произвольным SQL-интерфейсом. */
   const {
     database: playwrightDatabase,
     attachmentStorage,
     attachmentStorageAvailable,
     repositoryFor,
   } = dependencies;
-  // Набор допустимых таблиц исключает очистку учётных записей и произвольного SQL.
+  /** Набор допустимых таблиц исключает очистку учётных записей и произвольного SQL. */
   const testTables = {
     /** Таблица задач. */
     tasks: "tasks",
@@ -36,16 +51,22 @@ export const registerPlaywrightRoutes = (
     /** Таблица проектов. */
     projects: "projects",
   } as const;
-  /** Удаляет данные пользователя из разрешённой таблицы и очищает её файлы вложений. */
+  /**
+   * Удаляет данные пользователя из разрешённой таблицы и очищает её файлы вложений.
+   *
+   * @param {keyof typeof testTables} table
+   * @param {string} userId
+   * @returns Результат выполнения функции.
+   */
   const clearTestTable = async (table: keyof typeof testTables, userId: string) => {
-    // Перед удалением задач/комментариев сохраняем ID вложений для очистки файловой системы.
+    /** Перед удалением задач/комментариев сохраняем ID вложений для очистки файловой системы. */
     const attachmentRows =
       table === "tasks" || table === "task_comments"
         ? await playwrightDatabase<
             { attachments: unknown }[]
           >`SELECT attachments FROM task_comments WHERE user_id = ${userId}`
         : [];
-    // Имя таблицы берётся только из allowlist, а значение userId передаётся параметром SQL.
+    /** Имя таблицы берётся только из allowlist, а значение userId передаётся параметром SQL. */
     const result = await playwrightDatabase.unsafe(`DELETE FROM ${testTables[table]} WHERE user_id = $1`, [
       userId,
     ]);
@@ -69,7 +90,7 @@ export const registerPlaywrightRoutes = (
   };
 
   app.post("/api/playwright/reset", async (context) => {
-    // Сбрасываем только данные тестовых сущностей, сохраняя пользователей и сессии.
+    /** Сбрасываем только данные тестовых сущностей, сохраняя пользователей и сессии. */
     const userId = context.get("userId");
     if (attachmentStorage.enabled) await clearTestTable("task_comments", userId);
     await playwrightDatabase.begin(async (transaction) => {
@@ -84,7 +105,7 @@ export const registerPlaywrightRoutes = (
   });
 
   app.delete("/api/playwright/tables/:table", async (context) => {
-    // Удаляем записи только из таблицы, прошедшей проверку разрешённого списка.
+    /** Удаляем записи только из таблицы, прошедшей проверку разрешённого списка. */
     const table = context.req.param("table");
     if (!Object.hasOwn(testTables, table)) return context.json({ error: "Unsupported test table" }, 400);
     const deleted = await clearTestTable(table as keyof typeof testTables, context.get("userId"));
@@ -92,7 +113,7 @@ export const registerPlaywrightRoutes = (
   });
 
   app.post("/api/playwright/entities/:entity", async (context) => {
-    // Создаём одну из поддерживаемых тестовых сущностей из валидированного тела запроса.
+    /** Создаём одну из поддерживаемых тестовых сущностей из валидированного тела запроса. */
     const entity = context.req.param("entity");
     const taskRepository = repositoryFor(context.get("userId"));
     if (entity === "task") {

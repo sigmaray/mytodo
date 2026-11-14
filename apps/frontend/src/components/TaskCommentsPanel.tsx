@@ -7,43 +7,90 @@ import { taskQueryKey } from "../queryKeys";
 import { CommentAttachment, renderCommentMarkdown } from "./CommentAttachment";
 import { AutoGrowTextarea } from "./TaskFormFields";
 
-/** Данные задачи, состояние редактора комментариев и операции над вложениями. */
+/**
+ * @callback TaskCommentsPanelPropsOnHide
+ * @returns {void | Promise<void>}
+ */
+
+/**
+ * @callback TaskCommentsPanelPropsRemoveCommentAttachment
+ * @param {string} commentId
+ * @param {string} attachmentId
+ * @returns {Promise<void>}
+ */
+
+/**
+ * @callback TaskCommentsPanelPropsConfirmDeletion
+ * @param {string} message
+ * @returns {boolean}
+ */
+
+/**
+ * @callback TaskCommentsPanelPropsNotifyAttachedFiles
+ * @param {Array<File>} files
+ * @returns {void}
+ */
+/**
+ * Данные задачи, состояние редактора комментариев и операции над вложениями.
+ *
+ * @typedef {Object} TaskCommentsPanelProps
+ * @property {TaskNode} task - Данные «задача», используемые типом «TaskCommentsPanelProps».
+ * @property {ApplicationApi} api - Набор API-операций для серверных данных.
+ * @property {boolean} attachmentsEnabled - Разрешено ли приложению загружать и выдавать вложения.
+ * @property {boolean} showMobileComments - Признак, что мобильный блок комментариев открыт.
+ * @property {TaskCommentsPanelPropsOnHide} onHide - Закрывает мобильную панель.
+ * @property {string | null} editingCommentId - Данные «редактируемое комментарий id», используемые типом «TaskCommentsPanelProps».
+ * @property {Dispatch<SetStateAction<string | null>>} setEditingCommentId - Обновляет значение соответствующего состояния.
+ * @property {string} editingCommentBody - Черновик текста редактируемого комментария.
+ * @property {Dispatch<SetStateAction<string>>} setEditingCommentBody - Обновляет значение соответствующего состояния.
+ * @property {string} detailComment - Черновик текста нового комментария.
+ * @property {Dispatch<SetStateAction<string>>} setDetailComment - Обновляет значение соответствующего состояния.
+ * @property {Array<File>} detailCommentFiles - Файлы для нового комментария.
+ * @property {Dispatch<SetStateAction<Array<File>>>} setDetailCommentFiles - Обновляет значение соответствующего состояния.
+ * @property {TaskCommentsPanelPropsRemoveCommentAttachment} removeCommentAttachment - Удаляет файл, прикреплённый к комментарию.
+ * @property {TaskCommentsPanelPropsConfirmDeletion} confirmDeletion - Запрашивает подтверждение перед удалением.
+ * @property {TaskCommentsPanelPropsNotifyAttachedFiles} notifyAttachedFiles - Сообщает о выбранных файлах.
+ */
 type TaskCommentsPanelProps = {
-  /** Задача, чьё обсуждение отображается. */
   task: TaskNode;
-  /** Клиент API для создания и редактирования комментариев. */
+
   api: ApplicationApi;
-  /** Разрешены ли прикреплённые файлы. */
+
   attachmentsEnabled: boolean;
-  /** Нужно ли показывать раздел комментариев на мобильном экране. */
+
   showMobileComments: boolean;
-  /** Сворачивает мобильный раздел комментариев. */
+
   onHide: () => void | Promise<void>;
-  /** ID редактируемого сообщения либо `null`. */
+
   editingCommentId: string | null;
-  /** Выбирает редактируемый комментарий. */
+
   setEditingCommentId: Dispatch<SetStateAction<string | null>>;
-  /** Черновик текста редактируемого комментария. */
+
   editingCommentBody: string;
-  /** Обновляет черновик комментария. */
+
   setEditingCommentBody: Dispatch<SetStateAction<string>>;
-  /** Черновик нового комментария. */
+
   detailComment: string;
-  /** Обновляет текст нового комментария. */
+
   setDetailComment: Dispatch<SetStateAction<string>>;
-  /** Выбранные файлы нового комментария. */
+
   detailCommentFiles: Array<File>;
-  /** Обновляет выбранные файлы комментария. */
+
   setDetailCommentFiles: Dispatch<SetStateAction<Array<File>>>;
-  /** Удаляет вложение из комментария. */
+
   removeCommentAttachment: (commentId: string, attachmentId: string) => Promise<void>;
-  /** Подтверждает удаление согласно настройкам пользователя. */
+
   confirmDeletion: (message: string) => boolean;
-  /** Показывает результат добавления файлов. */
+
   notifyAttachedFiles: (files: Array<File>) => void;
 };
 
-/** Отображает обсуждение задачи, формы комментариев и действия с вложениями. */
+/**
+ * Отображает обсуждение задачи, формы комментариев и действия с вложениями.
+ *
+ * @param {TaskCommentsPanelProps} parameter1
+ * @returns Результат выполнения функции.
+ */
 export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) => {
   const {
     api,
@@ -103,7 +150,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   type="button"
                   className="btn-primary"
                   onClick={async () => {
-                    // Сохраняем полный список комментариев, меняя текст только выбранного сообщения.
+                    /** Сохраняем полный список комментариев, меняя текст только выбранного сообщения. */
                     const comments = task.comments.map((item) =>
                       item.id === comment.id ? { ...item, body: editingCommentBody.trim() } : item,
                     );
@@ -148,7 +195,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                   type="button"
                   className="danger"
                   onClick={async () => {
-                    // Удаление требует подтверждения согласно пользовательской настройке.
+                    /** Удаление требует подтверждения согласно пользовательской настройке. */
                     if (!confirmDeletion("Delete this comment?")) return;
                     await api.updateTask(task.id, {
                       comments: task.comments.filter((item) => item.id !== comment.id),
@@ -174,13 +221,13 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
             onKeyDown={async (event) => {
               if (event.key === "Enter" && event.ctrlKey) {
                 event.preventDefault();
-                // Пустая отправка игнорируется, если пользователь не выбрал файл.
+                /** Пустая отправка игнорируется, если пользователь не выбрал файл. */
                 if (!detailComment.trim() && detailCommentFiles.length === 0) return;
                 if (detailCommentFiles.length) {
-                  // Маршрут загрузки отдельно сохраняет файлы и текст комментария.
+                  /** Маршрут загрузки отдельно сохраняет файлы и текст комментария. */
                   await api.createComment(task.id, detailComment.trim(), detailCommentFiles);
                 } else {
-                  // Комментарий без файлов отправляется как обновление списка комментариев задачи.
+                  /** Комментарий без файлов отправляется как обновление списка комментариев задачи. */
                   const comments = [
                     ...task.comments,
                     {
@@ -207,11 +254,11 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
                 multiple
                 onChange={(event) => {
                   const files = Array.from(event.currentTarget.files ?? []);
-                  // Ограничиваем добавление числом файлов, которое ещё помещается в лимит.
+                  /** Ограничиваем добавление числом файлов, которое ещё помещается в лимит. */
                   const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length));
                   setDetailCommentFiles([...detailCommentFiles, ...acceptedFiles]);
                   notifyAttachedFiles(acceptedFiles);
-                  // Сбрасываем input, чтобы можно было повторно выбрать тот же файл.
+                  /** Сбрасываем input, чтобы можно было повторно выбрать тот же файл. */
                   event.currentTarget.value = "";
                 }}
               />
@@ -237,7 +284,7 @@ export const TaskCommentsPanel = ({ task, ...props }: TaskCommentsPanelProps) =>
           className="btn-primary"
           disabled={!detailComment.trim() && detailCommentFiles.length === 0}
           onClick={async () => {
-            // Файлы отправляются через endpoint загрузки, обычный текст — через PATCH задачи.
+            /** Файлы отправляются через endpoint загрузки, обычный текст — через PATCH задачи. */
             if (detailCommentFiles.length) {
               await api.createComment(task.id, detailComment.trim(), detailCommentFiles);
             } else {
