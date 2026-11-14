@@ -6,6 +6,7 @@ import type { TaskRepository } from "../repository";
 import { firstSection, nullableEq, sectionOrder, toSection } from "./postgresHelpers";
 import { projects as projectsTable, sections as sectionsTable } from "./schema";
 
+/** Создаёт операции с секциями, ограниченные владельцем репозитория. */
 export const createPostgresSectionMethods = (
   db: ReturnType<typeof drizzle>,
   client: postgres.Sql,
@@ -14,6 +15,7 @@ export const createPostgresSectionMethods = (
   TaskRepository,
   "listSections" | "reorderSection" | "createSection" | "updateSection" | "deleteSection"
 > => ({
+  /** Возвращает секции пользователя в порядке их ключей. */
   listSections: async () => {
     const rows = await db
       .select()
@@ -23,6 +25,7 @@ export const createPostgresSectionMethods = (
 
     return rows.map(toSection);
   },
+  /** Перемещает секцию среди секций того же проекта. */
   reorderSection: async (id, beforeId, afterId) => {
     const current = await db
       .select()
@@ -52,6 +55,7 @@ export const createPostgresSectionMethods = (
       .returning();
     return firstSection(rows);
   },
+  /** Создаёт секцию после последней секции выбранного проекта. */
   createSection: async (title, projectId) => {
     if (
       projectId !== null &&
@@ -87,6 +91,7 @@ export const createPostgresSectionMethods = (
 
     return section;
   },
+  /** Переименовывает секцию пользователя. */
   updateSection: async (id, title) => {
     const rows = await db
       .update(sectionsTable)
@@ -99,6 +104,7 @@ export const createPostgresSectionMethods = (
 
     return firstSection(rows);
   },
+  /** Удаляет секцию, оставляя её задачи в проекте на корневом уровне. */
   deleteSection: async (id) => {
     return client.begin(async (transaction) => {
       const existing = await transaction<

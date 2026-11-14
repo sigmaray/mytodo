@@ -1,15 +1,23 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 
+/** Метаданные вложения, сохраняемые в комментарии и возвращаемые через API. */
 export type AttachmentMetadata = {
+  /** UUID, совпадающий с именем файла во внутреннем хранилище. */
   id: string;
+  /** Исходное имя файла для показа и скачивания. */
   name: string;
+  /** MIME-тип, заявленный клиентом при загрузке. */
   mimeType: string;
+  /** Размер файла в байтах. */
   size: number;
 };
 
+/** Проверяет имена, MIME-типы и предельные размеры загружаемых файлов. */
 export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "limits-exceeded" | null => {
+  // Сначала проверяем метаданные файлов, затем их количество и суммарный объём.
   const invalidFile = files.some((file) => {
+    // Проверяем суффикс отдельно, потому что basename уже ограничивает путь ниже.
     const extension = extname(file.name);
     const validName =
       file.name.length > 0 &&
@@ -20,7 +28,9 @@ export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "l
       /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/i.test(file.type);
     return !validName || !validMime;
   });
+  // Сначала возвращаем ошибку метаданных, чтобы причины отказа были однозначными.
   if (invalidFile) return "invalid-file";
+  // Лимиты ограничивают количество файлов, размер каждого файла и общий объём запроса.
   if (
     files.length > 10 ||
     files.some((file) => file.size > 10 * 1024 * 1024) ||
@@ -30,7 +40,9 @@ export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "l
   return null;
 };
 
+/** Определяет тип изображения по сигнатуре байтов, не доверяя расширению файла. */
 export const detectSafeImageMimeType = (contents: Buffer): string | null => {
+  // MIME определяется по сигнатурам форматов, а не по имени или заголовку клиента.
   const isPng =
     contents.length >= 8 && contents.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   const isJpeg = contents.length >= 3 && contents[0] === 255 && contents[1] === 216 && contents[2] === 255;
@@ -42,18 +54,24 @@ export const detectSafeImageMimeType = (contents: Buffer): string | null => {
   return isPng ? "image/png" : isJpeg ? "image/jpeg" : isGif ? "image/gif" : isWebp ? "image/webp" : null;
 };
 
+/** Создаёт файловое хранилище вложений, доступ к которому адресуется UUID. */
 export const createAttachmentStorage = (directory: string | null) => {
+  // Разрешаем каталог при создании, чтобы операции не зависели от текущей директории.
   const resolvedDirectory = directory?.trim() ? resolve(directory) : null;
+  // Проверка UUID не позволяет использовать идентификатор как путь к произвольному файлу.
   const pathForId = (id: string) =>
     resolvedDirectory !== null && /^[0-9a-f-]{36}$/i.test(id) ? resolve(resolvedDirectory, id) : null;
 
+  /** Удаляет файл вложения, если его идентификатор допустим. */
   const remove = async (id: string) => {
     const path = pathForId(id);
     if (path !== null) await rm(path, { force: true });
   };
 
+  /** Удаляет несколько файлов, например при очистке удалённых комментариев. */
   const removeMany = async (ids: Array<string>) => Promise.all(ids.map(remove));
 
+  /** Записывает один файл с закрытыми правами и возвращает его метаданные. */
   const saveOne = async (file: File): Promise<AttachmentMetadata> => {
     if (resolvedDirectory === null) throw new Error("Attachment storage is disabled");
     const id = crypto.randomUUID();
@@ -63,13 +81,17 @@ export const createAttachmentStorage = (directory: string | null) => {
     await writeFile(path, new Uint8Array(await file.arrayBuffer()), { flag: "wx", mode: 0o600 });
     return {
       id,
+      // Нормализуем разделители пути и оставляем только имя файла для интерфейса.
       name: basename(file.name.replaceAll("\\", "/")).slice(0, 255) || "attachment",
+      // Ограничиваем длину типа и задаём нейтральное значение при пустом MIME.
       mimeType: file.type.slice(0, 128) || "application/octet-stream",
       size: file.size,
     };
   };
 
+  /** Сохраняет файлы набора; при ошибке удаляет все уже записанные файлы этого набора. */
   const saveMany = async (files: Array<File>): Promise<Array<AttachmentMetadata>> => {
+    // Последовательная запись позволяет откатить именно успешно сохранённую часть набора.
     const saveRemaining = async (
       index: number,
       saved: Array<AttachmentMetadata>,
@@ -86,6 +108,7 @@ export const createAttachmentStorage = (directory: string | null) => {
     return saveRemaining(0, []);
   };
 
+  /** Читает содержимое файла или возвращает `null`, если его нельзя получить. */
   const read = async (id: string) => {
     const path = pathForId(id);
     if (path === null) return null;
@@ -106,4 +129,5 @@ export const createAttachmentStorage = (directory: string | null) => {
   };
 };
 
+/** Тип операций, предоставляемых настроенным файловым хранилищем. */
 export type AttachmentStorage = ReturnType<typeof createAttachmentStorage>;

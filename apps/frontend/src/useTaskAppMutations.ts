@@ -7,23 +7,37 @@ import { projectQueryKey, sectionQueryKey, taskQueryKey } from "./queryKeys";
 import { inboxPlacement, parsePlacement, taskPlacement } from "./taskAppUtils";
 import type { TaskAppMutationsState } from "./useTaskAppState";
 
+/** Поля назначения для перемещения задачи через API. */
 type MoveInput = {
+  /** Идентификатор перемещаемой задачи. */
   taskId: TaskId;
+  /** Проект назначения или `null` для Входящих. */
   projectId: ProjectId | null;
+  /** Секция назначения или `null` для корня проекта. */
   sectionId: SectionId | null;
+  /** Новый родитель или `null` для корневого уровня. */
   parentId: TaskId | null;
+  /** ID соседа, перед которым нужно расположить задачу. */
   beforeId: TaskId | null;
+  /** ID соседа, после которого нужно расположить задачу. */
   afterId: TaskId | null;
 };
 
+/** Аргументы для создания набора React Query мутаций workspace. */
 type TaskAppMutationInput = {
+  /** HTTP-клиент доменных операций. */
   api: ApplicationApi;
+  /** Кэш запросов для синхронизации серверного состояния. */
   queryClient: QueryClient;
+  /** Локальное состояние форм, drag-and-drop и массовых действий. */
   state: TaskAppMutationsState;
+  /** Загруженные секции для разбора выбранного места задачи. */
   sectionData: Array<Section> | undefined;
+  /** Настройки пользователя для подтверждения опасных действий. */
   settings: { confirmDelete: boolean } | undefined;
 };
 
+/** Создаёт мутации и оптимистичные обновления для задач, проектов и секций. */
 export const useTaskAppMutations = ({
   api,
   queryClient,
@@ -52,6 +66,7 @@ export const useTaskAppMutations = ({
     setSelectedMoveOpen,
   } = state;
 
+  // Отсутствующая настройка сохраняет безопасное поведение и требует подтверждения.
   const confirmDeletion = (message: string) => settings?.confirmDelete === false || window.confirm(message);
 
   const createSubtaskMutation = useMutation({
@@ -131,9 +146,11 @@ export const useTaskAppMutations = ({
   const toggleMutation = useMutation({
     mutationFn: (task: TaskNode) => api.patchTask(task.id, !task.completed),
     onMutate: async (task) => {
+      // Отменяем устаревший запрос, чтобы он не перезаписал оптимистичное состояние.
       await queryClient.cancelQueries({ queryKey: taskQueryKey });
       const previousTasks = queryClient.getQueryData<Array<TaskNode>>(taskQueryKey);
 
+      // Обновляем выбранную задачу в дереве, не меняя состояние её потомков.
       const toggleNodes = (nodes: Array<TaskNode>): Array<TaskNode> =>
         nodes.map((node) => ({
           ...node,
@@ -146,6 +163,7 @@ export const useTaskAppMutations = ({
       return { previousTasks };
     },
     onError: (_error, _task, context) => {
+      // Восстанавливаем снимок кэша, если сервер отклонил переключение.
       queryClient.setQueryData(taskQueryKey, context?.previousTasks);
     },
     onSettled: async () => {
@@ -155,6 +173,7 @@ export const useTaskAppMutations = ({
 
   const editMutation = useMutation({
     mutationFn: async (task: TaskNode) => {
+      // Сначала обновляем текст; перемещение вызывается отдельно только при смене списка.
       const placement = parsePlacement(editPlacement, allSections);
       const titleTask = await api.updateTask(task.id, { title: editTitle.trim() });
 
@@ -207,6 +226,7 @@ export const useTaskAppMutations = ({
       projectId: ProjectId | null;
       sectionId: SectionId | null;
     }) => {
+      // Последовательность сохраняет предсказуемый порядок и изолирует ошибки каждого переноса.
       for (const taskId of input.taskIds) {
         await api.moveTask(taskId, input.projectId, input.sectionId, null, null, null);
       }
@@ -221,6 +241,7 @@ export const useTaskAppMutations = ({
 
   const selectedDeleteMutation = useMutation({
     mutationFn: async (taskIds: Array<TaskId>) =>
+      // Все выбранные корни удаляются, а состояние интерфейса очищается после успеха.
       Promise.all(taskIds.map((taskId) => api.deleteTask(taskId))),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });

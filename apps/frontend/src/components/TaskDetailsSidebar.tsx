@@ -11,6 +11,7 @@ import {
 import type { TaskDetailsDialogProps } from "./TaskDetailsDialog";
 import { LabelPicker } from "./TaskFormFields";
 
+/** Показывает свойства задачи и мобильные ярлыки для раскрытия дополнительных полей. */
 export const TaskDetailsSidebar = ({
   api,
   queryClient,
@@ -93,6 +94,7 @@ export const TaskDetailsSidebar = ({
               : sectionPlacement(detailSectionId)
           }
           onChange={async (event) => {
+            // Сначала обновляем локальный выбор, затем сохраняем новое расположение на сервере.
             const placement = parsePlacement(event.target.value, allSections);
             setDetailProjectId(placement.projectId);
             setDetailSectionId(placement.sectionId);
@@ -109,6 +111,7 @@ export const TaskDetailsSidebar = ({
               await queryClient.invalidateQueries({ queryKey: taskQueryKey });
               setDetailSaveStatus("Saved");
             } catch {
+              // При ошибке возвращаем исходные значения, чтобы форма совпадала с сервером.
               setDetailProjectId(selectedDetailsTask.projectId);
               setDetailSectionId(selectedDetailsTask.sectionId);
               setDetailSaveStatus("Could not save changes");

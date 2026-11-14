@@ -1,18 +1,29 @@
 import { ClipboardCopy, Download, Eye } from "lucide-react";
 
+/** Форматы, которые интерфейс предлагает для экспорта и предпросмотра данных. */
 export type ExportKind = "markdown" | "advancedMarkdown" | "json";
 
+/** Подписи и обработчики одной карточки формата экспорта. */
 type ExportFormatCardProps = {
+  /** Название формата. */
   title: string;
+  /** Краткое описание содержимого файла. */
   description: string;
+  /** Подпись кнопки скачивания. */
   downloadLabel: string;
+  /** Подпись кнопки копирования. */
   copyLabel: string;
+  /** Подпись кнопки предпросмотра. */
   previewLabel: string;
+  /** Запускает сохранение файла. */
   onDownload: () => void;
+  /** Копирует данные в буфер обмена. */
   onCopy: () => void;
+  /** Открывает предпросмотр данных. */
   onPreview: () => void;
 };
 
+/** Отображает набор действий для одного формата экспорта. */
 const ExportFormatCard = ({
   title,
   description,
@@ -45,13 +56,19 @@ const ExportFormatCard = ({
   </section>
 );
 
+/** Статус копирования и действия для экспорта всех данных. */
 export type ExportPageProps = {
+  /** Сообщение об успешном копировании или пустая строка. */
   copyStatus: string;
+  /** Скачивает данные в указанном формате. */
   onExport: (kind: ExportKind) => void;
+  /** Копирует данные указанного формата. */
   onCopy: (kind: ExportKind) => void;
+  /** Показывает предпросмотр выбранного формата. */
   onPreview: (kind: ExportKind) => void;
 };
 
+/** Показывает доступные форматы полного экспорта и их действия. */
 export const ExportPage = ({ copyStatus, onExport, onCopy, onPreview }: ExportPageProps) => (
   <section className="export-page" aria-label="Export data">
     <ExportFormatCard

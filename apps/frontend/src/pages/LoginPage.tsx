@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 
+/** Отображает форму входа и обновляет состояние сессии после успеха. */
 export const LoginPage = ({ api }: { api: ApplicationApi }) => {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");

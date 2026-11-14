@@ -15,6 +15,7 @@ beforeEach(() => {
 });
 
 describe("TaskApp drag and drop", () => {
+  // Перетаскивание на строку задачи превращает источник в её дочернюю задачу.
   it("moves a task inside another task with drag and drop", async () => {
     const moveTask = vi.fn(
       async (
@@ -40,6 +41,7 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("child", null, null, "parent", null, null));
   });
 
+  // Сброс между строками меняет порядок соседних задач.
   it("reorders sibling tasks with drag and drop insertion lines", async () => {
     const moveTask = vi.fn(
       async (
@@ -73,6 +75,7 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("c", null, null, null, "a", null));
   });
 
+  // Клавиатурные сокращения изменяют глубину вложенности задачи.
   it("indents and outdents tasks with keyboard shortcuts", async () => {
     const moveTask = vi.fn(
       async (
@@ -107,6 +110,7 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("child", null, null, null, null, "parent"));
   });
 
+  // Перетаскивание строки влево снимает один уровень вложенности.
   it("outdents a nested task by dragging it left", async () => {
     const moveTask = vi.fn(
       async (

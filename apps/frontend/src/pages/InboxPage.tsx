@@ -4,6 +4,7 @@ import { inboxPlacement, projectPlacement, sectionPlacement } from "../taskAppUt
 import type { TaskAppBoardProps } from "../components/TaskAppBoardTypes";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
+/** Отображает общий board Inbox/Projects и связывает его с переданными действиями. */
 export const InboxPage = (props: TaskAppBoardProps) => {
   const {
     targetProjectId,

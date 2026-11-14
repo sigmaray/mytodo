@@ -2,22 +2,35 @@ import { Paperclip } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatAttachmentSize } from "../components/CommentAttachment";
 
+/** Представление вложения в общей библиотеке файлов. */
 export type AttachmentLibraryItem = {
+  /** UUID файла для URL просмотра и скачивания. */
   id: string;
+  /** Имя файла, выбранное при загрузке. */
   name: string;
+  /** MIME-тип файла для выбора способа предварительного просмотра. */
   mimeType: string;
+  /** Размер файла в байтах. */
   size: number;
+  /** Задача, к комментарию которой приложен файл. */
   taskId: string;
+  /** Название связанной задачи. */
   taskTitle: string;
+  /** Время загрузки, показываемое в карточке файла. */
   uploadedAt: string;
 };
 
+/** Данные и обработчики страницы библиотеки вложений. */
 export type AttachmentsPageProps = {
+  /** Файлы, извлечённые из комментариев текущего пользователя. */
   attachments: Array<AttachmentLibraryItem>;
+  /** Показывает состояние ожидания данных. */
   loading: boolean;
+  /** Открывает подробности задачи, связанной с файлом. */
   onTaskOpen: (taskId: string) => void;
 };
 
+/** Отображает файлы пользователя и ссылки на комментарии/задачи, где они используются. */
 export const AttachmentsPage = ({ attachments, loading, onTaskOpen }: AttachmentsPageProps) => (
   <section className="attachments-page" aria-label="Attachments list">
     {attachments.length > 0 ? (

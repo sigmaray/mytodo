@@ -7,13 +7,17 @@ import { hashPassword } from "./auth";
 import { createMemoryTaskRepository } from "./repository";
 import { createMemoryUserRepository } from "./users";
 
+/** Серверы, которые нужно закрыть после завершения API-тестов. */
 export const activeServers = new Set<Server>();
 
+/** Временные каталоги тестов, подлежащие удалению в cleanup. */
 export const temporaryDirectories = new Set<string>();
 
+/** Запускает Hono-приложение на свободном локальном порту для Supertest. */
 export const createTestServer = async (app: ReturnType<typeof createApp>) => {
   const server = createServer(getRequestListener(app.fetch));
   activeServers.add(server);
+  // Динамический порт позволяет параллельным тестам не конфликтовать друг с другом.
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {
@@ -24,7 +28,13 @@ export const createTestServer = async (app: ReturnType<typeof createApp>) => {
   return server;
 };
 
-export const createTestAgent = async (options: { projectArchivingEnabled?: boolean } = {}) => {
+/** Создаёт аутентифицированный тестовый agent с учётной записью администратора. */
+export const createTestAgent = async (
+  options: {
+    /** Разрешает архивирование проектов в приложении, созданном для теста. */
+    projectArchivingEnabled?: boolean;
+  } = {},
+) => {
   const userRepository = createMemoryUserRepository([
     {
       id: "test-admin",
@@ -46,6 +56,7 @@ export const createTestAgent = async (options: { projectArchivingEnabled?: boole
   return agent;
 };
 
+/** Закрывает запущенные серверы и удаляет временные каталоги тестовой среды. */
 export const cleanupTestResources = async () => {
   const servers = [...activeServers];
   activeServers.clear();

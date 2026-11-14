@@ -20,7 +20,9 @@ import { useTaskAppViewModel } from "./useTaskAppViewModel";
 import { inboxPlacement, projectPlacement, sectionPlacement } from "./taskAppUtils";
 import { createTaskAppPageModel } from "./taskAppPageModel";
 
+/** Извлекает файлы из DataTransfer, используя список файлов как запасной вариант. */
 const pastedFiles = (clipboardData: DataTransfer): Array<File> => {
+  // Некоторые браузеры заполняют items, другие — только files.
   const itemFiles = Array.from(clipboardData.items)
     .filter((item) => item.kind === "file")
     .map((item) => item.getAsFile())
@@ -28,16 +30,21 @@ const pastedFiles = (clipboardData: DataTransfer): Array<File> => {
   return itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files);
 };
 
+/** Показывает уведомление для каждого файла, добавленного в задачу или комментарий. */
 const notifyAttachedFiles = (files: Array<File>) =>
   files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
 
+/** Загружает серверное состояние и связывает workspace-хуки с экранной композицией. */
 export const TaskApp = ({
   api,
   attachmentsEnabled = false,
   projectArchivingEnabled = false,
 }: {
+  /** HTTP-клиент задач, проектов, настроек и пользователей. */
   api: ApplicationApi;
+  /** Разрешает загрузку и показ файлов комментариев. */
   attachmentsEnabled?: boolean;
+  /** Разрешает архивирование проектов. */
   projectArchivingEnabled?: boolean;
 }) => {
   const location = useLocation();
@@ -83,6 +90,7 @@ export const TaskApp = ({
 
   const queryClient = useQueryClient();
   useEffect(() => {
+    // Контекстное меню закрывается при клике за его пределами или по Escape.
     if (taskContextMenu === null) return;
     const dismiss = (event: globalThis.MouseEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest(".task-context-menu"))

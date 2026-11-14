@@ -8,16 +8,25 @@ import { dragPlacementFromEvent, findTaskNode, hasDescendant, inboxPlacement } f
 import type { useTaskAppMutations } from "./useTaskAppMutations";
 import type { DropZoneId, TaskAppDragState } from "./useTaskAppState";
 
+/** Данные, необходимые для обработки перетаскиваний задач и секций. */
 type TaskAppDragActionInput = {
+  /** API для сохранения результата перемещения. */
   api: ApplicationApi;
+  /** Кэш задач и секций для обновления после drop. */
   queryClient: QueryClient;
+  /** Текущее состояние жестов и выделения. */
   state: TaskAppDragState;
+  /** Мутации, используемые обработчиками сброса. */
   mutations: ReturnType<typeof useTaskAppMutations>;
+  /** Иерархия задач для расчёта допустимого положения. */
   allTasks: Array<TaskNode>;
+  /** Плоский список задач для выбора соседей. */
   flatTasks: Array<Task>;
+  /** Секции для определения их принадлежности проектам. */
   allSections: Array<Section>;
 };
 
+/** Создаёт обработчики drag-and-drop для мыши, клавиатуры и мобильного ввода. */
 export const createTaskAppDragActions = ({
   api,
   queryClient,
@@ -46,6 +55,7 @@ export const createTaskAppDragActions = ({
 
   const markDropZone =
     (projectId: ProjectId | null, sectionId: SectionId | null) => (event: DragEvent<HTMLElement>) => {
+      // Игнорируем чужие drag-объекты, оставляя обработчик активным только для задач приложения.
       if (event.dataTransfer?.types && !event.dataTransfer.types.includes("text/task-id")) return;
       event.preventDefault();
       setActiveDropZone(dropZoneId(projectId, sectionId));
@@ -60,9 +70,11 @@ export const createTaskAppDragActions = ({
       if (taskId.length > 0) {
         if (taskIdsJson.length > 0) {
           try {
+            // Групповой payload задаёт перемещение выбранных корней, если он корректно сериализован.
             const taskIds = JSON.parse(taskIdsJson) as Array<TaskId>;
             if (taskIds.length > 0) selectedMoveMutation.mutate({ taskIds, projectId, sectionId });
           } catch {
+            // При повреждённом групповом payload всё ещё переносим одиночную задачу.
             moveMutation.mutate({
               taskId,
               projectId,
@@ -109,6 +121,7 @@ export const createTaskAppDragActions = ({
         ? "before"
         : "after";
     const ordered = siblings.filter((item) => item.id !== draggedId);
+    // Сначала убираем переносимую секцию, затем находим соседей в итоговом порядке.
     const index = ordered.findIndex((item) => item.id === section.id);
     const beforeId = position === "before" ? section.id : (ordered[index + 1]?.id ?? null);
     const afterId = position === "before" ? (ordered[index - 1]?.id ?? null) : section.id;
@@ -129,6 +142,7 @@ export const createTaskAppDragActions = ({
     const drag = mobileDragRef.current;
     if (drag === null) return;
     event.preventDefault();
+    // Сопоставляем координаты указателя с задачей, секцией или проектом под ним.
     const target = document.elementFromPoint(event.clientX, event.clientY);
     if (!(target instanceof Element)) return;
     {
@@ -146,6 +160,7 @@ export const createTaskAppDragActions = ({
           !hasDescendant(sourceTask, targetTask.id)
         ) {
           const rect = taskTarget.getBoundingClientRect();
+          // Верхняя и нижняя трети означают перестановку, середина — вложение.
           const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
           const placement = ratio < 0.3 ? "before" : ratio > 0.7 ? "after" : "inside";
           setActiveDragTarget({ taskId: targetTask.id, placement });
@@ -171,6 +186,7 @@ export const createTaskAppDragActions = ({
 
   const finishMobileDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const drag = mobileDragRef.current;
+    // Очищаем ref сразу, чтобы повторный pointer event не применил то же перемещение.
     mobileDragRef.current = null;
     if (drag === null) return;
     const target = document.elementFromPoint(event.clientX, event.clientY);
@@ -183,9 +199,11 @@ export const createTaskAppDragActions = ({
         const targetTask = findTaskNode(allTasks, taskTarget.dataset.taskId ?? "");
         if (targetTask !== null && targetTask.id !== moved.id && !hasDescendant(moved, targetTask.id)) {
           const rect = taskTarget.getBoundingClientRect();
+          // Повторно вычисляем позицию на pointerup: последний pointermove мог не сработать.
           const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
           const placement = ratio < 0.3 ? "before" : ratio > 0.7 ? "after" : "inside";
           const nextPlacement =
+            // Сброс в середину вкладывает задачу; края делегируются общей доменной логике.
             placement === "inside"
               ? {
                   parentId: targetTask.id,
@@ -235,6 +253,7 @@ export const createTaskAppDragActions = ({
 
   const dropTaskOnCalendarDate = (date: string) => (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
+    // Поддерживаем и обычный drag, и перенос из календаря на сенсорном устройстве.
     const taskId = event.dataTransfer.getData("text/task-id") || calendarDraggedTaskRef.current;
     calendarDraggedTaskRef.current = null;
     setActiveCalendarDate(null);
@@ -267,11 +286,12 @@ export const createTaskAppDragActions = ({
     const taskIdsJson = event.dataTransfer.getData("text/task-ids");
     if (taskIdsJson.length > 0) {
       try {
+        // Если перетаскивается выделенная группа, переносим корни в список цели.
         const taskIds = JSON.parse(taskIdsJson) as Array<TaskId>;
         selectedMoveMutation.mutate({ taskIds, projectId: target.projectId, sectionId: target.sectionId });
         return;
       } catch {
-        // Fall back to the existing single-task drop behavior for invalid payloads.
+        // Для некорректных данных используем прежнюю обработку сброса одной задачи.
       }
     }
     const moved = findTaskNode(allTasks, taskId);
@@ -283,6 +303,7 @@ export const createTaskAppDragActions = ({
     }
 
     const placement = dragPlacementFromEvent(event);
+    // Разрешаем outdent при перетаскивании на самого себя, если задача вложенная.
     const nextPlacement =
       placement === "outdent" || (moved.id === target.id && moved.parentId !== null)
         ? computeOutdentPlacement(flatTasks, moved)

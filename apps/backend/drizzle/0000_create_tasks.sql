@@ -1,3 +1,4 @@
+-- Создаёт базовые таблицы проектов, секций и задач исходной схемы приложения.
 CREATE TABLE IF NOT EXISTS "projects" (
   "id" text PRIMARY KEY NOT NULL,
   "title" text NOT NULL,

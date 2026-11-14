@@ -6,25 +6,41 @@ import type { ApplicationApi } from "../api";
 import { projectDepth } from "../projectTree";
 import type { useSidebarProjectManagement } from "./useSidebarProjectManagement";
 
+/** Состояние и обработчики, предоставляемые хуком управления проектами. */
 type ProjectManagement = ReturnType<typeof useSidebarProjectManagement>;
 
+/** Данные, обработчики навигации и меню списка проектов. */
 type SidebarProjectsProps = {
+  /** API-клиент или `null`, когда операции недоступны. */
   api: ApplicationApi | null;
+  /** Проекты в порядке дерева sidebar. */
   navigationProjects: Array<Project>;
+  /** Активные проекты, доступные как цели перемещения. */
   activeProjects: Array<Project>;
+  /** ID открытого проекта или `null`, если проект не выбран. */
   selectedProjectId: ProjectId | null;
+  /** Текущий раздел приложения для подсветки навигации. */
   activePage: string;
+  /** Разрешено ли архивировать проекты. */
   projectArchivingEnabled: boolean;
+  /** Проверяет, является ли проект активной целью сброса. */
   isProjectDropActive?: (projectId: ProjectId | null) => boolean;
+  /** Создаёт обработчик входа курсора в drop-зону проекта. */
   onProjectDragEnter?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
+  /** Создаёт обработчик движения курсора над drop-зоной проекта. */
   onProjectDragOver?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
+  /** Создаёт обработчик выхода курсора из drop-зоны проекта. */
   onProjectDragLeave?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
+  /** Создаёт обработчик сброса задачи на проект. */
   onProjectDrop?: (projectId: ProjectId) => DragEventHandler<HTMLElement>;
+  /** Состояние и операции создания, редактирования и удаления проекта. */
   management: ProjectManagement;
 };
 
+/** Тип обработчика HTML drag event для указанного элемента. */
 type DragEventHandler<T extends HTMLElement> = (event: DragEvent<T>) => void;
 
+/** Рисует дерево проектов с меню действий, редактированием и drag-and-drop. */
 export const SidebarProjects = ({
   api,
   navigationProjects,
@@ -122,6 +138,7 @@ export const SidebarProjects = ({
               )}
               draggable
               onDragStart={(event) => {
+                // HTML drag сохраняет ID проекта в payload, чтобы drop работал и за пределами sidebar.
                 draggedProjectRef.current = project.id;
                 setDraggingProjectId(project.id);
                 setActiveProjectDrop(null);
@@ -131,6 +148,7 @@ export const SidebarProjects = ({
               onDragEnd={cancelProjectDrag}
               onDragOver={markProjectDrop(project)}
               onDragLeave={(event) => {
+                // Переход между дочерними узлами строки не считается выходом из drop-цели.
                 if (!event.currentTarget.contains(event.relatedTarget as Node | null))
                   setActiveProjectDrop(null);
               }}

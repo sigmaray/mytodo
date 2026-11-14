@@ -4,31 +4,55 @@ import { CalendarPanel, type CalendarPanelProps } from "../components/CalendarPa
 import { calendarWeekdays } from "../components/TaskFormFields";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
+/** Данные календарного экрана и обработчики выбора, перемещения и открытия задач. */
 export type DatesPageProps = {
+  /** Активный режим списка или календаря. */
   dateView: "list" | "calendar";
+  /** Переключает режим просмотра дат. */
   setDateView: Dispatch<SetStateAction<"list" | "calendar">>;
+  /** Фильтр списка задач по сроку. */
   dateListFilter: "all" | "overdue" | "today" | "upcoming";
+  /** Обновляет фильтр задач по сроку. */
   setDateListFilter: Dispatch<SetStateAction<"all" | "overdue" | "today" | "upcoming">>;
+  /** Месяц календаря в формате `YYYY-MM`. */
   calendarMonth: string;
+  /** Локализованный заголовок текущего месяца. */
   calendarLabel: string;
+  /** Ячейки календарной сетки. */
   calendarDays: CalendarPanelProps["days"];
+  /** Задачи, связанные с текущим месяцем или выбранным днём. */
   calendarTasks: Array<Task>;
+  /** Количество задач, показанное возле заголовка календаря. */
   calendarTaskCount: number;
+  /** Дата, над которой находится курсор или для которой открыт список задач. */
   activeCalendarDate: string | null;
+  /** Возвращает подпись места размещения задачи. */
   calendarTaskLocation: (task: Task) => string;
+  /** Меняет месяц календаря. */
   setCalendarMonth: Dispatch<SetStateAction<string>>;
+  /** Сдвигает календарь на заданное количество месяцев. */
   shiftCalendarMonth: (amount: number) => void;
+  /** Возвращает календарь к текущему месяцу. */
   onToday: () => void;
+  /** Устанавливает дату задачи на выбранный календарный день. */
   onMarkDate: CalendarPanelProps["onMarkDate"];
+  /** Перемещает задачу на выбранный день. */
   onDropDate: CalendarPanelProps["onDropDate"];
+  /** Закрывает список задач активного дня. */
   onLeaveDate: () => void;
+  /** Начинает перетаскивание задачи из календаря. */
   onTaskDragStart: CalendarPanelProps["onTaskDragStart"];
+  /** Завершает перетаскивание задачи из календаря. */
   onTaskDragEnd: CalendarPanelProps["onTaskDragEnd"];
+  /** Открывает выбранную задачу. */
   onTaskOpen: CalendarPanelProps["onTaskOpen"];
+  /** Иерархия задач для представления списка дат. */
   viewTasks: Array<TaskNode>;
+  /** Действия над строками задач. */
   taskActions: Parameters<typeof renderTaskNodes>[1];
 };
 
+/** Показывает календарь либо отфильтрованный список задач со сроками. */
 export const DatesPage = ({
   dateView,
   setDateView,

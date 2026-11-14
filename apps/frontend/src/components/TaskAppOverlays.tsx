@@ -6,37 +6,65 @@ import { ClipboardCopy, Eye, X } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { copyText, createPlacementOptions } from "../taskAppUtils";
 
+/** Данные открытого предпросмотра Markdown или JSON. */
 export type TaskAppMarkdownModal = {
+  /** Заголовок окна предпросмотра. */
   title: string;
+  /** Текст документа для отображения внутри окна. */
   markdown: string;
+  /** Тип содержимого, определяющий подпись формата. */
   format?: "markdown" | "advanced-markdown" | "json";
 };
 
+/** Состояние и действия модальных окон массового перемещения и экспорта. */
 type TaskAppOverlaysProps = {
+  /** Открыт ли диалог перемещения выбранных задач. */
   selectedMoveOpen: boolean;
+  /** Закрывает или открывает диалог массового перемещения. */
   setSelectedMoveOpen: (open: boolean) => void;
+  /** Корневые задачи, выбранные для перемещения. */
   selectedRootTasks: Array<TaskNode>;
+  /** Текущий выбор целевого проекта или секции. */
   selectedMovePlacement: string;
+  /** Меняет целевое место перемещения. */
   setSelectedMovePlacement: (placement: string) => void;
+  /** Проекты, доступные для выбора назначения. */
   activeProjects: Array<Project>;
+  /** Секции, доступные для выбора назначения. */
   allSections: Array<Section>;
+  /** Выполняется ли запрос перемещения. */
   selectedMovePending: boolean;
+  /** Подтверждает и выполняет перемещение выбранных задач. */
   moveSelectedTasks: () => void;
+  /** Данные открытого предпросмотра или `null`, если окно закрыто. */
   markdownModal: TaskAppMarkdownModal | null;
+  /** Управляет открытием и содержимым предпросмотра. */
   setMarkdownModal: Dispatch<SetStateAction<TaskAppMarkdownModal | null>>;
+  /** Позиционирование и поведение фокуса плавающего окна. */
   markdownFloating: ReturnType<typeof useFloating>;
+  /** Открыты ли варианты scoped-экспорта текущей области. */
   scopeExportOpen: boolean;
+  /** Закрывает или открывает варианты scoped-экспорта. */
   setScopeExportOpen: (open: boolean) => void;
+  /** ID текущего проекта либо `null` для Входящих. */
   targetProjectId: ProjectId | null;
+  /** Данные проекта для отображения названия и описания. */
   scopeProject: Project | null;
+  /** Заголовок текущей области задач. */
   taskTargetLabel: string;
+  /** Простой Markdown текущей области. */
   markdown: string;
+  /** Расширенный Markdown текущей области. */
   advancedMarkdown: string;
+  /** JSON текущей области. */
   scopeJson: string;
+  /** Текст статуса последнего копирования. */
   copyStatus: string;
+  /** Устанавливает текст статуса копирования. */
   setCopyStatus: (status: string) => void;
 };
 
+/** Отображает модальные окна экспорта и массового перемещения задач. */
 export const TaskAppOverlays = ({
   selectedMoveOpen,
   setSelectedMoveOpen,
@@ -67,6 +95,7 @@ export const TaskAppOverlays = ({
         className="selection-move-backdrop"
         role="presentation"
         onMouseDown={(event) => {
+          // Клик по фону отменяет массовое перемещение, клик внутри формы — нет.
           if (event.target === event.currentTarget) setSelectedMoveOpen(false);
         }}
       >
@@ -76,6 +105,7 @@ export const TaskAppOverlays = ({
           aria-modal="true"
           aria-label="Move selected tasks"
           onKeyDown={(event) => {
+            // Escape закрывает диалог массового перемещения.
             if (event.key === "Escape") setSelectedMoveOpen(false);
           }}
         >
@@ -138,6 +168,7 @@ export const TaskAppOverlays = ({
             }
             onKeyDown={(event) => {
               if (event.key === "Escape") {
+                // Закрытие предпросмотра освобождает focus manager от текущего диалога.
                 setMarkdownModal(null);
               }
             }}
@@ -164,6 +195,7 @@ export const TaskAppOverlays = ({
         className="export-options-backdrop"
         role="presentation"
         onMouseDown={(event) => {
+          // Закрываем настройки экспорта только по клику на затемнённый фон.
           if (event.target === event.currentTarget) setScopeExportOpen(false);
         }}
       >
@@ -174,6 +206,7 @@ export const TaskAppOverlays = ({
           aria-label="Export options"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
+              // Escape закрывает список вариантов, не меняя открытое окно предпросмотра.
               event.preventDefault();
               setScopeExportOpen(false);
             }
@@ -214,6 +247,7 @@ export const TaskAppOverlays = ({
                 <button
                   type="button"
                   onClick={async () => {
+                    // После успешного копирования показываем короткий статус пользователю.
                     await copyText(markdown);
                     setCopyStatus("Markdown copied");
                   }}

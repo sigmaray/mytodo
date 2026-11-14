@@ -3,6 +3,7 @@ import type { AppHono, RepositoryForUser } from "./appTypes";
 import type { AttachmentMetadata, AttachmentStorage } from "./attachmentStorage";
 import { detectSafeImageMimeType, validateAttachmentFiles } from "./attachmentStorage";
 
+/** Регистрирует API загрузки комментариев с файлами и чтения вложений. */
 export const registerAttachmentRoutes = (
   app: AppHono,
   dependencies: {
@@ -11,14 +12,17 @@ export const registerAttachmentRoutes = (
     attachmentStorageAvailable: boolean;
   },
 ) => {
+  // Для каждого запроса выбирается репозиторий пользователя из установленной сессии.
   const { repositoryFor, attachmentStorage, attachmentStorageAvailable } = dependencies;
   app.post("/tasks/:id/comments", bodyLimit({ maxSize: 26 * 1024 * 1024 }), async (context) => {
+    // Проверяем доступность и существование задачи до сохранения переданных файлов.
     if (!attachmentStorageAvailable) return context.json({ error: "Attachments are disabled" }, 503);
     const taskRepository = repositoryFor(context.get("userId"));
     const taskId = context.req.param("id");
     const task = (await taskRepository.list()).find((item) => item.id === taskId);
     if (task === undefined) return context.json({ error: "Task not found" }, 404);
     let form: FormData;
+    // Разбор multipart может завершиться ошибкой при некорректном теле запроса.
     try {
       form = await context.req.formData();
     } catch {
@@ -35,6 +39,7 @@ export const registerAttachmentRoutes = (
       return context.json({ error: "Unsupported filename or MIME type" }, 400);
     if (fileValidation === "limits-exceeded")
       return context.json({ error: "Attachment limits exceeded (10 files, 10 MB each, 25 MB total)" }, 413);
+    // Если запись комментария не удастся, созданные файлы будут удалены в обработчике ошибки.
     let attachments: Array<AttachmentMetadata> | undefined;
     try {
       attachments = await attachmentStorage.saveMany(files);
@@ -53,6 +58,7 @@ export const registerAttachmentRoutes = (
   });
 
   app.get("/attachments/:id", async (context) => {
+    // Перед чтением файла убеждаемся, что он указан в комментарии текущего пользователя.
     if (!attachmentStorageAvailable) return context.json({ error: "Attachments are disabled" }, 503);
     const id = context.req.param("id");
     const uuid = /^[0-9a-f-]{36}$/i.test(id);

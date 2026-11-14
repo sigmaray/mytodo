@@ -1,8 +1,10 @@
 import { test as base, expect } from "@playwright/test";
 
+/** Расширяет фикстуру Playwright: входит администратором и сбрасывает тестовые данные. */
 export const test = base.extend({
   page: async ({ page, baseURL }, use) => {
     if (baseURL === undefined) throw new Error("Playwright baseURL is required");
+    // Общий контекст браузера сохраняет cookie между входом и очисткой тестовых данных.
     const loginResponse = await page.request.post(new URL("/auth/login", baseURL).toString(), {
       data: { username: "admin", password: "todoist-e2e-password" },
     });

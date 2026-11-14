@@ -18,6 +18,8 @@ import { createMemoryUserRepository } from "./users";
 afterEach(cleanupTestResources);
 
 describe("comment attachments", () => {
+  // Вложения недоступны без каталога хранения.
+  // Без каталога хранения API не объявляет и не принимает вложения.
   it("keeps attachments disabled unless a storage directory is configured", async () => {
     const agent = await createTestAgent();
     await agent
@@ -28,6 +30,8 @@ describe("comment attachments", () => {
     await agent.post(`/tasks/${task.id}/comments`).field("body", "A note").expect(503);
   });
 
+  // Флаг функции может отключить загрузку даже при настроенной файловой системе.
+  // Переключатель функции отключает API даже при заданном каталоге.
   it("keeps attachment APIs disabled when the environment feature flag is off even if storage is configured", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-disabled-"));
     temporaryDirectories.add(directory);
@@ -61,6 +65,8 @@ describe("comment attachments", () => {
     await agent.get("/attachments/00000000-0000-0000-0000-000000000000").expect(503);
   });
 
+  // Сохраняем файл приватно и выдаём его только по аутентифицированному API.
+  // Вложения комментария хранятся приватно и выдаются только авторизованным запросам.
   it("stores confirmed comment files privately and serves them only through the authenticated API", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-"));
     temporaryDirectories.add(directory);
@@ -106,6 +112,8 @@ describe("comment attachments", () => {
     expect(JSON.stringify(listed.body)).toContain(attachment.id);
   });
 
+  // Одновременные запросы не должны терять комментарии или вложения друг друга.
+  // Параллельные загрузки файлов не затирают комментарии друг друга.
   it("keeps comments from concurrent attachment uploads", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-concurrent-"));
     temporaryDirectories.add(directory);
@@ -150,6 +158,8 @@ describe("comment attachments", () => {
     );
   });
 
+  // Редактирование и удаление комментариев синхронизирует метаданные вложений в правильном порядке.
+  // Комментарии можно редактировать и удалять, сохраняя порядок метаданных вложений.
   it("allows editing and deleting comments with PostgreSQL-ordered attachment metadata", async () => {
     const createdAt = "2026-11-08T15:00:31.010Z";
     const attachment = {

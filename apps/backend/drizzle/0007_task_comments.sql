@@ -1,3 +1,4 @@
+-- Выделяет комментарии и вложения из полей задач в отдельную таблицу.
 CREATE TABLE IF NOT EXISTS "task_comments" (
   "id" text PRIMARY KEY NOT NULL,
   "task_id" text NOT NULL REFERENCES "tasks" ("id") ON DELETE CASCADE,

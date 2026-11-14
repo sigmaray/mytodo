@@ -1,16 +1,18 @@
 version: "3"
 
 vars:
+  # Параметры подключения PostgreSQL для локальных команд по умолчанию.
   MYTODO_DB_HOST: '{{.MYTODO_DB_HOST | default "127.0.0.1"}}'
   MYTODO_DB_PORT: '{{.MYTODO_DB_PORT | default "5432"}}'
   MYTODO_DB_USER: '{{.MYTODO_DB_USER | default "todoist"}}'
   MYTODO_DB_PASSWORD: '{{.MYTODO_DB_PASSWORD | default "todoist"}}'
   MYTODO_DB_NAME: '{{.MYTODO_DB_NAME | default "todoist"}}'
+  # Имя дампа получает временную метку, чтобы новые копии не затирали предыдущие.
   MYTODO_DB_DUMP_FILE: '{{.MYTODO_DB_DUMP_FILE | default (printf "dumps/todoist-%s.dump" (now | date "2006-01-02_150405"))}}'
 
 tasks:
   # -----------------------
-  # For launching locally with Docker (preferred method)
+  # Локальный запуск через Docker (рекомендуемый способ)
 
   dev:docker:
     desc: Run the full development environment through Docker Compose
@@ -25,6 +27,7 @@ tasks:
       - echo "Database dump saved to {{.MYTODO_DB_DUMP_FILE}}"
 
   dev:docker:db:restore:
+    # Восстановление заменяет объекты, включённые в дамп.
     desc: Restore a custom-format dump, replacing objects included in the dump
     vars:
       DUMP_FILE: '{{.DUMP_FILE | default .MYTODO_DB_DUMP_FILE}}'
@@ -57,6 +60,7 @@ tasks:
       - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users list
 
   dev:docker:users:create:
+    # Проверяет обязательные аргументы до вызова backend CLI.
     desc: Create a user account (USERNAME=... PASSWORD=... [ADMIN=true])
     vars:
       USERNAME: '{{.USERNAME | default ""}}'
@@ -77,6 +81,7 @@ tasks:
       - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users create "{{.USERNAME}}" "{{.PASSWORD}}" {{if eq .ADMIN "true"}}--admin{{end}}
 
   dev:docker:users:update:
+    # Для изменения требуется передать хотя бы одно поле.
     desc: Update an account (USERNAME=... [NAME=...] [PASSWORD=...] [ADMIN=true|false])
     vars:
       USERNAME: '{{.USERNAME | default ""}}'
@@ -111,6 +116,7 @@ tasks:
       - MYTODO_DB_HOST="{{.MYTODO_DB_HOST}}" MYTODO_DB_PORT="{{.MYTODO_DB_PORT}}" MYTODO_DB_USER="{{.MYTODO_DB_USER}}" MYTODO_DB_PASSWORD="{{.MYTODO_DB_PASSWORD}}" MYTODO_DB_NAME="{{.MYTODO_DB_NAME}}" pnpm users delete "{{.USERNAME}}"
 
   dev:docker:test:
+    # Останавливает и удаляет тестовый Compose stack даже при ошибке тестов.
     desc: Run the app in Docker test mode, execute all tests, and stop it
     cmds:
       - |
@@ -120,7 +126,7 @@ tasks:
         exit $status
 
   # -----------------------
-  # For launching in production using external PostgreSQL (from other container or other server)
+  # Production-запуск с внешним PostgreSQL в другом контейнере или на другом сервере
 
   prod:docker:
     desc: Alias for prod:docker:up
@@ -150,6 +156,7 @@ tasks:
         '
 
   prod:docker:db:drop-tables:
+    # Сбрасывает все таблицы общей production-схемы, включая служебные.
     desc: Drop all tables in the shared production database (destructive)
     dotenv: [.env]
     cmds:
@@ -257,7 +264,7 @@ tasks:
 
 
   # -------------------------
-  # Launch app in production using Docker and launch PosgreSQL without using external infra
+  # Production-запуск приложения и PostgreSQL в Docker без внешней инфраструктуры
 
   prod:docker:with-infra:
     desc: Alias for prod:docker:with-infra:up
@@ -287,6 +294,7 @@ tasks:
       - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T postgres dropdb --force --if-exists -U "{{.MYTODO_DB_USER | default "todoist"}}" "{{.MYTODO_DB_NAME | default "todoist"}}"
 
   prod:docker:with-infra:db:drop-tables:
+    # Сбрасывает все таблицы production-базы, включая пользователей и сессии.
     desc: Drop all tables in the bundled production database (destructive)
     dotenv: [.env]
     cmds:
@@ -370,7 +378,7 @@ tasks:
       - docker compose --env-file .env -f docker-compose.with-infra.yml exec -T todoist-api ./node_modules/.bin/tsx src/users-cli.ts delete "{{.USERNAME}}"
 
   # -----------------------
-  # For launching locally without Docker
+  # Локальный запуск без Docker
 
   backend:
     desc: Run the backend API in watch mode (for launching locally without docker)
@@ -418,6 +426,7 @@ tasks:
       - pnpm test
 
   test:prod:lxd:test:
+    # Передаёт provisioner-у явное требование удалить тестовый контейнер.
     desc: Test the production Docker stack inside a temporary LXD container
     cmds:
       - LXD_CREATE_DEFAULT_ADMIN=false LXD_REMOVE_CONTAINER=true bash scripts/setup-production-in-lxd.sh

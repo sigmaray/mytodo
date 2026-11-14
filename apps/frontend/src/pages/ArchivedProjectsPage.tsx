@@ -8,22 +8,35 @@ import type { ApplicationApi } from "../api";
 import { isTaskDueToday, taskDueDateTone } from "../dateUtils";
 import { projectQueryKey, taskQueryKey } from "../queryKeys";
 
-export const ArchivedProjectsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: ReactNode }) => {
+/** API и sidebar страницы архивных проектов. */
+type ArchivedProjectsPageProps = {
+  /** Выполняет загрузку, восстановление и удаление проектов. */
+  api: ApplicationApi;
+  /** Sidebar приложения, отображаемый рядом с архивом. */
+  sidebar?: ReactNode;
+};
+
+/** Показывает архивные проекты и позволяет восстановить или удалить выбранный проект. */
+export const ArchivedProjectsPage = ({ api, sidebar }: ArchivedProjectsPageProps) => {
   const queryClient = useQueryClient();
   const [selectedProjectId, setSelectedProjectId] = useState<ProjectId | null>(null);
   const projects = useQuery({ queryKey: projectQueryKey, queryFn: api.listProjects });
   const tasks = useQuery({ queryKey: taskQueryKey, queryFn: api.listTasks });
   const archived = (projects.data ?? []).filter((project) => project.archived);
+  /** Возвращает проект в активный список и обновляет query cache. */
   const restore = async (project: Project) => {
     await api.archiveProject(project.id, false);
     await queryClient.invalidateQueries({ queryKey: projectQueryKey });
   };
+  /** Удаляет проект вместе с задачами после подтверждения пользователя. */
   const remove = async (project: Project) => {
+    // Удаление очищает проектные данные, поэтому перед запросом требуется подтверждение.
     if (!window.confirm(`Delete project “${project.title}” and all its tasks?`)) return;
     await api.deleteProject(project.id);
     await queryClient.invalidateQueries({ queryKey: projectQueryKey });
     await queryClient.invalidateQueries({ queryKey: taskQueryKey });
   };
+  /** Рекурсивно показывает дерево задач выбранного архивного проекта. */
   const renderTasks = (nodes: Array<TaskNode>): ReactElement => (
     <ul className="archived-task-tree">
       {nodes.map((task) => (
@@ -49,6 +62,7 @@ export const ArchivedProjectsPage = ({ api, sidebar }: { api: ApplicationApi; si
     </ul>
   );
   const selectedProject = archived.find((project) => project.id === selectedProjectId);
+  // Показываем корни проекта, а renderTasks рекурсивно выводит все вложенные задачи.
   const archivedTaskRoots = (tasks.data ?? []).filter(
     (task) => task.projectId === selectedProjectId && task.parentId === null,
   );

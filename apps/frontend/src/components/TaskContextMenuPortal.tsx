@@ -1,16 +1,25 @@
 import type { TaskNode } from "@todoist-clone/domain";
 import { createPortal } from "react-dom";
 
+/** Задача, позиция и действия всплывающего контекстного меню. */
 type TaskContextMenuPortalProps = {
+  /** Выбранная задача или `null`, когда меню закрыто. */
   task: TaskNode | null;
+  /** Горизонтальная экранная координата меню. */
   left: number;
+  /** Вертикальная экранная координата меню. */
   top: number;
+  /** Открывает подробности задачи. */
   onOpen: () => void;
+  /** Начинает быстрое редактирование задачи. */
   onQuickEdit: () => void;
+  /** Создаёт дочернюю задачу. */
   onAddSubtask: () => void;
+  /** Удаляет задачу и её подзадачи. */
   onDelete: () => void;
 };
 
+/** Рендерит меню действий в portal рядом с выбранной задачей. */
 export const TaskContextMenuPortal = ({
   task,
   left,

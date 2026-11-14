@@ -1,12 +1,15 @@
--- Repair invalid legacy links before enforcing same-user relationships.
+-- Исправляет устаревшие ссылки до добавления ограничений, запрещающих межпользовательские связи.
+-- Очищаем ссылки на родительские проекты, принадлежащие другому пользователю или отсутствующие.
 UPDATE "projects" AS child SET "parent_id" = NULL
 WHERE child."parent_id" IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM "projects" AS parent WHERE parent."id" = child."parent_id" AND parent."user_id" = child."user_id"
 );
+-- Очищаем ссылки секций на чужие или отсутствующие проекты.
 UPDATE "sections" AS section SET "project_id" = NULL
 WHERE section."project_id" IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM "projects" AS project WHERE project."id" = section."project_id" AND project."user_id" = section."user_id"
 );
+-- Очищаем родительские задачи и расположения, которые выходят за границы владельца.
 UPDATE "tasks" AS task SET "parent_id" = NULL
 WHERE task."parent_id" IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM "tasks" AS parent WHERE parent."id" = task."parent_id" AND parent."user_id" = task."user_id"
@@ -19,9 +22,11 @@ UPDATE "tasks" AS task SET "section_id" = NULL
 WHERE task."section_id" IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM "sections" AS section WHERE section."id" = task."section_id" AND section."user_id" = task."user_id"
 );
+-- Приводим владельца комментария к владельцу связанной задачи.
 UPDATE "task_comments" AS comment SET "user_id" = task."user_id"
 FROM "tasks" AS task WHERE comment."task_id" = task."id" AND comment."user_id" <> task."user_id";
 
+-- Составные уникальные ключи позволяют внешним ключам проверять совпадение владельца.
 CREATE UNIQUE INDEX IF NOT EXISTS "projects_id_user_id_uq" ON "projects" ("id", "user_id");
 CREATE UNIQUE INDEX IF NOT EXISTS "sections_id_user_id_uq" ON "sections" ("id", "user_id");
 CREATE UNIQUE INDEX IF NOT EXISTS "tasks_id_user_id_uq" ON "tasks" ("id", "user_id");
@@ -32,6 +37,7 @@ CREATE INDEX IF NOT EXISTS "tasks_user_project_idx" ON "tasks" ("user_id", "proj
 CREATE INDEX IF NOT EXISTS "tasks_user_section_idx" ON "tasks" ("user_id", "section_id");
 CREATE INDEX IF NOT EXISTS "task_comments_task_user_created_idx" ON "task_comments" ("task_id", "user_id", "created_at", "id");
 
+-- Добавляем составные внешние ключи только после исправления исторических данных.
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'projects_parent_user_fk') THEN
     ALTER TABLE "projects" ADD CONSTRAINT "projects_parent_user_fk"

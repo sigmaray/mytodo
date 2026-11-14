@@ -2,12 +2,17 @@ import type { Project, ProjectId, Section, SectionId, TaskNode } from "@todoist-
 import { renderAdvancedMarkdownDocument, renderTaskMarkdownDocument } from "@todoist-clone/domain";
 import type { DragEvent } from "react";
 
+/** Положение курсора относительно задачи при перетаскивании. */
 export type DragPlacement = "before" | "inside" | "after" | "outdent";
 
+/** Специальный идентификатор списка Входящие для выбора места размещения. */
 export const inboxPlacement = "inbox";
+/** Кодирует проект в строковый идентификатор места размещения. */
 export const projectPlacement = (id: ProjectId) => `project:${id}`;
+/** Кодирует секцию в строковый идентификатор места размещения. */
 export const sectionPlacement = (id: SectionId) => `section:${id}`;
 
+/** Возвращает идентификатор списка, в котором находится задача. */
 export const taskPlacement = (task: TaskNode) =>
   task.sectionId !== null
     ? sectionPlacement(task.sectionId)
@@ -15,10 +20,12 @@ export const taskPlacement = (task: TaskNode) =>
       ? projectPlacement(task.projectId)
       : inboxPlacement;
 
+/** Разбирает идентификатор места и определяет проект/секцию для размещения. */
 export const parsePlacement = (
   placement: string,
   sections: Array<Section>,
 ): { projectId: ProjectId | null; sectionId: SectionId | null } => {
+  // Для секции проект определяется по её записи, поскольку его нет в строковом ID.
   if (placement.startsWith("project:")) {
     return { projectId: placement.slice("project:".length), sectionId: null };
   }
@@ -34,6 +41,7 @@ export const parsePlacement = (
   return { projectId: null, sectionId: null };
 };
 
+/** Формирует отсортированные подписи всех доступных мест создания задачи. */
 export const createPlacementOptions = (
   projects: Array<Project>,
   sections: Array<Section>,
@@ -57,12 +65,14 @@ export const createPlacementOptions = (
       left.value.localeCompare(right.value),
   );
 
+/** Ищет узел дерева по ID, включая любые уровни вложенных задач. */
 export const findTaskNode = (tasks: Array<TaskNode>, id: string): TaskNode | null =>
   tasks.reduce<TaskNode | null>(
     (found, task) => found ?? (task.id === id ? task : findTaskNode(task.children, id)),
     null,
   );
 
+/** Оставляет задачи, удовлетворяющие условию, и сохраняет их исходных потомков. */
 export const filterTaskTree = (
   tasks: Array<TaskNode>,
   predicate: (task: TaskNode) => boolean,
@@ -72,10 +82,13 @@ export const filterTaskTree = (
     return filterTaskTree(task.children, predicate);
   });
 
+/** Проверяет, содержит ли поддерево задачи узел с указанным идентификатором. */
 export const hasDescendant = (task: TaskNode, id: string): boolean =>
   task.children.some((child) => child.id === id || hasDescendant(child, id));
 
+/** Вычисляет место сброса по координатам курсора и отступу строки задачи. */
 export const dragPlacementFromEvent = (event: DragEvent<HTMLElement>): DragPlacement => {
+  // Виртуальные события и строки без layout могут не иметь полезных координат или размеров.
   const { top, left, height } = event.currentTarget.getBoundingClientRect();
   const pointerX = Number.isFinite(event.clientX) ? event.clientX : left;
   const pointerY = Number.isFinite(event.clientY) ? event.clientY : 0;
@@ -95,6 +108,7 @@ export const dragPlacementFromEvent = (event: DragEvent<HTMLElement>): DragPlace
   return y < height * 0.35 ? "before" : y > height * 0.65 ? "after" : "inside";
 };
 
+/** Формирует простой Markdown для открытого проекта либо списка Входящие. */
 export const currentMarkdown = (
   title: string,
   inboxRootTasks: Array<TaskNode>,
@@ -102,6 +116,7 @@ export const currentMarkdown = (
   allTasks: Array<TaskNode>,
   targetProjectId: ProjectId | null,
 ) => {
+  // В экспорте проекта разделяем корневые задачи и задачи его секций.
   if (targetProjectId !== null) {
     return renderTaskMarkdownDocument(
       title,
@@ -129,6 +144,7 @@ export const currentMarkdown = (
   );
 };
 
+/** Формирует расширенный Markdown для выбранной области с описанием и деталями задач. */
 export const currentAdvancedMarkdown = (
   title: string,
   sections: Array<Section>,
@@ -136,6 +152,7 @@ export const currentAdvancedMarkdown = (
   targetProjectId: ProjectId | null,
   description: string,
 ) =>
+  // Функция отображения доменного пакета формирует вложенность и подробности задачи.
   renderAdvancedMarkdownDocument(
     title,
     allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null),
@@ -148,6 +165,7 @@ export const currentAdvancedMarkdown = (
     description,
   );
 
+/** Собирает Markdown-документ со всеми списками и проектами пользователя. */
 export const allMarkdownDocument = (
   projects: Array<Project>,
   sections: Array<Section>,
@@ -182,6 +200,7 @@ export const allMarkdownDocument = (
     ],
   );
 
+/** Собирает расширенный Markdown по всем областям вместе с их описаниями. */
 export const allAdvancedMarkdownDocument = (
   projects: Array<Project>,
   sections: Array<Section>,
@@ -219,12 +238,14 @@ export const allAdvancedMarkdownDocument = (
     ],
   );
 
+/** Копирует текст в буфер обмена и использует временное поле как запасной путь. */
 export const copyText = async (text: string) => {
   if (navigator.clipboard !== undefined) {
     await navigator.clipboard.writeText(text);
     return;
   }
 
+  // Запасной способ нужен браузерам без Clipboard API или без выданного разрешения.
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
@@ -235,6 +256,7 @@ export const copyText = async (text: string) => {
   textarea.remove();
 };
 
+/** Запускает скачивание Blob через временную ссылку и освобождает её URL. */
 export const downloadBlob = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

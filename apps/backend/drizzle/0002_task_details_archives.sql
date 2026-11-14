@@ -1,3 +1,4 @@
+-- Добавляет описания, сроки, метки, комментарии и архивный признак проекта.
 ALTER TABLE "tasks" ADD COLUMN IF NOT EXISTS "description" text NOT NULL DEFAULT '';
 ALTER TABLE "tasks" ADD COLUMN IF NOT EXISTS "due_date" text;
 ALTER TABLE "tasks" ADD COLUMN IF NOT EXISTS "labels" text[] NOT NULL DEFAULT '{}';

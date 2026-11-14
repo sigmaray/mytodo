@@ -11,18 +11,29 @@ import { useTaskAppMutations } from "./useTaskAppMutations";
 import { createTaskAppDragActions } from "./useTaskAppDragActions";
 import type { TaskAppActionsState } from "./useTaskAppState";
 
+/** Зависимости и состояние, из которых хук собирает обработчики workspace. */
 type TaskAppActionInput = {
+  /** HTTP-клиент приложения. */
   api: ApplicationApi;
+  /** Кэш запросов для оптимистичных обновлений и инвалидации. */
   queryClient: QueryClient;
+  /** Локальное состояние форм и выбранных задач. */
   state: TaskAppActionsState;
+  /** Разрешена ли загрузка файлов к комментариям. */
   attachmentsEnabled: boolean;
+  /** Разрешено ли архивировать проекты. */
   projectArchivingEnabled: boolean;
+  /** Последний результат запроса задач. */
   taskData: Array<TaskNode> | undefined;
+  /** Последний результат запроса проектов. */
   projectData: Array<Project> | undefined;
+  /** Последний результат запроса секций. */
   sectionData: Array<Section> | undefined;
+  /** Настройки пользователя, которые влияют на подтверждение удаления. */
   settings: { confirmDelete: boolean } | undefined;
 };
 
+/** Создаёт пользовательские обработчики и связывает их с доменными мутациями. */
 export const useTaskAppActions = ({
   api,
   queryClient,
@@ -173,6 +184,7 @@ export const useTaskAppActions = ({
     (task) => task.parentId === null && task.projectId === targetProjectId,
   );
   const selectedRootTasks = scopeRootTasks.filter((task) => selectedRootTaskIds.includes(task.id));
+  // Групповое перемещение корня включает и все его дочерние задачи.
   const collectSelectedTaskIds = (task: TaskNode): Array<TaskId> => [
     task.id,
     ...task.children.flatMap(collectSelectedTaskIds),
@@ -184,11 +196,13 @@ export const useTaskAppActions = ({
     setSelectedMoveOpen(false);
   };
   const rootTaskForSelection = (task: TaskNode): TaskNode => {
+    // Выбор всегда хранит только корневые задачи, даже если клик пришёлся на потомка.
     if (task.parentId === null) return task;
     const parent = findTaskNode(allTasks, task.parentId);
     return parent === null ? task : rootTaskForSelection(parent);
   };
   const toggleTaskSelection = (task: TaskNode) => {
+    // В режиме выбора разрешены только задачи текущего Inbox/project scope.
     if (!selectionMode) return;
     const rootTask = rootTaskForSelection(task);
     if (!scopeRootTasks.some((candidate) => candidate.id === rootTask.id)) return;
@@ -198,11 +212,13 @@ export const useTaskAppActions = ({
   };
   const availableLabels = normalizeLabels(flatTasks.flatMap((task) => task.labels));
   useEffect(() => {
+    // Quick-add URL открывает форму в текущем списке и очищает одноразовый параметр.
     if (new URLSearchParams(window.location.search).get("addTask") === "1") {
       setAddTaskPlacement(targetProjectId === null ? inboxPlacement : projectPlacement(targetProjectId));
       setAddTaskOpen(true);
       window.history.replaceState({}, "", window.location.pathname);
     }
+    // Ссылка на задачу открывает её детали после того, как дерево задач загружено.
     const taskId = new URLSearchParams(window.location.search).get("task");
     const task = taskId === null ? null : findTaskNode(allTasks, taskId);
     if (task !== null) {
@@ -238,6 +254,7 @@ export const useTaskAppActions = ({
     setDetailSaveStatus("Saving…");
     try {
       const updatedTask = await api.updateTask(selectedDetailsTask.id, patch);
+      // Обновляем узел на месте в дереве, сохраняя уже загруженные дочерние узлы.
       queryClient.setQueryData<Array<TaskNode>>(taskQueryKey, (current) => {
         if (current === undefined) return current;
         const updateNode = (node: TaskNode): TaskNode =>
@@ -249,12 +266,14 @@ export const useTaskAppActions = ({
       setDetailSaveStatus("Saved");
       return true;
     } catch {
+      // Старое значение остаётся в кэше; статус сообщает пользователю о неудачной записи.
       setDetailSaveStatus("Could not save changes");
       return false;
     }
   };
   const removeCommentAttachment = async (commentId: string, attachmentId: string) => {
     if (selectedDetailsTask === null || !attachmentsEnabled) return;
+    // Удаляем пустой комментарий целиком, если в нём не осталось текста и вложений.
     const comments = selectedDetailsTask.comments.flatMap((comment) => {
       if (comment.id !== commentId) return [comment];
       const attachments = (comment.attachments ?? []).filter((attachment) => attachment.id !== attachmentId);
@@ -269,6 +288,7 @@ export const useTaskAppActions = ({
     if (selectedDetailsTask === null) return;
     if (selectedDetailsTask.labels.length > 0 && !window.confirm("Remove all saved labels from this task?"))
       return;
+    // Сначала закрываем секцию и очищаем черновик, затем сохраняем удаление меток.
     setShowMobileLabels(false);
     setDetailLabelInput("");
     if (selectedDetailsTask.labels.length > 0) await saveTaskDetails({ labels: [] });
@@ -280,6 +300,7 @@ export const useTaskAppActions = ({
       !window.confirm("Remove all saved comments from this task?")
     )
       return;
+    // Подтверждение выше защищает уже сохранённые комментарии от случайного удаления.
     setShowMobileComments(false);
     setDetailComment("");
     if (selectedDetailsTask.comments.length > 0) await saveTaskDetails({ comments: [] });
@@ -293,6 +314,7 @@ export const useTaskAppActions = ({
       return;
     setShowMobileSubtasks(false);
     setDetailSubtask("");
+    // Каждое удаление корневой подзадачи каскадно удаляет и её потомков на сервере.
     await Promise.all(selectedDetailsTask.children.map((child) => api.deleteTask(child.id)));
     if (selectedDetailsTask.children.length > 0)
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });

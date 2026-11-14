@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { ToastContainer } from "react-toastify";
 
+/** Рендерит контейнер уведомлений вне основного DOM-поддерева приложения. */
 export const ToastPortal = () =>
   createPortal(
     <ToastContainer

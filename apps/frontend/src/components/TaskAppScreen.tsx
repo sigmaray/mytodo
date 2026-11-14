@@ -36,20 +36,33 @@ import {
   sectionPlacement,
 } from "../taskAppUtils";
 
+/** Props композиционного экрана workspace и его подключённых действий. */
 type TaskAppScreenProps = {
+  /** API, вызываемый обработчиками экрана. */
   api: ApplicationApi;
+  /** Разрешено ли работать с вложениями. */
   attachmentsEnabled: boolean;
+  /** Кэш серверного состояния React Query. */
   queryClient: QueryClient;
+  /** Выполняется ли загрузка задач. */
   tasksLoading: boolean;
+  /** Завершилась ли загрузка задач ошибкой. */
   tasksError: boolean;
+  /** Состояние локальных полей и диалогов. */
   state: TaskAppScreenState;
+  /** Обработчики пользовательских действий. */
   actions: ReturnType<typeof useTaskAppActions>;
+  /** Вычисленные заголовки и элементы для отображения. */
   viewModel: ReturnType<typeof useTaskAppViewModel>;
+  /** Модель текущей страницы. */
   pageModel: TaskAppPageModel;
+  /** Извлекает файлы, вставленные из буфера обмена. */
   pastedFiles: (data: DataTransfer) => Array<File>;
+  /** Показывает уведомления о прикреплённых файлах. */
   notifyAttachedFiles: (files: Array<File>) => void;
 };
 
+/** Композитный экран: подключает sidebar, доску, диалоги и drag-and-drop. */
 export const TaskAppScreen = ({
   api,
   attachmentsEnabled,
@@ -435,10 +448,12 @@ export const TaskAppScreen = ({
           notifyAttachedFiles={notifyAttachedFiles}
           onSubmit={async (event) => {
             event.preventDefault();
+            // Не создаём задачу с пустым названием и не отправляем лишние запросы.
             const taskTitle = addTaskTitle.trim();
             if (!taskTitle) return;
             const placement = parsePlacement(addTaskPlacement, allSections);
             const created = await api.createTask(taskTitle, placement.projectId, placement.sectionId, null);
+            // Для вставки перед выбранным соседом отдельно задаём порядок после создания.
             if (addTaskBeforeId !== null)
               await api.moveTask(
                 created.id,
@@ -452,6 +467,7 @@ export const TaskAppScreen = ({
               try {
                 await api.createComment(created.id, "", addTaskFiles);
               } catch (error) {
+                // Откатываем создание, если файл не сохранился и задачу нельзя оставить полной.
                 await api.deleteTask(created.id);
                 throw error;
               }
@@ -462,6 +478,7 @@ export const TaskAppScreen = ({
               dueDate: addTaskDate || null,
               labels,
             };
+            // Обновление отправляется только при наличии дополнительных значений.
             if (patch.description || patch.dueDate || patch.labels?.length)
               await api.updateTask(created.id, patch);
             await queryClient.invalidateQueries({ queryKey: taskQueryKey });
@@ -534,6 +551,7 @@ export const TaskAppScreen = ({
         left={taskContextMenu?.left ?? 0}
         top={taskContextMenu?.top ?? 0}
         onOpen={() => {
+          // Скрываем меню до открытия подробностей выбранной задачи.
           if (taskContextMenu === null) return;
           setTaskContextMenu(null);
           openDetails(taskContextMenu.task);

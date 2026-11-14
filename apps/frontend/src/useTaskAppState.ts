@@ -14,14 +14,18 @@ import {
 
 export type { DropZoneId } from "./taskAppStateGroups";
 
+/** Вычисляет тип объединённых свойств нескольких групп объектов состояния. */
 type MergeGroups<T> = (T extends unknown ? (value: T) => void : never) extends (value: infer M) => void
   ? M
   : never;
 
+/** Объединяет группы состояния и сохраняет точный тип их доступных свойств. */
 const mergeStateGroups = <TGroups extends Array<object>>(...groups: TGroups) =>
   Object.assign({}, ...groups) as MergeGroups<TGroups[number]>;
 
+/** Компонуёт тематические хуки состояния в контракты для частей workspace. */
 export const useTaskAppState = () => {
+  // Каждому потребителю возвращается подходящий набор групп, без общего монолитного объекта.
   const calendar = useCalendarState();
   const addTask = useAddTaskState();
   const sections = useSectionsState();
@@ -76,10 +80,17 @@ export const useTaskAppState = () => {
   };
 };
 
+/** Полная форма состояния, выведенная из хука-композиции. */
 export type TaskAppState = ReturnType<typeof useTaskAppState>;
+/** Состояние экранного компонента. */
 export type TaskAppScreenState = TaskAppState["screen"];
+/** Контракт данных и действий пользовательских операций. */
 export type TaskAppActionsState = TaskAppState["actions"];
+/** Контракт локального состояния мутаций. */
 export type TaskAppMutationsState = TaskAppState["mutations"];
+/** Контракт состояния drag-and-drop. */
 export type TaskAppDragState = TaskAppState["dragActions"];
+/** Контракт вычисленных данных для отображения. */
 export type TaskAppViewModelState = TaskAppState["viewModel"];
+/** Контракт данных и действий, используемый моделями страниц. */
 export type TaskAppPageModelState = TaskAppState["pageModel"];

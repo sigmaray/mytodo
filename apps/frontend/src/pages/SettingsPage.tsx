@@ -6,7 +6,16 @@ import type { ApplicationApi } from "../api";
 import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 
-export const SettingsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: ReactNode }) => {
+/** API и общая навигация страницы пользовательских настроек. */
+type SettingsPageProps = {
+  /** Клиент для чтения и изменения настроек и аккаунта. */
+  api: ApplicationApi;
+  /** Sidebar приложения, отображаемый рядом с содержимым. */
+  sidebar?: ReactNode;
+};
+
+/** Позволяет изменить пользовательские предпочтения, учётные данные и завершить сессию. */
+export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   useQuickAddShortcut();
   const queryClient = useQueryClient();
   const settings = useQuery({ queryKey: settingsQueryKey, queryFn: api.getSettings });
@@ -15,6 +24,7 @@ export const SettingsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: 
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   useEffect(() => {
+    // Серверные данные задают исходные значения формы после загрузки или смены пользователя.
     if (settings.data !== undefined) {
       setConfirmDelete(settings.data.confirmDelete);
       setAccountUsername(settings.data.username);
@@ -40,6 +50,7 @@ export const SettingsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: 
     },
   });
 
+  /** Завершает текущую сессию и обновляет состояние аутентификации в кэше. */
   const logOut = async () => {
     await api.logout();
     await queryClient.invalidateQueries({ queryKey: authStatusQueryKey });
@@ -110,6 +121,7 @@ export const SettingsPage = ({ api, sidebar }: { api: ApplicationApi; sidebar?: 
                 className="settings-credentials"
                 onSubmit={(event) => {
                   event.preventDefault();
+                  // Пустой пароль исключается из patch, чтобы сохранить текущий пароль.
                   updateAccount.mutate({
                     username: accountUsername.trim().toLowerCase(),
                     ...(accountPassword.length > 0 ? { password: accountPassword } : {}),

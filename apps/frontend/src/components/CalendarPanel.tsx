@@ -3,34 +3,59 @@ import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DragEvent } from "react";
 
+/** День календарной сетки и признаки его визуального состояния. */
 type CalendarDay = {
+  /** ISO-дата ячейки. */
   date: string;
+  /** Число месяца для подписи ячейки. */
   day: number;
+  /** Входит ли дата в отображаемый месяц. */
   isCurrentMonth: boolean;
+  /** Является ли дата текущим днём. */
   isToday: boolean;
+  /** Попадает ли день на выходные. */
   isWeekend: boolean;
 };
 
+/** Данные календарной сетки и обработчики навигации, выбора и drag-and-drop. */
 export type CalendarPanelProps = {
+  /** Месяц в формате `YYYY-MM`. */
   month: string;
+  /** Текстовая подпись месяца. */
   label: string;
+  /** Ячейки календаря. */
   days: Array<CalendarDay>;
+  /** Подписи столбцов дней недели. */
   weekdays: Array<string>;
+  /** Задачи, сроки которых показаны в календаре. */
   tasks: Array<Task>;
+  /** Количество задач в активном представлении. */
   taskCount: number;
+  /** Дата выбранной или наведённой ячейки. */
   activeDate: string | null;
+  /** Формирует подпись места задачи рядом с её названием. */
   locationForTask: (task: Task) => string;
+  /** Выбирает месяц из поля календаря. */
   onMonthChange: (month: string) => void;
+  /** Сдвигает календарь на заданное число месяцев. */
   onShiftMonth: (amount: number) => void;
+  /** Переключает календарь на текущий месяц. */
   onToday: () => void;
+  /** Запускает изменение срока задачи для даты. */
   onMarkDate: (date: string) => (event: DragEvent<HTMLElement>) => void;
+  /** Принимает перетащенную задачу на календарную дату. */
   onDropDate: (date: string) => (event: DragEvent<HTMLElement>) => void;
+  /** Сбрасывает активную календарную дату. */
   onLeaveDate: () => void;
+  /** Начинает перетаскивание задачи из календаря. */
   onTaskDragStart: (task: Task, event: DragEvent<HTMLButtonElement>) => void;
+  /** Завершает перетаскивание задачи из календаря. */
   onTaskDragEnd: () => void;
+  /** Открывает задачу из календаря. */
   onTaskOpen: (task: Task) => void;
 };
 
+/** Отрисовывает календарную сетку, сроки задач и список выбранного дня. */
 export const CalendarPanel = ({
   month,
   label,
@@ -75,6 +100,7 @@ export const CalendarPanel = ({
             type="month"
             value={month}
             onChange={(event) => {
+              // Пустой ввод month не заменяет последнее валидное отображение календаря.
               if (event.target.value) onMonthChange(event.target.value);
             }}
           />
@@ -107,6 +133,7 @@ export const CalendarPanel = ({
                 aria-label={`Tasks for ${day.date}`}
                 onDragOver={onMarkDate(day.date)}
                 onDragLeave={(event) => {
+                  // Не сбрасываем подсветку, пока указатель перемещается между дочерними элементами ячейки.
                   if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onLeaveDate();
                 }}
                 onDrop={onDropDate(day.date)}

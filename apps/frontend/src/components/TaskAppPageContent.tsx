@@ -5,7 +5,15 @@ import { InboxPage } from "../pages/InboxPage";
 import { LabelsPage } from "../pages/LabelsPage";
 import type { TaskAppPageModel } from "../taskAppPageModel";
 
-export const TaskAppPageContent = ({ page }: { page: TaskAppPageModel }) => {
+/** Выбирает компонент страницы по дискриминатору модели маршрута. */
+export const TaskAppPageContent = ({
+  /** Модель маршрута и его специфические данные. */
+  page,
+}: {
+  /** Модель, по которой выбирается компонент страницы. */
+  page: TaskAppPageModel;
+}) => {
+  // Исчерпывающий switch связывает каждый вариант модели с отдельной страницей.
   switch (page.mode) {
     case "dates":
       return <DatesPage {...page.props} />;

@@ -21,16 +21,25 @@ import { createTaskAppExportModel } from "./taskAppExportModel";
 import type { useTaskAppActions } from "./useTaskAppActions";
 import type { TaskAppViewModelState } from "./useTaskAppState";
 
+/** Запросы, состояние и действия для вычисления представления workspace. */
 type TaskAppViewModelInput = {
+  /** API для действий отображаемых элементов. */
   api: ApplicationApi;
+  /** Кэш React Query для чтения и обновления данных. */
   queryClient: QueryClient;
+  /** Состояние экранных форм и выбранного представления. */
   state: TaskAppViewModelState;
+  /** Обработчики действий, создаваемые отдельным хуком. */
   actions: ReturnType<typeof useTaskAppActions>;
+  /** Текущий URL для выбора модели активной страницы. */
   currentPath: string;
+  /** Разрешена ли работа с вложениями. */
   attachmentsEnabled: boolean;
+  /** Описание Входящих, которое может ещё загружаться. */
   inboxDescription: string | undefined;
 };
 
+/** Вычисляет данные, заголовки, доступность действий и списки для отображения. */
 export const useTaskAppViewModel = ({
   api,
   queryClient,
@@ -134,6 +143,7 @@ export const useTaskAppViewModel = ({
     setEditingScopeDescription(true);
   };
   const saveScopeDescription = async () => {
+    // У Входящих описание хранится в настройках пользователя, а у проекта — в записи проекта.
     const description = scopeDescriptionDraft.trim();
     if (targetProjectId === null) {
       await api.updateInboxDescription(description);
@@ -214,6 +224,7 @@ export const useTaskAppViewModel = ({
     selectedTaskIds,
     toggleTaskSelection,
     openContextMenu: (task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => {
+      // Контекстное меню доступно только в списке задач и не выходит за границы окна.
       if (pageMode !== "tasks") return;
       event.preventDefault();
       const width = 196;
@@ -284,6 +295,7 @@ export const useTaskAppViewModel = ({
   }, [pageMode]);
   useEffect(() => {
     const handleSelectionKeys = (event: globalThis.KeyboardEvent) => {
+      // Escape снимает выделение; повтор клавиши и ввод в поля игнорируются ниже.
       if (event.key === "Escape") {
         if (selectionMode) {
           event.preventDefault();
@@ -309,6 +321,7 @@ export const useTaskAppViewModel = ({
   const viewTasks =
     pageMode === "dates"
       ? filterTaskTree(allTasks, (task) => {
+          // Фильтр дат сначала исключает задачи без срока, затем применяет выбранный диапазон.
           if (!task.dueDate) return false;
           switch (dateListFilter) {
             case "all":
@@ -330,6 +343,7 @@ export const useTaskAppViewModel = ({
   const calendarLabel = calendarMonthLabel(calendarMonth);
   const calendarTaskCount = calendarTasks.filter((task) => task.dueDate?.startsWith(calendarMonth)).length;
   const calendarTaskLocation = (task: Task) => {
+    // Для подписи места предпочитаем секцию, затем проект, иначе показываем Входящие.
     const taskSection =
       task.sectionId === null ? null : (allSections.find((item) => item.id === task.sectionId) ?? null);
     const taskProject =
@@ -357,6 +371,7 @@ export const useTaskAppViewModel = ({
     const title = projectTitleDraft.trim();
     if (selectedProject === null || title.length === 0) return;
     try {
+      // Закрываем inline-редактор только после подтверждения мутации.
       await updateProjectMutation.mutateAsync({ id: selectedProject.id, title });
       setEditingProjectTitle(false);
       setProjectTitleDraft("");
@@ -376,6 +391,7 @@ export const useTaskAppViewModel = ({
   );
   const markdown = currentMarkdown(taskTargetLabel, inboxRootTasks, allSections, allTasks, targetProjectId);
   const openAddTaskDialog = (placement: string, beforeId: string | null = null) => {
+    // Каждый новый диалог начинается с чистого черновика, не наследуя прошлый ввод.
     setAddTaskPlacement(placement);
     setAddTaskBeforeId(beforeId);
     setAddTaskTitle("");
@@ -390,6 +406,7 @@ export const useTaskAppViewModel = ({
     setAddTaskOpen(true);
   };
   const deleteAllTasks = async () => {
+    // Удаляем только корни текущего проекта/Входящих: сервер каскадно обработает потомков.
     const roots = flatTasks.filter((task) => task.parentId === null && task.projectId === targetProjectId);
     if (roots.length === 0) return;
     const scope =

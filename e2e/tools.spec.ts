@@ -1,5 +1,6 @@
 import { expect, test } from "./fixtures";
 
+// Страница инструментов позволяет выполнить SQL-запрос в среде разработки.
 test("runs a SQL query from the development tools page", async ({ page }) => {
   await page.goto("/tools/");
 

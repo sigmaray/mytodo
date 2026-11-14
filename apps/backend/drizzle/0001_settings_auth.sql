@@ -1,3 +1,4 @@
+-- Добавляет настройки входа, предпочтения пользователя и серверные сессии.
 CREATE TABLE IF NOT EXISTS "app_settings" (
   "id" text PRIMARY KEY NOT NULL,
   "confirm_delete" boolean DEFAULT true NOT NULL,

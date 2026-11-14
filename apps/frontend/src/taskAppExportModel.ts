@@ -7,16 +7,25 @@ import {
   filterTaskTree,
 } from "./taskAppUtils";
 
+/** Данные текущего workspace, необходимые для подготовки вариантов экспорта. */
 type TaskAppExportModelInput = {
+  /** Все проекты пользователя. */
   allProjects: Array<Project>;
+  /** Все секции, включая секции Входящих. */
   allSections: Array<Section>;
+  /** Дерево задач для экспорта с сохранением иерархии. */
   allTasks: Array<TaskNode>;
+  /** Плоский список задач для разделов JSON-экспорта. */
   flatTasks: Array<Task>;
+  /** Идентификатор открытого проекта или `null` для Входящих. */
   targetProjectId: ProjectId | null;
+  /** Подпись текущего списка для заголовка экспортируемого документа. */
   taskTargetLabel: string;
+  /** Описание Входящих, ещё не загруженное значение обозначается `undefined`. */
   inboxDescription: string | undefined;
 };
 
+/** Формирует полные и scoped варианты Markdown/JSON экспорта и действия скачивания. */
 export const createTaskAppExportModel = ({
   allProjects,
   allSections,
@@ -26,17 +35,22 @@ export const createTaskAppExportModel = ({
   taskTargetLabel,
   inboxDescription,
 }: TaskAppExportModelInput) => {
+  // Полный экспорт сохраняет все сущности вместе с метаданными версии и времени создания.
   const allMarkdown = allMarkdownDocument(allProjects, allSections, allTasks);
   const allJson = JSON.stringify(
     {
+      // Версия схемы позволяет будущим импортёрам отличать формат файла.
       schemaVersion: 1,
+      // Время фиксируется в UTC для однозначной интерпретации экспорта.
       exportedAt: new Date().toISOString(),
       inbox: {
+        // Входящие включают собственное описание, секции и корневые задачи.
         description: inboxDescription ?? "",
         sections: allSections.filter((section) => section.projectId === null),
         tasks: flatTasks.filter((task) => task.projectId === null),
       },
       projects: allProjects.map((project) => ({
+        // Внутри проекта сохраняются его секции и задачи вместе с полями проекта.
         ...project,
         sections: allSections.filter((section) => section.projectId === project.id),
         tasks: flatTasks.filter((task) => task.projectId === project.id),
@@ -45,9 +59,11 @@ export const createTaskAppExportModel = ({
       tasks: flatTasks,
       taskTree: allTasks,
       dates: flatTasks
+        // Отдельный список сроков упрощает чтение дат без обхода всех задач.
         .filter((task) => task.dueDate !== null)
         .map((task) => ({ taskId: task.id, dueDate: task.dueDate })),
       comments: flatTasks.flatMap((task) =>
+        // Идентификатор задачи связывает каждый комментарий с его владельцем.
         task.comments.map((comment) => ({ ...comment, taskId: task.id })),
       ),
       descriptions: {
@@ -61,6 +77,7 @@ export const createTaskAppExportModel = ({
     null,
     2,
   );
+  // Экспорт текущей области ограничивает данные открытым проектом либо списком Входящие.
   const scopeProject =
     targetProjectId === null ? null : (allProjects.find((project) => project.id === targetProjectId) ?? null);
   const scopeSections = allSections.filter((section) => section.projectId === targetProjectId);

@@ -24,6 +24,7 @@ beforeEach(() => {
 });
 
 describe("ToolsPage", () => {
+  // Кнопки инструментов вызывают API базы и показывают полученный результат.
   it("runs database tool actions", async () => {
     const clearTable = vi.fn(async () => ({ cleared: true }));
     const runQuery = vi.fn(async () => ({ rows: [{ id: "1" }] }));
@@ -64,6 +65,7 @@ describe("ToolsPage", () => {
 describe("Dates and Labels task views", () => {
   afterEach(() => window.history.replaceState({}, "", "/"));
 
+  // Даты задач видны в списке, а метки ведут к соответствующему фильтру.
   it("shows dated tasks and their labels with links into the label filter", async () => {
     window.history.replaceState({}, "", "/dates");
     const today = new Date();
@@ -106,6 +108,7 @@ describe("Dates and Labels task views", () => {
     expect(screen.getByRole("link", { name: "work" })).toHaveAttribute("href", "/labels?label=work");
   });
 
+  // Фильтры разделяют задачи по просрочке, сегодняшней дате и будущим срокам.
   it("filters the Dates list by overdue, today, and upcoming dates", async () => {
     window.history.replaceState({}, "", "/dates");
     const today = new Date();
@@ -202,6 +205,7 @@ describe("Dates and Labels task views", () => {
     expect(screen.queryByRole("navigation", { name: "Filter dated tasks" })).not.toBeInTheDocument();
   });
 
+  // Календарь строит навигацию по месяцам и выделяет текущую дату.
   it("renders a complete navigable month calendar with a visible today marker", async () => {
     window.history.replaceState({}, "", "/dates");
     const now = new Date();
@@ -235,6 +239,7 @@ describe("Dates and Labels task views", () => {
     expect(screen.getByLabelText("Calendar month")).toHaveValue(currentMonth);
   });
 
+  // Выбранная метка фильтрует задачи по всему загруженному дереву.
   it("filters tasks by selected label across the complete task list", async () => {
     window.history.replaceState({}, "", "/labels?label=work");
     const labeledParent = task({
@@ -260,6 +265,7 @@ describe("Dates and Labels task views", () => {
 });
 
 describe("SearchPalette", () => {
+  // Поиск находит описания и метки, затем открывает задачу или фильтр.
   it("searches task descriptions and labels, and opens matching destinations", async () => {
     renderApp(
       baseApi([
@@ -286,6 +292,7 @@ describe("SearchPalette", () => {
 });
 
 describe("SettingsPage", () => {
+  // Настройка подтверждения удаления сохраняется для аккаунта пользователя.
   it("saves the current user's deletion preference", async () => {
     const updateSettings = vi.fn(async (settings: Parameters<ApplicationApi["updateSettings"]>[0]) => ({
       confirmDelete: settings.confirmDelete,
@@ -311,6 +318,7 @@ describe("SettingsPage", () => {
     expect(updateSettings.mock.calls[0]?.[0]).toEqual({ confirmDelete: false });
   });
 
+  // Пользователь меняет собственный аккаунт без доступа к администрированию.
   it("lets a signed-in user update their own account without user administration", async () => {
     const updateOwnAccount = vi.fn(async (account: Parameters<ApplicationApi["updateOwnAccount"]>[0]) => ({
       id: "admin",
@@ -338,6 +346,7 @@ describe("SettingsPage", () => {
     );
   });
 
+  // Администратор создаёт пользователя из отдельной страницы управления.
   it("lets administrators create a user on the user management page", async () => {
     const createUser = vi.fn(async (user: Parameters<ApplicationApi["createUser"]>[0]) => ({
       id: "created",
@@ -365,6 +374,7 @@ describe("SettingsPage", () => {
 });
 
 describe("createTaskApi", () => {
+  // Клиент отправляет перемещение задачи через ожидаемый PUT endpoint.
   it("moves tasks with the backend PUT contract", async () => {
     const fetchMock = vi.fn(
       async () =>
@@ -401,6 +411,7 @@ describe("createTaskApi", () => {
     );
   });
 
+  // Обновления проекта и задачи отправляются JSON-запросами с PATCH-методом.
   it("updates projects and task patches with JSON requests", async () => {
     const fetchMock = vi.fn(
       async (url: string) =>

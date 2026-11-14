@@ -1,104 +1,210 @@
 import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskNode } from "@todoist-clone/domain";
 
+/** Данные комментария, которые frontend передаёт API при обновлении задачи. */
 export type TaskCommentInput = {
+  /** Идентификатор сохранённого комментария; для нового сообщения не задаётся. */
   id?: string;
+  /** Текст комментария. */
   body: string;
+  /** Метаданные уже загруженных файлов, если они есть. */
   attachments?: Comment["attachments"];
 };
 
+/** Набор HTTP-операций задач, проектов и секций. */
 export type TaskApi = {
+  /** Загружает дерево задач текущего пользователя. */
   listTasks: () => Promise<Array<TaskNode>>;
+  /** Загружает проекты пользователя. */
   listProjects: () => Promise<Array<Project>>;
+  /** Создаёт проект верхнего уровня или подпроект. */
   createProject: (title: string, parentId?: ProjectId | null) => Promise<Project>;
+  /** Меняет родителя проекта или переносит его в корень. */
   moveProject: (id: ProjectId, parentId: ProjectId | null) => Promise<Project>;
+  /** Переставляет проект между соседями. */
   reorderProject: (id: ProjectId, beforeId: ProjectId | null, afterId: ProjectId | null) => Promise<Project>;
+  /** Обновляет название и/или описание проекта. */
   updateProject: (id: ProjectId, patch: { title?: string; description?: string }) => Promise<Project>;
+  /** Загружает описание списка Входящие. */
   getInboxDescription: () => Promise<string>;
+  /** Сохраняет описание списка Входящие. */
   updateInboxDescription: (description: string) => Promise<void>;
+  /** Создаёт копию проекта вместе с его содержимым. */
   duplicateProject: (id: ProjectId) => Promise<Project>;
+  /** Меняет архивное состояние проекта. */
   archiveProject: (id: ProjectId, archived: boolean) => Promise<Project>;
+  /** Удаляет проект. */
   deleteProject: (id: ProjectId) => Promise<void>;
+  /** Загружает секции пользователя. */
   listSections: () => Promise<Array<Section>>;
+  /** Создаёт секцию во Входящих или выбранном проекте. */
   createSection: (title: string, projectId: ProjectId | null) => Promise<Section>;
+  /** Переставляет секцию относительно соседних секций. */
   reorderSection: (id: SectionId, beforeId: SectionId | null, afterId: SectionId | null) => Promise<Section>;
+  /** Переименовывает секцию. */
   updateSection: (id: SectionId, title: string) => Promise<Section>;
+  /** Удаляет секцию. */
   deleteSection: (id: SectionId) => Promise<void>;
+  /** Создаёт задачу с указанным проектом, секцией и родителем. */
   createTask: (
+    /** Заголовок новой задачи. */
     title: string,
+    /** Проект назначения либо `null` для Входящих. */
     projectId: ProjectId | null,
+    /** Секция назначения либо `null` для корня списка. */
     sectionId: SectionId | null,
+    /** Родительская задача либо `null` для корневой задачи. */
     parentId: string | null,
   ) => Promise<Task>;
+  /** Добавляет комментарий и выбранные файлы к задаче. */
   createComment: (taskId: string, body: string, files: Array<File>) => Promise<void>;
+  /** Меняет состояние завершения задачи. */
   patchTask: (id: string, completed: boolean) => Promise<Task>;
+  /** Обновляет текст, срок, метки или комментарии задачи. */
   updateTask: (
+    /** Идентификатор обновляемой задачи. */
     id: string,
+    /** Поля задачи, которые требуется сохранить. */
     patch: {
+      /** Новое название задачи. */
       title?: string;
+      /** Новое описание задачи. */
       description?: string;
+      /** Новый срок или `null` для удаления срока. */
       dueDate?: string | null;
+      /** Новый полный список меток. */
       labels?: Array<string>;
+      /** Новый упорядоченный список комментариев. */
       comments?: Array<TaskCommentInput>;
     },
   ) => Promise<Task>;
+  /** Перемещает задачу в проект/секцию и задаёт нового родителя или соседей. */
   moveTask: (
+    /** Перемещаемая задача. */
     id: string,
+    /** Целевой проект или `null` для Входящих. */
     projectId: ProjectId | null,
+    /** Целевая секция либо `null` для корня списка. */
     sectionId: SectionId | null,
+    /** Новый родитель либо `null` для корневого уровня. */
     parentId: string | null,
+    /** Сосед, перед которым нужно поставить задачу. */
     beforeId?: string | null,
+    /** Сосед, после которого нужно поставить задачу. */
     afterId?: string | null,
   ) => Promise<Task>;
+  /** Удаляет задачу и её потомков. */
   deleteTask: (id: string) => Promise<void>;
 };
 
+/** Набор запросов административной страницы инструментов БД. */
 export type ToolsApi = {
+  /** Возвращает список доступных таблиц. */
   listTables: () => Promise<Array<string>>;
+  /** Загружает ограниченное число записей из выбранной таблицы. */
   listRecords: (table: string, limit: "10" | "100" | "all") => Promise<unknown>;
+  /** Удаляет записи выбранной таблицы. */
   clearTable: (table: string) => Promise<unknown>;
+  /** Удаляет таблицы базы данных. */
   dropAllTables: () => Promise<unknown>;
+  /** Применяет миграции базы данных. */
   migrate: () => Promise<unknown>;
+  /** Очищает данные таблиц. */
   clearAllTables: () => Promise<unknown>;
+  /** Заполняет базу демонстрационными данными. */
   seed: () => Promise<unknown>;
+  /** Выполняет SQL-запрос, доступный только администратору. */
   runQuery: (sql: string) => Promise<unknown>;
 };
 
+/** Настройки пользователя, отображаемые на странице настроек. */
 export type AppSettings = {
+  /** Требовать подтверждение перед удалением. */
   confirmDelete: boolean;
+  /** Способ входа, объявленный сервером. */
   accessMode: "password";
+  /** Имя вошедшего пользователя. */
   username: string;
 };
 
-export type ManagedUser = { id: string; username: string; isAdmin: boolean };
+/** Публичная запись аккаунта для управления пользователями. */
+export type ManagedUser = {
+  /** Идентификатор аккаунта. */
+  id: string;
+  /** Имя, используемое для входа. */
+  username: string;
+  /** Признак административных прав. */
+  isAdmin: boolean;
+};
 
+/** Текущий статус входа и возможности, включённые на сервере. */
 export type AuthStatus = {
+  /** Режим аутентификации приложения. */
   accessMode: "anonymous" | "password";
+  /** Признак действующей сессии браузера. */
   authenticated: boolean;
+  /** Текущий пользователь либо `null`, если сессии нет. */
   user: ManagedUser | null;
+  /** Может ли приложение сохранять и выдавать вложения. */
   attachmentsEnabled?: boolean;
+  /** Разрешено ли архивирование проектов. */
   projectArchivingEnabled?: boolean;
 };
 
+/** Поля настроек, которые клиент отправляет для сохранения. */
 export type SettingsUpdate = {
+  /** Новое значение подтверждения удаления. */
   confirmDelete: boolean;
 };
 
+/** Полный контракт API клиентского приложения и административных аккаунтов. */
 export type ApplicationApi = TaskApi & {
+  /** Загружает настройки текущего пользователя. */
   getSettings: () => Promise<AppSettings>;
+  /** Сохраняет настройки и возвращает результат сервера. */
   updateSettings: (settings: SettingsUpdate) => Promise<AppSettings>;
+  /** Проверяет состояние сессии и доступные возможности приложения. */
   getAuthStatus: () => Promise<AuthStatus>;
+  /** Входит в аккаунт и сохраняет сессионную cookie на сервере. */
   login: (username: string, password: string) => Promise<void>;
+  /** Завершает текущую сессию. */
   logout: () => Promise<void>;
-  updateOwnAccount: (account: { username: string; password?: string }) => Promise<ManagedUser>;
+  /** Меняет собственное имя пользователя или пароль. */
+  updateOwnAccount: (account: {
+    /** Новое имя входа пользователя. */
+    username: string;
+    /** Новый пароль; отсутствие сохраняет текущий пароль. */
+    password?: string;
+  }) => Promise<ManagedUser>;
+  /** Получает пользователей, доступных администратору. */
   listUsers: () => Promise<Array<ManagedUser>>;
-  createUser: (user: { username: string; password: string; isAdmin: boolean }) => Promise<ManagedUser>;
+  /** Создаёт аккаунт пользователя. */
+  createUser: (user: {
+    /** Имя входа нового пользователя. */
+    username: string;
+    /** Пароль, который сервер захеширует перед сохранением. */
+    password: string;
+    /** Нужно ли выдать пользователю права администратора. */
+    isAdmin: boolean;
+  }) => Promise<ManagedUser>;
+  /** Меняет имя, пароль или административные права пользователя. */
   updateUser: (
+    /** Идентификатор редактируемого аккаунта. */
     id: string,
-    user: { username?: string; password?: string; isAdmin?: boolean },
+    /** Переданные поля аккаунта; отсутствующие значения не меняются. */
+    user: {
+      /** Новое имя входа, если оно меняется. */
+      username?: string;
+      /** Новый пароль; отсутствие сохраняет текущий хеш. */
+      password?: string;
+      /** Новая административная роль, если она меняется. */
+      isAdmin?: boolean;
+    },
   ) => Promise<ManagedUser>;
+  /** Удаляет аккаунт пользователя. */
   deleteUser: (id: string) => Promise<void>;
 };
 
+/** Проверяет HTTP-ответ и преобразует его JSON-тело в ожидаемый тип. */
 const readJson = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     throw new Error(`Request failed with ${response.status}`);
@@ -107,6 +213,7 @@ const readJson = async <T>(response: Response): Promise<T> => {
   return response.json() as Promise<T>;
 };
 
+/** Создаёт HTTP-клиент приложения с необязательным префиксом API. */
 export const createTaskApi = (baseUrl = ""): ApplicationApi => ({
   getSettings: async () => {
     const data = await readJson<{ settings: AppSettings }>(await fetch(`${baseUrl}/settings`));
@@ -338,6 +445,7 @@ export const createTaskApi = (baseUrl = ""): ApplicationApi => ({
   },
 });
 
+/** Отправляет JSON POST и проверяет ответ по общим правилам клиента. */
 const postJson = async <T>(url: string, body: unknown = {}): Promise<T> =>
   readJson<T>(
     await fetch(url, {
@@ -347,6 +455,7 @@ const postJson = async <T>(url: string, body: unknown = {}): Promise<T> =>
     }),
   );
 
+/** Создаёт HTTP-клиент административных инструментов базы данных. */
 export const createToolsApi = (baseUrl = ""): ToolsApi => ({
   listTables: async () => {
     const data = await readJson<{ tables: Array<string> }>(await fetch(`${baseUrl}/tools-api/tables`));

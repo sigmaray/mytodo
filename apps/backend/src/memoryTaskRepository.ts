@@ -2,8 +2,10 @@ import type { Project, ProjectId, Section, SectionId, Task, TaskId } from "@todo
 import { generateLexicalOrder } from "@todoist-clone/domain";
 import type { TaskRepository } from "./repository";
 
+/** Возвращает текущее время в формате, принятом доменными моделями. */
 const now = () => new Date().toISOString();
 
+/** Собирает идентификатор задачи и всех потомков для каскадного удаления. */
 const collectDescendantIds = (allTasks: Array<Task>, id: TaskId): Array<TaskId> => [
   id,
   ...allTasks
@@ -11,7 +13,9 @@ const collectDescendantIds = (allTasks: Array<Task>, id: TaskId): Array<TaskId> 
     .flatMap((task) => collectDescendantIds(allTasks, task.id)),
 ];
 
+/** Проверяет, создаст ли назначение родителя цикл в иерархии задач. */
 const wouldCreateTaskCycle = (tasks: Array<Task>, taskId: TaskId, parentId: TaskId | null): boolean => {
+  // Идём от предлагаемого родителя вверх и ищем саму задачу или уже посещённый узел.
   const followsParentChain = (ancestorId: TaskId | null, visited: Array<TaskId>): boolean => {
     if (ancestorId === null) return false;
     if (ancestorId === taskId || visited.includes(ancestorId)) return true;
@@ -21,9 +25,11 @@ const wouldCreateTaskCycle = (tasks: Array<Task>, taskId: TaskId, parentId: Task
   return followsParentChain(parentId, []);
 };
 
+/** Сравнивает задачи по строковому ключу ручной сортировки. */
 const compareOrder = (left: Task, right: Task): number =>
   left.lexicalOrder < right.lexicalOrder ? -1 : left.lexicalOrder > right.lexicalOrder ? 1 : 0;
 
+/** Вычисляет дробный ключ между соседями в заданном списке задач. */
 const findSiblingOrder = (
   tasks: Array<Task>,
   parentId: TaskId | null,
@@ -50,21 +56,27 @@ const findSiblingOrder = (
   return generateLexicalOrder(low, high);
 };
 
+/** Создаёт тестовое хранилище задач, проектов и секций без подключения к базе. */
 export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): TaskRepository => {
+  // Копируем входные данные, чтобы репозиторий не изменял переданный массив.
   let tasks = initialTasks.map((task) => ({ ...task }));
   let projects = [] as Array<Project>;
   let sections = [] as Array<Section>;
 
+  // Пересоздаём массив и объекты при изменении, сохраняя изоляцию состояния репозитория.
   const replace = (nextTasks: Array<Task>) => {
     tasks = nextTasks.map((task) => ({ ...task }));
   };
+  // Секция допустима только внутри того же проекта, что указан у задачи.
   const hasValidTaskPlacement = (projectId: string | null, sectionId: string | null): boolean =>
     sectionId === null || sections.find((section) => section.id === sectionId)?.projectId === projectId;
 
   return {
+    // Методы чтения возвращают только данные текущего экземпляра репозитория.
     list: async () => tasks,
     listProjects: async () => projects,
     createProject: async (title) => {
+      // Новый проект добавляется в конец списка соседних корневых проектов.
       const createdAt = now();
       const siblings = projects
         .filter((project) => project.parentId === null)
@@ -85,6 +97,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return project;
     },
     createSubproject: async (title, parentId) => {
+      // Подпроект нельзя создать, если его родитель отсутствует.
       if (!projects.some((project) => project.id === parentId)) throw new Error("Parent project not found");
       const createdAt = now();
       const siblings = projects
@@ -104,6 +117,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return project;
     },
     moveProject: async (id, parentId) => {
+      // Проверяем родителя и всю его цепочку, чтобы перемещение не создало цикл.
       const existing = projects.find((item) => item.id === id);
       if (
         !existing ||
@@ -129,6 +143,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return moved;
     },
     reorderProject: async (id, beforeId, afterId) => {
+      // Для ключа порядка рассматриваются только проекты того же уровня.
       const existing = projects.find((project) => project.id === id);
       if (!existing) return null;
       const ordered = projects
@@ -158,6 +173,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return reordered;
     },
     updateProject: async (id, patch) => {
+      // Отсутствующий проект нельзя обновить.
       const existing = projects.find((project) => project.id === id);
 
       if (existing === undefined) {
@@ -175,6 +191,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return updated;
     },
     deleteProject: async (id) => {
+      // Перед удалением собираем задачи проекта и задачи его секций вместе с потомками.
       const existing = projects.find((project) => project.id === id);
 
       if (existing === undefined) {
@@ -203,6 +220,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return true;
     },
     duplicateProject: async (id) => {
+      // Копия получает новые ID; таблицы соответствий сохраняют внутренние ссылки.
       const source = projects.find((project) => project.id === id);
       if (source === undefined) return null;
       const createdAt = now();
@@ -247,6 +265,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return duplicated;
     },
     setProjectArchived: async (id, archived) => {
+      // Архивный признак меняется без изменения содержимого проекта.
       const existing = projects.find((project) => project.id === id);
       if (existing === undefined) return null;
       const updated = { ...existing, archived, updatedAt: now() };
@@ -255,6 +274,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     listSections: async () => sections,
     reorderSection: async (id, beforeId, afterId) => {
+      // Перестановка ограничена секциями того же проекта.
       const section = sections.find((item) => item.id === id);
       if (!section) return null;
       const siblings = sections
@@ -284,6 +304,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return reordered;
     },
     createSection: async (title, projectId) => {
+      // Новая секция получает ключ после последней секции проекта.
       const createdAt = now();
       const siblings = sections.filter((section) => section.projectId === projectId);
       const section = {
@@ -300,6 +321,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return section;
     },
     updateSection: async (id, title) => {
+      // Сохраняем остальные поля секции и обновляем только название и время изменения.
       const existing = sections.find((section) => section.id === id);
 
       if (existing === undefined) {
@@ -317,6 +339,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return updated;
     },
     deleteSection: async (id) => {
+      // Задачи удалённой секции остаются в проекте, но возвращаются на корневой уровень.
       const existing = sections.find((section) => section.id === id);
 
       if (existing === undefined) {
@@ -333,6 +356,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return true;
     },
     create: async (title, parentId, projectId, sectionId) => {
+      // Перед созданием проверяем, что выбранная секция совпадает с проектом задачи.
       if (!hasValidTaskPlacement(projectId, sectionId)) throw new Error("Section does not belong to project");
       const createdAt = now();
       const task = {
@@ -356,6 +380,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return task;
     },
     patch: async (id, patch) => {
+      // Для частичного обновления сохраняем исходную задачу и наследуем её неизменённые поля.
       const existing = tasks.find((task) => task.id === id);
 
       if (existing === undefined) {
@@ -372,6 +397,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       const updated = {
         ...existing,
         ...patch,
+        // Существующие комментарии сохраняют ID и дату; сервер назначает их новым сообщениям.
         comments:
           patch.comments === undefined
             ? existing.comments
@@ -396,6 +422,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return updated;
     },
     addComment: async (id, comment) => {
+      // Комментарий добавляется к задаче и одновременно обновляет время самой задачи.
       const existing = tasks.find((task) => task.id === id);
       if (existing === undefined) return false;
       const updated = {
@@ -407,6 +434,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return true;
     },
     move: async (id, move) => {
+      // Не допускаем отсутствующего родителя, цикла и несогласованного проекта с секцией.
       const existing = tasks.find((task) => task.id === id);
 
       if (existing === undefined) {
@@ -438,6 +466,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       return updated;
     },
     delete: async (id) => {
+      // Удаление корневой задачи также удаляет всё её поддерево.
       const existing = tasks.find((task) => task.id === id);
 
       if (existing === undefined) {

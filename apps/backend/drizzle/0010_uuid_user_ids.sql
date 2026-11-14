@@ -1,4 +1,5 @@
--- Replace the historical sentinel with a real UUID and make user identity columns native UUIDs.
+-- Заменяет исторический ID администратора на UUID и переводит идентификаторы владельцев на тип uuid.
+-- Временно снимаем внешние ключи и триггер, чтобы изменить типы связанных колонок согласованно.
 ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "projects_user_id_users_id_fk";
 ALTER TABLE "sections" DROP CONSTRAINT IF EXISTS "sections_user_id_users_id_fk";
 ALTER TABLE "tasks" DROP CONSTRAINT IF EXISTS "tasks_user_id_users_id_fk";
@@ -12,6 +13,7 @@ ALTER TABLE "tasks" DROP CONSTRAINT IF EXISTS "tasks_section_user_fk";
 ALTER TABLE "task_comments" DROP CONSTRAINT IF EXISTS "task_comments_task_user_fk";
 DROP TRIGGER IF EXISTS "tasks_section_project_match" ON "tasks";
 
+-- Переносим все ссылки прежнего администратора на новый постоянный UUID.
 UPDATE "projects" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id"::text = 'legacy-admin';
 UPDATE "sections" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id"::text = 'legacy-admin';
 UPDATE "tasks" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id"::text = 'legacy-admin';
@@ -19,12 +21,14 @@ UPDATE "sessions" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "
 UPDATE "task_comments" SET "user_id" = '00000000-0000-4000-8000-000000000001' WHERE "user_id"::text = 'legacy-admin';
 UPDATE "users" SET "id" = '00000000-0000-4000-8000-000000000001' WHERE "id"::text = 'legacy-admin';
 
+-- Останавливаем миграцию с понятной ошибкой, если в базе остались не-UUID идентификаторы.
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM "users" WHERE "id"::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$') THEN
     RAISE EXCEPTION 'Cannot migrate users: a user ID is not a UUID';
   END IF;
 END $$;
 
+-- Меняем типы пользователя и всех внешних ключей после нормализации значений.
 ALTER TABLE "users" ALTER COLUMN "id" TYPE uuid USING "id"::uuid;
 ALTER TABLE "projects" ALTER COLUMN "user_id" TYPE uuid USING "user_id"::uuid;
 ALTER TABLE "sections" ALTER COLUMN "user_id" TYPE uuid USING "user_id"::uuid;
@@ -32,6 +36,7 @@ ALTER TABLE "tasks" ALTER COLUMN "user_id" TYPE uuid USING "user_id"::uuid;
 ALTER TABLE "sessions" ALTER COLUMN "user_id" TYPE uuid USING "user_id"::uuid;
 ALTER TABLE "task_comments" ALTER COLUMN "user_id" TYPE uuid USING "user_id"::uuid;
 
+-- Восстанавливаем внешние ключи и ограничения владения после смены типов.
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ALTER TABLE "sections" ADD CONSTRAINT "sections_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;

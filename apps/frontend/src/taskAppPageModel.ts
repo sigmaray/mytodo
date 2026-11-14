@@ -12,21 +12,54 @@ import { copyText, downloadBlob, findTaskNode } from "./taskAppUtils";
 import { shiftCalendarMonth } from "./components/TaskFormFields";
 import { toLocalIsoDate } from "./dateUtils";
 
+/** Дискриминируемая модель маршрута и props, необходимых конкретной странице workspace. */
 export type TaskAppPageModel =
-  | { mode: "dates"; props: DatesPageProps }
-  | { mode: "labels"; props: LabelsPageProps }
-  | { mode: "attachments"; props: AttachmentsPageProps }
-  | { mode: "export"; props: ExportPageProps }
-  | { mode: "inbox"; props: TaskAppBoardProps };
+  | {
+      /** Показывает, что активна страница дат и календаря. */
+      mode: "dates";
+      /** Props страницы дат. */
+      props: DatesPageProps;
+    }
+  | {
+      /** Показывает, что активна страница меток. */
+      mode: "labels";
+      /** Props страницы меток. */
+      props: LabelsPageProps;
+    }
+  | {
+      /** Показывает, что активна библиотека вложений. */
+      mode: "attachments";
+      /** Props страницы вложений. */
+      props: AttachmentsPageProps;
+    }
+  | {
+      /** Показывает, что открыт экспорт данных. */
+      mode: "export";
+      /** Props страницы экспорта. */
+      props: ExportPageProps;
+    }
+  | {
+      /** Показывает, что открыт основной список задач. */
+      mode: "inbox";
+      /** Props доски задач. */
+      props: TaskAppBoardProps;
+    };
 
+/** Состояние и обработчики, из которых собирается модель активной страницы. */
 type TaskAppPageModelInput = {
+  /** Разрешено ли показывать маршруты и элементы управления файлами. */
   attachmentsEnabled: boolean;
+  /** Показывает, что запрос задач ещё выполняется. */
   tasksLoading: boolean;
+  /** Текущее состояние экранов, диалогов и локальных форм. */
   state: TaskAppPageModelState;
+  /** Обработчики действий пользователя и мутаций. */
   actions: ReturnType<typeof useTaskAppActions>;
+  /** Вычисленные заголовки, списки и отображаемые задачи. */
   viewModel: ReturnType<typeof useTaskAppViewModel>;
 };
 
+/** Собирает узкий контракт props для страницы, соответствующей текущему маршруту. */
 export const createTaskAppPageModel = ({
   attachmentsEnabled,
   tasksLoading,
@@ -34,6 +67,7 @@ export const createTaskAppPageModel = ({
   actions,
   viewModel,
 }: TaskAppPageModelInput): TaskAppPageModel => {
+  // Разделяем общий state/actions/view model на нужные конкретной странице значения.
   const {
     dateView,
     setDateView,

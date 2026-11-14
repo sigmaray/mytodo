@@ -1,5 +1,6 @@
 import type { Project, ProjectId } from "@todoist-clone/domain";
 
+/** Считает глубину проекта по цепочке родителей, ограничивая обход размером списка. */
 export const projectDepth = (projects: Array<Project>, project: Project): number => {
   let depth = 0;
   let parentId = project.parentId;
@@ -12,6 +13,7 @@ export const projectDepth = (projects: Array<Project>, project: Project): number
   return depth;
 };
 
+/** Проверяет, входит ли проект в поддерево указанного предка. */
 export const isProjectWithinTree = (
   projects: Array<Project>,
   projectId: ProjectId | null,
@@ -27,7 +29,9 @@ export const isProjectWithinTree = (
   return false;
 };
 
+/** Возвращает проекты в порядке обхода дерева, сохраняя порядок соседей. */
 export const projectTreeOrder = (projects: Array<Project>): Array<Project> => {
+  // Проекты с отсутствующим родителем считаются корневыми, чтобы не потерять их из интерфейса.
   const byParent = (parentId: ProjectId | null) =>
     projects
       .filter(
@@ -38,6 +42,7 @@ export const projectTreeOrder = (projects: Array<Project>): Array<Project> => {
             !projects.some((parent) => parent.id === item.parentId)),
       )
       .toSorted((a, b) => (a.lexicalOrder < b.lexicalOrder ? -1 : a.lexicalOrder > b.lexicalOrder ? 1 : 0));
+  // Добавляем каждого родителя перед рекурсивно отсортированными дочерними проектами.
   const visit = (parentId: ProjectId | null): Array<Project> =>
     byParent(parentId).flatMap((project) => [project, ...visit(project.id)]);
   return visit(null);

@@ -1,4 +1,6 @@
+/** Публичные позиции размещения задачи, используемые общими функциями дерева. */
 export type { DropPosition, TaskPlacement } from "./pure";
+/** Чистые операции построения дерева задач и расчёта порядка перетаскивания. */
 export {
   buildTaskTree,
   computeDropPlacement,
@@ -8,6 +10,7 @@ export {
   renderAdvancedMarkdownDocument,
   renderTaskMarkdownDocument,
 } from "./pure";
+/** Общие сущности и идентификаторы, которыми обмениваются frontend и backend. */
 export type {
   Attachment,
   Comment,

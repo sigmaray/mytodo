@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { createQueryClient, TaskApp } from "./App";
 import type { ApplicationApi, TaskCommentInput } from "./api";
 
+/** Создаёт задачу для тестов с полным набором безопасных значений по умолчанию. */
 export const task = (values: Partial<TaskNode> & Pick<TaskNode, "id" | "title">): TaskNode => ({
   description: "",
   dueDate: null,
@@ -21,6 +22,7 @@ export const task = (values: Partial<TaskNode> & Pick<TaskNode, "id" | "title">)
   ...values,
 });
 
+/** Имитирует комментарии, сохранённые сервером, включая выданные им идентификаторы. */
 export const savedComments = (comments: Array<TaskCommentInput> = []): Array<Comment> =>
   comments.map((comment, index) => ({
     id: comment.id ?? `server-comment-${index}`,
@@ -29,6 +31,7 @@ export const savedComments = (comments: Array<TaskCommentInput> = []): Array<Com
     ...(comment.attachments === undefined ? {} : { attachments: comment.attachments }),
   }));
 
+/** Создаёт проектную фикстуру с полями, общими для frontend-тестов. */
 export const project = (values: Partial<Project> & Pick<Project, "id" | "title">): Project => ({
   description: "",
   archived: false,
@@ -39,6 +42,7 @@ export const project = (values: Partial<Project> & Pick<Project, "id" | "title">
   ...values,
 });
 
+/** Создаёт секцию для тестов и позволяет переопределить её исходные поля. */
 export const section = (values: Partial<Section> & Pick<Section, "id" | "title">): Section => ({
   projectId: null,
   lexicalOrder: "U",
@@ -47,6 +51,7 @@ export const section = (values: Partial<Section> & Pick<Section, "id" | "title">
   ...values,
 });
 
+/** Рендерит приложение с роутером и отдельным клиентом запросов для теста. */
 export const renderApp = (api: ApplicationApi, attachmentsEnabled = false) =>
   render(
     <QueryClientProvider client={createQueryClient()}>
@@ -56,6 +61,7 @@ export const renderApp = (api: ApplicationApi, attachmentsEnabled = false) =>
     </QueryClientProvider>,
   );
 
+/** Создаёт API-заглушку с переданными задачами и рабочими ответами по умолчанию. */
 export const baseApi = (tasks: Array<TaskNode>): ApplicationApi => ({
   getSettings: async () => ({ confirmDelete: true, accessMode: "password" as const, username: "admin" }),
   updateSettings: async (settings) => ({
@@ -132,6 +138,7 @@ export const baseApi = (tasks: Array<TaskNode>): ApplicationApi => ({
   deleteTask: async () => undefined,
 });
 
+/** Перетаскивает строку задачи через синтетические HTML Drag and Drop события. */
 export const dragTask = (title: string) => {
   const data = new Map<string, string>();
   const dataTransfer = {
@@ -149,6 +156,7 @@ export const dragTask = (title: string) => {
   return dataTransfer;
 };
 
+/** Находит строку задачи по точному заголовку для последующих проверок и действий. */
 export const taskRow = (title: string) => {
   const row = screen.getByText(title).closest(".task-row");
 
@@ -159,6 +167,7 @@ export const taskRow = (title: string) => {
   return row;
 };
 
+/** Размещает указатель над выбранной строкой для проверки drag-and-drop зон. */
 export const placePointer = (row: Element, top = 0) => {
   Object.defineProperty(row, "getBoundingClientRect", {
     configurable: true,
