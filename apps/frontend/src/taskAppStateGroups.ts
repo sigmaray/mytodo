@@ -5,32 +5,32 @@ import type { ActiveDragTarget } from "./components/TaskTreeView";
 import { inboxPlacement } from "./taskAppUtils";
 
 /**
- * Минимальные данные перетаскиваемого элемента для мобильного интерфейса.
+ * Minimal data for an item being dragged in the mobile interface.
  *
  * @typedef {Object} MobileDragItem
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
+ * @property {string} id - Identifier of the dragged item.
  */
 type MobileDragItem = { id: string };
 /**
- * Идентификатор списка или секции, принимающих задачу при сбросе.
+ * ID of the list or section that accepts a task when it is dropped.
  *
  * @typedef {"inbox" | `project:${ProjectId}` | `section:${SectionId}`} DropZoneId
  */
 export type DropZoneId = "inbox" | `project:${ProjectId}` | `section:${SectionId}`;
 /**
- * Задача и экранные координаты открытого контекстного меню.
+ * Task and screen coordinates for the open context menu.
  *
  * @typedef {Object} TaskContextMenuState
- * @property {TaskNode} task - Данные «задача», используемые типом «TaskContextMenuState».
- * @property {number} left - Горизонтальная координата меню.
- * @property {number} top - Вертикальная координата меню.
+ * @property {TaskNode} task - Task shown in the context menu.
+ * @property {number} left - Horizontal position of the menu.
+ * @property {number} top - Vertical position of the menu.
  */
 type TaskContextMenuState = { task: TaskNode; left: number; top: number };
 
 /**
- * Хранит режим календаря, текущий месяц и выбранную дату.
+ * Stores the calendar view, current month, and selected date.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for the calendar view.
  */
 export const useCalendarState = () => {
   const [dateView, setDateView] = useState<"list" | "calendar">("list");
@@ -52,9 +52,9 @@ export const useCalendarState = () => {
 };
 
 /**
- * Хранит значения полей и раскрытых секций диалога создания задачи.
+ * Stores field values and expanded sections in the task creation dialog.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for the task creation dialog.
  */
 export const useAddTaskState = () => {
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -104,9 +104,9 @@ export const useAddTaskState = () => {
 };
 
 /**
- * Хранит локальное состояние создания, сортировки и редактирования секций.
+ * Stores local state for creating, sorting, and editing sections.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for section management.
  */
 export const useSectionsState = () => {
   const [sectionTitle, setSectionTitle] = useState("");
@@ -128,9 +128,9 @@ export const useSectionsState = () => {
 };
 
 /**
- * Хранит состояние раскрытых подзадач и их локального редактирования.
+ * Stores expanded subtask state and local subtask editing state.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for subtasks.
  */
 export const useSubtasksState = () => {
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -139,9 +139,9 @@ export const useSubtasksState = () => {
 };
 
 /**
- * Хранит состояние текущего drag-and-drop взаимодействия.
+ * Stores the current drag and drop interaction state.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for drag and drop.
  */
 export const useDragState = () => {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
@@ -169,9 +169,9 @@ export const useDragState = () => {
 };
 
 /**
- * Хранит локальные формы и временные данные управления проектами.
+ * Stores local forms and temporary project management data.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for project management.
  */
 export const useProjectsState = () => {
   const [targetProjectId, setTargetProjectId] = useState<ProjectId | null>(() =>
@@ -196,9 +196,9 @@ export const useProjectsState = () => {
 };
 
 /**
- * Хранит значения форм редактирования задачи и её деталей.
+ * Stores values for the task edit and details forms.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for task editing.
  */
 export const useTaskEditingState = () => {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
@@ -208,9 +208,9 @@ export const useTaskEditingState = () => {
 };
 
 /**
- * Хранит состояние копирования и предпросмотра экспортируемых данных.
+ * Stores copy and preview state for exported data.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for export previews.
  */
 export const useExportsState = () => {
   const [markdownModal, setMarkdownModal] = useState<TaskAppMarkdownModal | null>(null);
@@ -220,9 +220,9 @@ export const useExportsState = () => {
 };
 
 /**
- * Хранит выбранные задачи для пакетных операций.
+ * Stores tasks selected for bulk operations.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for bulk selection.
  */
 export const useSelectionState = () => {
   const [selectionMode, setSelectionMode] = useState(false);
@@ -242,9 +242,9 @@ export const useSelectionState = () => {
 };
 
 /**
- * Хранит состояние боковой панели, диалогов и контекстного меню задачи.
+ * Stores the state of the sidebar, dialogs, and task context menu.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for task overlays.
  */
 export const useDetailsState = () => {
   const [detailsTaskId, setDetailsTaskId] = useState<TaskId | null>(null);
@@ -316,9 +316,9 @@ export const useDetailsState = () => {
 };
 
 /**
- * Хранит состояние редактирования описания текущего списка или проекта.
+ * Stores editing state for the current list or project description.
  *
- * @returns Результат выполнения функции.
+ * @returns State and setters for description editing.
  */
 export const useScopeDescriptionState = () => {
   const [editingScopeDescription, setEditingScopeDescription] = useState(false);

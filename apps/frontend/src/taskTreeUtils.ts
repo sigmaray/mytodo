@@ -1,7 +1,7 @@
 import type { Task, TaskNode } from "@todoist-clone/domain";
 
 /**
- * Превращает дерево задач в плоский список обходом родителя и его потомков.
+ * Flattens the task tree by traversing each parent and its descendants.
  *
  * @param {Array<TaskNode>} tasks
  * @returns {Array<Task>}

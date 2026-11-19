@@ -1,4 +1,4 @@
--- Создаёт таблицу пользователей и переносит прежние настройки входа в аккаунт администратора.
+-- Creates the users table and moves the previous login settings to the administrator account.
 CREATE TABLE IF NOT EXISTS "users" (
   "id" text PRIMARY KEY NOT NULL,
   "username" text NOT NULL UNIQUE,

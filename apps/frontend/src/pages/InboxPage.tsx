@@ -5,10 +5,10 @@ import type { TaskAppBoardProps } from "../components/TaskAppBoardTypes";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
 /**
- * Отображает общий board Inbox/Projects и связывает его с переданными действиями.
+ * Renders the shared Inbox and Projects board with the supplied actions.
  *
  * @param {TaskAppBoardProps} props
- * @returns Результат выполнения функции.
+ * @returns The Inbox page.
  */
 export const InboxPage = (props: TaskAppBoardProps) => {
   const {

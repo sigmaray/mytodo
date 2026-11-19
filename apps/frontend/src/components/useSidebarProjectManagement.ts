@@ -24,16 +24,16 @@ import { projectQueryKey, sectionQueryKey, taskQueryKey } from "../queryKeys";
  * @returns {void}
  */
 /**
- * API и текущее состояние, необходимые для операций с деревом проектов.
+ * API and current state required for project tree operations.
  *
  * @typedef {Object} SidebarProjectManagementOptions
- * @property {ApplicationApi | null} api - Набор API-операций для серверных данных.
- * @property {Array<Project>} activeProjects - Активные проекты пользователя.
- * @property {ProjectId | null} selectedProjectId - Данные «выбранные проект id», используемые типом «SidebarProjectManagementOptions».
- * @property {boolean} [confirmDelete] - Настройка подтверждения перед удалением.
- * @property {SidebarProjectManagementOptionsOnInboxSelect} [onInboxSelect] - Переходит во Входящие.
- * @property {SidebarProjectManagementOptionsOnProjectSelect} [onProjectSelect] - Открывает проект.
- * @property {SidebarProjectManagementOptionsCloseSidebar} closeSidebar - Вызывает соответствующую операцию API.
+ * @property {ApplicationApi | null} api - API operations for server data.
+ * @property {Array<Project>} activeProjects - User's active projects.
+ * @property {ProjectId | null} selectedProjectId - ID of the selected project.
+ * @property {boolean} [confirmDelete] - Whether to ask for confirmation before deleting.
+ * @property {SidebarProjectManagementOptionsOnInboxSelect} [onInboxSelect] - Navigates to the Inbox.
+ * @property {SidebarProjectManagementOptionsOnProjectSelect} [onProjectSelect] - Opens a project.
+ * @property {SidebarProjectManagementOptionsCloseSidebar} closeSidebar - Closes the sidebar.
  */
 type SidebarProjectManagementOptions = {
   api: ApplicationApi | null;
@@ -52,10 +52,10 @@ type SidebarProjectManagementOptions = {
 };
 
 /**
- * Предоставляет создание, редактирование, удаление и перемещение проектов sidebar.
+ * Provides project creation, editing, deletion, and reordering for the sidebar.
  *
  * @param {SidebarProjectManagementOptions} parameter1
- * @returns Результат выполнения функции.
+ * @returns Project management handlers and state.
  */
 export const useSidebarProjectManagement = ({
   api,
@@ -96,14 +96,14 @@ export const useSidebarProjectManagement = ({
     target: Project,
     position: "before" | "after" | "inside",
   ) => {
-    /** Запрещаем сброс в себя/потомка и выходим, если sidebar работает без API. */
+    /** Reject drops onto a project or its descendant, and exit when the sidebar has no API. */
     const parentId = position === "inside" ? target.id : target.parentId;
     if (sourceId === target.id || isProjectWithinTree(activeProjects, parentId, sourceId) || api === null)
       return;
     try {
       if (position === "inside") await api.moveProject(sourceId, target.id);
       else {
-        /** Перенос в соседний уровень состоит из смены родителя и задания порядка среди соседей. */
+        /** Moving to another level changes the parent and reorders the project among its siblings. */
         const siblings = activeProjects.filter(
           (item) => item.parentId === target.parentId && item.id !== sourceId,
         );
@@ -115,7 +115,7 @@ export const useSidebarProjectManagement = ({
       }
       await queryClient.invalidateQueries({ queryKey: projectQueryKey });
     } catch {
-      /** Повторная загрузка синхронизирует интерфейс с сервером после частичного отказа. */
+      /** Refetch to sync the UI with the server after a partial failure. */
       await queryClient.invalidateQueries({ queryKey: projectQueryKey });
     }
   };
@@ -142,7 +142,7 @@ export const useSidebarProjectManagement = ({
       element instanceof Element ? element.closest<HTMLElement>(".project-nav-row[data-project-id]") : null;
     const target = activeProjects.find((project) => project.id === row?.dataset.projectId);
     if (row === null || target === undefined) {
-      /** Указатель вне проекта сбрасывает предыдущую drop-подсветку. */
+      /** A pointer outside the project clears the previous drop highlight. */
       mobileProjectDropRef.current = null;
       setActiveProjectDrop(null);
       return;
@@ -150,7 +150,7 @@ export const useSidebarProjectManagement = ({
     const position = positionFor(row, event.clientY);
     const parentId = position === "inside" ? target.id : target.parentId;
     const drop =
-      /** Не разрешаем образовать цикл при вложении или переносе между уровнями. */
+      /** Prevent cycles when nesting or moving a project between levels. */
       target.id === sourceId || isProjectWithinTree(activeProjects, parentId, sourceId)
         ? null
         : { id: target.id, position };
@@ -167,7 +167,7 @@ export const useSidebarProjectManagement = ({
       (project) => project.id === (rememberedDrop?.id ?? row?.dataset.projectId),
     );
     const position = rememberedDrop?.position ?? (row === null ? null : positionFor(row, event.clientY));
-    /** Очищаем drag-ссылки до асинхронного запроса, чтобы повторное событие не повторило перенос. */
+    /** Clear drag references before the async request to prevent duplicate moves. */
     draggedProjectRef.current = null;
     mobileProjectDropRef.current = null;
     setDraggingProjectId(null);
@@ -208,7 +208,7 @@ export const useSidebarProjectManagement = ({
     event.preventDefault();
     const title = projectTitle.trim();
     if (api === null || title.length === 0) return;
-    /** Отменяем список, который мог бы завершиться позднее и затереть добавленный проект. */
+    /** Cancel a pending list request that could otherwise overwrite the newly added project. */
     await queryClient.cancelQueries({ queryKey: projectQueryKey });
     const created = await api.createProject(title, newProjectParentId);
     queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
@@ -233,7 +233,7 @@ export const useSidebarProjectManagement = ({
   const duplicateProject = async (project: Project) => {
     if (api === null) return;
     const duplicate = await api.duplicateProject(project.id);
-    /** Дубликат создаёт связанные строки, поэтому обновляем кэш проектов, секций и задач. */
+    /** A duplicate creates related records, so update the project, section, and task caches. */
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: projectQueryKey }),
       queryClient.invalidateQueries({ queryKey: sectionQueryKey }),
@@ -247,14 +247,14 @@ export const useSidebarProjectManagement = ({
     queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       replaceById(current, archived),
     );
-    /** Архивированный проект нельзя оставлять активным маршрутом текущего sidebar. */
+    /** An archived project must not remain the active route in the current sidebar. */
     if (selectedProjectId === project.id) onInboxSelect?.();
   };
   const deleteProject = async (project: Project) => {
     if (api === null) return;
     if (confirmDelete !== false && !window.confirm(`Delete project “${project.title}” and all its tasks?`))
       return;
-    /** После серверного каскадного удаления обновляем зависимые коллекции интерфейса. */
+    /** Update dependent UI collections after the server cascades the deletion. */
     await api.deleteProject(project.id);
     queryClient.setQueryData(projectQueryKey, (current: Array<Project> | undefined) =>
       removeById(current, project.id),

@@ -21,13 +21,13 @@ import { inboxPlacement, projectPlacement, sectionPlacement } from "./taskAppUti
 import { createTaskAppPageModel } from "./taskAppPageModel";
 
 /**
- * Извлекает файлы из DataTransfer, используя список файлов как запасной вариант.
+ * Extracts files from DataTransfer, falling back to its files list.
  *
  * @param {DataTransfer} clipboardData
  * @returns {Array<File>}
  */
 const pastedFiles = (clipboardData: DataTransfer): Array<File> => {
-  /** Некоторые браузеры заполняют items, другие — только files. */
+  /** Some browsers populate items, while others populate only files. */
   const itemFiles = Array.from(clipboardData.items)
     .filter((item) => item.kind === "file")
     .map((item) => item.getAsFile())
@@ -36,7 +36,7 @@ const pastedFiles = (clipboardData: DataTransfer): Array<File> => {
 };
 
 /**
- * Показывает уведомление для каждого файла, добавленного в задачу или комментарий.
+ * Shows a notification for each file added to a task or comment.
  *
  * @param {Array<File>} files
  */
@@ -44,25 +44,19 @@ const notifyAttachedFiles = (files: Array<File>) =>
   files.forEach((file) => toast.success(`Файл «${file.name}» прикреплён`));
 
 /**
- * Загружает серверное состояние и связывает workspace-хуки с экранной композицией.
+ * Loads server state and connects workspace hooks to the screen composition.
  *
  * @param {{ api: ApplicationApi; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean; }} parameter1
- * @param {ApplicationApi} parameter1.api - HTTP-клиент задач, проектов, настроек и пользователей.
- * @param {boolean} parameter1.attachmentsEnabled - Разрешает загрузку и показ файлов комментариев.
- * @param {boolean} parameter1.projectArchivingEnabled - Разрешает архивирование проектов.
- * @returns Результат выполнения функции.
+ * @param {ApplicationApi} parameter1.api - HTTP client for tasks, projects, settings, and users.
+ * @param {boolean} parameter1.attachmentsEnabled - Enables uploading and displaying comment files.
+ * @param {boolean} parameter1.projectArchivingEnabled - Enables project archiving.
+ * @returns The task application.
  */
 export const TaskApp = ({
   api,
   attachmentsEnabled = false,
   projectArchivingEnabled = false,
-}: /**
- * Поля этой структуры:
- * - `api`: HTTP-клиент задач, проектов, настроек и пользователей.
- * - `attachmentsEnabled`: Разрешает загрузку и показ файлов комментариев.
- * - `projectArchivingEnabled`: Разрешает архивирование проектов.
- */
-{
+}: {
   api: ApplicationApi;
 
   attachmentsEnabled?: boolean;
@@ -112,7 +106,7 @@ export const TaskApp = ({
 
   const queryClient = useQueryClient();
   useEffect(() => {
-    /** Контекстное меню закрывается при клике за его пределами или по Escape. */
+    /** Close the context menu when clicking outside it or pressing Escape. */
     if (taskContextMenu === null) return;
     const dismiss = (event: globalThis.MouseEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest(".task-context-menu"))

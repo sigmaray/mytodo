@@ -3,47 +3,47 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { TaskRepository } from "./repository";
 
-/** Проверяет поля новой задачи и подставляет пустые значения контекста. */
+/** Validates new task fields and supplies default context values. */
 const createTaskSchema = z.object({
-  /** Название после удаления пробелов по краям. */
+  /** Title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Родительская задача или корень дерева по умолчанию. */
+  /** Parent task, or the tree root by default. */
   parentId: z.string().nullable().default(null),
-  /** Проект назначения; `null` означает Входящие. */
+  /** Destination project; `null` means the Inbox. */
   projectId: z.string().nullable().default(null),
-  /** Секция назначения или значение по умолчанию без секции. */
+  /** Destination section, or the default value with no section. */
   sectionId: z.string().nullable().default(null),
 });
 
-/** Проверяет допустимые поля задачи и целостность списка её комментариев. */
+/** Validates allowed task fields and the integrity of its comment list. */
 const patchTaskSchema = z.object({
-  /** Новое название задачи. */
+  /** New task title. */
   title: z.string().trim().min(1).optional(),
-  /** Подробное описание с ограничением размера API. */
+  /** Detailed description, limited to the API size constraint. */
   description: z.string().max(20000).optional(),
-  /** Срок в календарном формате YYYY-MM-DD либо его сброс. */
+  /** Due date in YYYY-MM-DD format, or `null` to clear it. */
   dueDate: z.string().date().nullable().optional(),
-  /** Полный набор меток с ограничением количества и длины. */
+  /** Complete label list, limited by count and length. */
   labels: z.array(z.string().trim().min(1).max(64)).max(50).optional(),
-  /** Полный упорядоченный набор комментариев после редактирования. */
+  /** Complete ordered list of comments after editing. */
   comments: z
     .array(
       z.object({
-        /** ID уже сохранённого комментария; отсутствие означает новый комментарий. */
+        /** ID of an existing comment; omit it for a new comment. */
         id: z.string().optional(),
-        /** Текст комментария; он может быть пустым, если приложен файл. */
+        /** Comment text; it may be empty when a file is attached. */
         body: z.string().max(5000),
-        /** Ссылки на уже загруженные файлы, принадлежащие комментарию. */
+        /** References to files already uploaded for this comment. */
         attachments: z
           .array(
             z.object({
-              /** UUID файла во внутреннем хранилище. */
+              /** File UUID in the internal storage. */
               id: z.string(),
-              /** Имя файла для отображения и скачивания. */
+              /** File name shown to users and used for downloads. */
               name: z.string(),
-              /** MIME-тип файла. */
+              /** File MIME type. */
               mimeType: z.string(),
-              /** Размер файла в байтах. */
+              /** File size in bytes. */
               size: z.number(),
             }),
           )
@@ -51,13 +51,13 @@ const patchTaskSchema = z.object({
       }),
     )
     .refine(
-      /** Комментарий без текста разрешён только при наличии хотя бы одного вложения. */
+      /** A comment without text is allowed only when it has at least one attachment. */
       (comments) =>
         comments.every((comment) => comment.body.trim().length > 0 || (comment.attachments?.length ?? 0) > 0),
       "Comment text or at least one attachment is required",
     )
     .refine(
-      /** Повторный ID мог бы неоднозначно обновить или удалить один комментарий. */
+      /** Duplicate IDs could make an update or deletion target ambiguous. */
       (comments) =>
         new Set(comments.flatMap((comment) => (comment.id === undefined ? [] : [comment.id]))).size ===
         comments.filter((comment) => comment.id !== undefined).length,
@@ -69,84 +69,84 @@ const patchTaskSchema = z.object({
   sectionId: z.string().nullable().optional(),
 });
 
-/** Проверяет новое место задачи и соседей для её позиционирования. */
+/** Validates the task's new placement and neighboring tasks. */
 const moveTaskSchema = z.object({
-  /** Новый родитель задачи или корень дерева. */
+  /** New parent task, or the tree root. */
   parentId: z.string().nullable().default(null),
-  /** Новый проект назначения либо Входящие. */
+  /** Destination project, or the Inbox. */
   projectId: z.string().nullable().default(null),
-  /** Новая секция назначения или корень списка. */
+  /** Destination section, or the list root. */
   sectionId: z.string().nullable().default(null),
-  /** ID соседа, перед которым нужно разместить задачу. */
+  /** ID of the neighboring task to place this task before. */
   beforeId: z.string().nullable().default(null),
-  /** ID соседа, после которого нужно разместить задачу. */
+  /** ID of the neighboring task to place this task after. */
   afterId: z.string().nullable().default(null),
 });
 
-/** Проверяет имя проекта и необязательную ссылку на родительский проект. */
+/** Validates a project name and optional parent project reference. */
 const createProjectSchema = z.object({
-  /** Название проекта после удаления пробелов по краям. */
+  /** Project title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Родительский проект для создания подпроекта. */
+  /** Parent project for a new subproject. */
   parentId: z.string().nullable().default(null),
 });
-/** Проверяет идентификатор родителя при перемещении проекта. */
+/** Validates the parent ID when moving a project. */
 const moveProjectSchema = z.object({
-  /** Новый родительский проект или `null`, чтобы переместить проект в корень. */
+  /** New parent project, or `null` to move the project to the root. */
   parentId: z.string().nullable(),
 });
 
-/** Принимает только непустое обновление названия и/или описания проекта. */
+/** Accepts only a non-empty update to a project's title and/or description. */
 const patchProjectSchema = z
   .object({
-    /** Новое название проекта. */
+    /** New project title. */
     title: z.string().trim().min(1).optional(),
-    /** Новое описание проекта. */
+    /** New project description. */
     description: z.string().max(20000).optional(),
   })
   .refine((patch) => patch.title !== undefined || patch.description !== undefined);
 
-/** Определяет двух соседей, между которыми следует расположить проект или секцию. */
+/** Identifies the two neighbors between which to place a project or section. */
 const reorderProjectSchema = z.object({
-  /** Сосед, перед которым поставить сущность, либо `null`. */
+  /** Neighbor to place the entity before, or `null`. */
   beforeId: z.string().nullable(),
-  /** Сосед, после которого поставить сущность, либо `null`. */
+  /** Neighbor to place the entity after, or `null`. */
   afterId: z.string().nullable(),
 });
 const reorderSectionSchema = reorderProjectSchema;
 
-/** Проверяет данные новой секции и её проект. */
+/** Validates new section data and its project. */
 const createSectionSchema = z.object({
-  /** Заголовок новой секции после удаления краевых пробелов. */
+  /** New section title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Проект-владелец или `null` для секции Входящих. */
+  /** Owning project, or `null` for an Inbox section. */
   projectId: z.string().nullable().default(null),
 });
 
-/** Проверяет новое непустое название секции. */
+/** Validates a new, non-empty section title. */
 const patchSectionSchema = z.object({
-  /** Новое название секции. */
+  /** New section title. */
   title: z.string().trim().min(1),
 });
 
 /**
- * Тип Hono-приложения с данными аутентифицированного пользователя.
+ * Hono application type containing the authenticated user's data.
  *
  * @typedef {Object} ApplicationHono
- * @property {{ userId: string; authenticated: boolean }} Variables - Данные «variables», используемые типом «ApplicationHono».
- * @property {string} Variables.userId - Данные «variables пользователь id», используемые типом «ApplicationHono».
- * @property {boolean} Variables.authenticated - Признак или настройка «variables аутентификация».
+ * @property {{ userId: string; authenticated: boolean }} Variables - Request variables available to route handlers.
+ * @property {string} Variables.userId - ID of the authenticated user.
+ * @property {boolean} Variables.authenticated - Whether the request has an authenticated session.
  */
 type ApplicationHono = Hono<{ Variables: { userId: string; authenticated: boolean } }>;
 /**
- * Фабрика репозитория, привязанного к идентификатору текущего пользователя.
+ * Creates a repository scoped to the current user's ID.
  *
  * @typedef {(userId: string) => TaskRepository} RepositoryForUser
  */
 type RepositoryForUser = (userId: string) => TaskRepository;
 
 /**
- * Регистрирует HTTP-адаптеры задач, проектов и секций.
+ * Registers HTTP adapters for tasks, projects, and sections.
  *
  * @param {ApplicationHono} app
  * @param {RepositoryForUser} repositoryFor
@@ -164,14 +164,14 @@ export const registerTaskRoutes = (
   attachmentStorageAvailable: boolean,
   removeAttachments: (ids: Array<string>) => Promise<unknown>,
 ): void => {
-  /** Возвращаем плоские задачи вместе с построенным доменной функцией деревом. */
+  /** Return the flat task list together with the tree built by the domain function. */
   app.get("/tasks", async (context) => {
     const tasks = await repositoryFor(context.get("userId")).list();
 
     return context.json({ tasks, tree: buildTaskTree(tasks) });
   });
 
-  /** Проекты и секции отдаются отдельными коллекциями для загрузки workspace. */
+  /** Return projects and sections as separate collections for workspace loading. */
   app.get("/projects", async (context) => {
     const projects = await repositoryFor(context.get("userId")).listProjects();
 
@@ -179,7 +179,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/projects", async (context) => {
-    /** Проверка схемы отделяет неверный HTTP-ввод от вызовов репозитория. */
+    /** Validate the schema before passing HTTP input to the repository. */
     const result = createProjectSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -280,7 +280,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/sections", async (context) => {
-    /** До создания секции проверяем, что указанный проект принадлежит пользователю. */
+    /** Before creating a section, verify that the project belongs to the user. */
     const result = createSectionSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -336,7 +336,7 @@ export const registerTaskRoutes = (
   });
 
   app.post("/tasks", async (context) => {
-    /** Проверяем ссылки на родителя, проект и секцию в данных текущего пользователя. */
+    /** Validate the parent, project, and section references against the current user's data. */
     const result = createTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -377,7 +377,7 @@ export const registerTaskRoutes = (
   });
 
   app.patch("/tasks/:id", async (context) => {
-    /** Сохраняем прежнюю задачу для проверки связей и очистки удалённых вложений. */
+    /** Keep the previous task to validate relationships and clean up removed attachments. */
     const result = patchTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -395,7 +395,7 @@ export const registerTaskRoutes = (
         nextProjectId
     )
       return context.json({ error: "Section does not belong to project" }, 400);
-    /** Клиент может переиспользовать только метаданные вложений из прежних комментариев. */
+    /** Clients may reuse attachment metadata only from the task's existing comments. */
     if (previous !== undefined && result.data.comments !== undefined) {
       const allowed = new Map(previous.comments.map((comment) => [comment.id, comment.attachments ?? []]));
       const hasForgedAttachment = result.data.comments.some((comment) =>
@@ -415,7 +415,7 @@ export const registerTaskRoutes = (
     }
     const task = await taskRepository.patch(context.req.param("id"), result.data);
 
-    /** После успешного обновления удаляем файлы вложений, больше не связанные с комментариями. */
+    /** After a successful update, delete attachment files no longer referenced by comments. */
     if (
       task !== null &&
       previous !== undefined &&
@@ -435,7 +435,7 @@ export const registerTaskRoutes = (
   });
 
   app.put("/tasks/:id/move", async (context) => {
-    /** Секция должна принадлежать тому же проекту, в который перемещается задача. */
+    /** The section must belong to the project receiving the task. */
     const result = moveTaskSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {

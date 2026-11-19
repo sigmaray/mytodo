@@ -1,5 +1,5 @@
 /**
- * Добавляет запись в список, предварительно убирая прежнюю версию с тем же ID.
+ * Adds a record to a list after removing any existing record with the same ID.
  *
  * @param {Array<TItem> | undefined} items
  * @param {TItem} item
@@ -11,7 +11,7 @@ export const appendById = <TItem extends { id: string }>(
 ): Array<TItem> => [...(items ?? []).filter((existing) => existing.id !== item.id), item];
 
 /**
- * Возвращает список без записи с указанным идентификатором.
+ * Returns the list without the record with the specified ID.
  *
  * @param {Array<TItem> | undefined} items
  * @param {string} id
@@ -23,7 +23,7 @@ export const removeById = <TItem extends { id: string }>(
 ): Array<TItem> => (items ?? []).filter((existing) => existing.id !== id);
 
 /**
- * Заменяет запись с тем же ID, сохраняя порядок элементов списка.
+ * Replaces the record with the same ID while preserving list order.
  *
  * @param {Array<TItem> | undefined} items
  * @param {TItem} item

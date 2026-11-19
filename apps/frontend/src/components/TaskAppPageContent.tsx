@@ -6,23 +6,19 @@ import { LabelsPage } from "../pages/LabelsPage";
 import type { TaskAppPageModel } from "../taskAppPageModel";
 
 /**
- * Выбирает компонент страницы по дискриминатору модели маршрута.
+ * Selects a page component using the route model discriminator.
  *
  * @param {{ page: TaskAppPageModel; }} parameter1
- * @param {TaskAppPageModel} parameter1.page - Модель, по которой выбирается компонент страницы.
- * @returns Результат выполнения функции.
+ * @param {TaskAppPageModel} parameter1.page - Model used to select the page component.
+ * @returns The component for the selected route.
  */
 export const TaskAppPageContent = ({
-  /** Модель маршрута и его специфические данные. */
+  /** Route model and its page-specific data. */
   page,
-}: /**
- * Поля этой структуры:
- * - `page`: Модель, по которой выбирается компонент страницы.
- */
-{
+}: {
   page: TaskAppPageModel;
 }) => {
-  /** Исчерпывающий switch связывает каждый вариант модели с отдельной страницей. */
+  /** This exhaustive switch maps each model variant to a dedicated page. */
   switch (page.mode) {
     case "dates":
       return <DatesPage {...page.props} />;

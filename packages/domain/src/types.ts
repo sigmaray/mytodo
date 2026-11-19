@@ -1,39 +1,39 @@
 /**
- * Строковый идентификатор задачи, используемый в ссылках между задачами.
+ * String identifier used to reference a task from other tasks.
  *
  * @typedef {string} TaskId
  */
 export type TaskId = string;
 /**
- * Строковый идентификатор проекта, к которому можно привязать задачи и секции.
+ * String identifier of a project that can contain tasks and sections.
  *
  * @typedef {string} ProjectId
  */
 export type ProjectId = string;
 /**
- * Строковый идентификатор секции внутри проекта.
+ * String identifier of a section within a project.
  *
  * @typedef {string} SectionId
  */
 export type SectionId = string;
 
 /**
- * Полная запись задачи, общая для доменной логики и приложений.
+ * Complete task record shared by the domain logic and applications.
  *
  * @typedef {Object} Task
- * @property {TaskId} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} title - Данные «заголовок», используемые типом «Task».
- * @property {string} description - Данные «описание», используемые типом «Task».
- * @property {string | null} dueDate - Данные «due дата», используемые типом «Task».
- * @property {Array<string>} labels - Список метки.
- * @property {Array<Comment>} comments - Список комментарии.
- * @property {boolean} completed - Признак или настройка «completed».
- * @property {TaskId | null} parentId - Данные «родитель id», используемые типом «Task».
- * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «Task».
- * @property {SectionId | null} sectionId - Данные «секция id», используемые типом «Task».
- * @property {string} lexicalOrder - Данные «lexical порядок», используемые типом «Task».
- * @property {string} createdAt - Данные «created в», используемые типом «Task».
- * @property {string} updatedAt - Данные «updated в», используемые типом «Task».
+ * @property {TaskId} id - Unique task identifier.
+ * @property {string} title - Task title.
+ * @property {string} description - Task description.
+ * @property {string | null} dueDate - Due date, or `null` when no date is set.
+ * @property {Array<string>} labels - Labels assigned to the task.
+ * @property {Array<Comment>} comments - Comments attached to the task.
+ * @property {boolean} completed - Whether the task is complete.
+ * @property {TaskId | null} parentId - Parent task ID, or `null` for a top-level task.
+ * @property {ProjectId | null} projectId - Project ID, or `null` when the task is in the Inbox.
+ * @property {SectionId | null} sectionId - Section ID, or `null` when the task is at the project root.
+ * @property {string} lexicalOrder - Lexical position used to order sibling tasks.
+ * @property {string} createdAt - Timestamp when the task was created.
+ * @property {string} updatedAt - Timestamp when the task was last updated.
  */
 export type Task = {
   id: TaskId;
@@ -64,13 +64,13 @@ export type Task = {
 };
 
 /**
- * Метаданные файла, прикреплённого к комментарию.
+ * Metadata for a file attached to a comment.
  *
  * @typedef {Object} Attachment
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} name - Данные «name», используемые типом «Attachment».
- * @property {string} mimeType - Данные «mime type», используемые типом «Attachment».
- * @property {number} size - Данные «size», используемые типом «Attachment».
+ * @property {string} id - Unique attachment identifier.
+ * @property {string} name - Original file name.
+ * @property {string} mimeType - File MIME type.
+ * @property {number} size - File size in bytes.
  */
 export type Attachment = {
   id: string;
@@ -82,13 +82,13 @@ export type Attachment = {
   size: number;
 };
 /**
- * Сообщение в обсуждении задачи и связанные с ним вложения.
+ * A message in a task discussion and its attached files.
  *
  * @typedef {Object} Comment
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} body - Данные «body», используемые типом «Comment».
- * @property {string} createdAt - Данные «created в», используемые типом «Comment».
- * @property {Array<Attachment>} [attachments] - Список вложения.
+ * @property {string} id - Unique comment identifier.
+ * @property {string} body - Comment text.
+ * @property {string} createdAt - Timestamp when the comment was created.
+ * @property {Array<Attachment>} [attachments] - Files attached to the comment.
  */
 export type Comment = {
   id: string;
@@ -101,27 +101,27 @@ export type Comment = {
 };
 
 /**
- * Задача, дополненная уже построенным списком дочерних узлов.
+ * A task extended with its already-built list of child nodes.
  *
  * @typedef {Object} TaskNode
- * @property {Array<TaskNode>} children - Дочерние задачи в порядке сортировки.
+ * @property {Array<TaskNode>} children - Child tasks in display order.
  */
 export type TaskNode = Task & {
   children: Array<TaskNode>;
 };
 
 /**
- * Проект — область для организации задач и секций.
+ * A project groups tasks and sections.
  *
  * @typedef {Object} Project
- * @property {ProjectId} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} title - Данные «заголовок», используемые типом «Project».
- * @property {string} description - Данные «описание», используемые типом «Project».
- * @property {boolean} archived - Признак, что проект помещён в архив.
- * @property {ProjectId | null} parentId - Данные «родитель id», используемые типом «Project».
- * @property {string} lexicalOrder - Данные «lexical порядок», используемые типом «Project».
- * @property {string} createdAt - Данные «created в», используемые типом «Project».
- * @property {string} updatedAt - Данные «updated в», используемые типом «Project».
+ * @property {ProjectId} id - Unique project identifier.
+ * @property {string} title - Project title.
+ * @property {string} description - Project description.
+ * @property {boolean} archived - Whether the project is archived.
+ * @property {ProjectId | null} parentId - Parent project ID, or `null` for a top-level project.
+ * @property {string} lexicalOrder - Lexical position used to order sibling projects.
+ * @property {string} createdAt - Timestamp when the project was created.
+ * @property {string} updatedAt - Timestamp when the project was last updated.
  */
 export type Project = {
   id: ProjectId;
@@ -142,15 +142,15 @@ export type Project = {
 };
 
 /**
- * Секция группирует задачи внутри проекта.
+ * A section groups tasks within a project.
  *
  * @typedef {Object} Section
- * @property {SectionId} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} title - Данные «заголовок», используемые типом «Section».
- * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «Section».
- * @property {string} lexicalOrder - Данные «lexical порядок», используемые типом «Section».
- * @property {string} createdAt - Данные «created в», используемые типом «Section».
- * @property {string} updatedAt - Данные «updated в», используемые типом «Section».
+ * @property {SectionId} id - Unique section identifier.
+ * @property {string} title - Section title.
+ * @property {ProjectId | null} projectId - Owning project ID, or `null` for the Inbox.
+ * @property {string} lexicalOrder - Lexical position used to order sections.
+ * @property {string} createdAt - Timestamp when the section was created.
+ * @property {string} updatedAt - Timestamp when the section was last updated.
  */
 export type Section = {
   id: SectionId;

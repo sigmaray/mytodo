@@ -3,16 +3,16 @@ import { Link } from "react-router-dom";
 import { formatAttachmentSize } from "../components/CommentAttachment";
 
 /**
- * Представление вложения в общей библиотеке файлов.
+ * Attachment entry shown in the shared file library.
  *
  * @typedef {Object} AttachmentLibraryItem
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} name - Данные «name», используемые типом «AttachmentLibraryItem».
- * @property {string} mimeType - Данные «mime type», используемые типом «AttachmentLibraryItem».
- * @property {number} size - Данные «size», используемые типом «AttachmentLibraryItem».
- * @property {string} taskId - Данные «задача id», используемые типом «AttachmentLibraryItem».
- * @property {string} taskTitle - Название задачи.
- * @property {string} uploadedAt - Время загрузки файла.
+ * @property {string} id - Unique attachment identifier.
+ * @property {string} name - Original file name.
+ * @property {string} mimeType - File MIME type.
+ * @property {number} size - File size in bytes.
+ * @property {string} taskId - ID of the task containing the attachment.
+ * @property {string} taskTitle - Task title.
+ * @property {string} uploadedAt - Time when the file was uploaded.
  */
 export type AttachmentLibraryItem = {
   id: string;
@@ -36,12 +36,12 @@ export type AttachmentLibraryItem = {
  * @returns {void}
  */
 /**
- * Данные и обработчики страницы библиотеки вложений.
+ * Data and handlers for the attachment library page.
  *
  * @typedef {Object} AttachmentsPageProps
- * @property {Array<AttachmentLibraryItem>} attachments - Список вложения.
- * @property {boolean} loading - Признак или настройка «загрузка».
- * @property {AttachmentsPagePropsOnTaskOpen} onTaskOpen - Открывает подробности задачи.
+ * @property {Array<AttachmentLibraryItem>} attachments - User's attachments.
+ * @property {boolean} loading - Whether attachments are loading.
+ * @property {AttachmentsPagePropsOnTaskOpen} onTaskOpen - Opens task details.
  */
 export type AttachmentsPageProps = {
   attachments: Array<AttachmentLibraryItem>;
@@ -52,7 +52,7 @@ export type AttachmentsPageProps = {
 };
 
 /**
- * Отображает файлы пользователя и ссылки на комментарии/задачи, где они используются.
+ * Displays the user's files and links to the comments and tasks that use them.
  *
  * @param {AttachmentsPageProps} parameter1
  */

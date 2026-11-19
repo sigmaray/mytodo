@@ -8,16 +8,16 @@ import {
 } from "./taskAppUtils";
 
 /**
- * Данные текущего workspace, необходимые для подготовки вариантов экспорта.
+ * Current workspace data required to prepare export options.
  *
  * @typedef {Object} TaskAppExportModelInput
- * @property {Array<Project>} allProjects - Все проекты пользователя.
- * @property {Array<Section>} allSections - Все секции пользователя.
- * @property {Array<TaskNode>} allTasks - Все задачи пользователя, включая вложенные.
- * @property {Array<Task>} flatTasks - Плоский список задач для построения экспорта.
- * @property {ProjectId | null} targetProjectId - Данные «target проект id», используемые типом «TaskAppExportModelInput».
- * @property {string} taskTargetLabel - Подпись целевой области задачи.
- * @property {string | undefined} inboxDescription - Описание списка Входящие.
+ * @property {Array<Project>} allProjects - All user projects.
+ * @property {Array<Section>} allSections - All user sections.
+ * @property {Array<TaskNode>} allTasks - All user tasks, including nested tasks.
+ * @property {Array<Task>} flatTasks - Flat task list used to build exports.
+ * @property {ProjectId | null} targetProjectId - Target project ID, or `null` for the Inbox.
+ * @property {string} taskTargetLabel - Label for the task export scope.
+ * @property {string | undefined} inboxDescription - Inbox description.
  */
 type TaskAppExportModelInput = {
   allProjects: Array<Project>;
@@ -36,10 +36,10 @@ type TaskAppExportModelInput = {
 };
 
 /**
- * Формирует полные и scoped варианты Markdown/JSON экспорта и действия скачивания.
+ * Builds full and scoped Markdown/JSON exports and download actions.
  *
  * @param {TaskAppExportModelInput} parameter1
- * @returns Результат выполнения функции.
+ * @returns Export content and download handlers.
  */
 export const createTaskAppExportModel = ({
   allProjects,
@@ -50,22 +50,22 @@ export const createTaskAppExportModel = ({
   taskTargetLabel,
   inboxDescription,
 }: TaskAppExportModelInput) => {
-  /** Полный экспорт сохраняет все сущности вместе с метаданными версии и времени создания. */
+  /** The full export includes all entities and metadata for the schema version and creation time. */
   const allMarkdown = allMarkdownDocument(allProjects, allSections, allTasks);
   const allJson = JSON.stringify(
     {
-      /** Версия схемы позволяет будущим импортёрам отличать формат файла. */
+      /** The schema version lets future importers identify the file format. */
       schemaVersion: 1,
-      /** Время фиксируется в UTC для однозначной интерпретации экспорта. */
+      /** Store the time in UTC so the export has an unambiguous timestamp. */
       exportedAt: new Date().toISOString(),
       inbox: {
-        /** Входящие включают собственное описание, секции и корневые задачи. */
+        /** The Inbox export includes its description, sections, and root tasks. */
         description: inboxDescription ?? "",
         sections: allSections.filter((section) => section.projectId === null),
         tasks: flatTasks.filter((task) => task.projectId === null),
       },
       projects: allProjects.map((project) => ({
-        /** Внутри проекта сохраняются его секции и задачи вместе с полями проекта. */
+        /** Project exports include project fields, sections, and tasks. */
         ...project,
         sections: allSections.filter((section) => section.projectId === project.id),
         tasks: flatTasks.filter((task) => task.projectId === project.id),
@@ -74,11 +74,11 @@ export const createTaskAppExportModel = ({
       tasks: flatTasks,
       taskTree: allTasks,
       dates: flatTasks
-        /** Отдельный список сроков упрощает чтение дат без обхода всех задач. */
+        /** A separate due date list makes dates available without traversing every task. */
         .filter((task) => task.dueDate !== null)
         .map((task) => ({ taskId: task.id, dueDate: task.dueDate })),
       comments: flatTasks.flatMap((task) =>
-        /** Идентификатор задачи связывает каждый комментарий с его владельцем. */
+        /** The task ID associates each comment with its owner. */
         task.comments.map((comment) => ({ ...comment, taskId: task.id })),
       ),
       descriptions: {
@@ -92,7 +92,7 @@ export const createTaskAppExportModel = ({
     null,
     2,
   );
-  /** Экспорт текущей области ограничивает данные открытым проектом либо списком Входящие. */
+  /** Scope the current export to the open project or the Inbox. */
   const scopeProject =
     targetProjectId === null ? null : (allProjects.find((project) => project.id === targetProjectId) ?? null);
   const scopeSections = allSections.filter((section) => section.projectId === targetProjectId);

@@ -21,9 +21,9 @@ const TaskAppWorkspace = lazy(() =>
 );
 
 /**
- * Выбирает страницы по URL и загружает крупные разделы приложения лениво.
+ * Selects pages by URL and lazy-loads the application's larger sections.
  *
- * @returns Результат выполнения функции.
+ * @returns The application router.
  */
 export const AppRouter = () => {
   const api = createTaskApi();

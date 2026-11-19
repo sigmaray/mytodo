@@ -1,2 +1,2 @@
-/** Подключает matchers для проверок доступности и DOM, а также расширение Vitest. */
+/** Loads accessibility and DOM matchers, along with the Vitest extensions. */
 import "@testing-library/jest-dom/vitest";

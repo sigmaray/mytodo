@@ -1,17 +1,17 @@
 import type { ProjectId, SectionId, Task, TaskId, TaskNode } from "./types";
 
-/** Алфавит задаёт порядок символов ключа так, чтобы обычное сравнение строк */
-/** совпадало с порядком элементов в списке. */
+/** The alphabet orders key characters so that normal string comparison */
+/** matches the order of items in the list. */
 const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-/** Основание системы счисления, используемой для дробных ключей сортировки. */
+/** Radix used to represent fractional sort keys. */
 const base = alphabet.length;
-/** Минимальная цифра для построения ключа перед самым первым соседом. */
+/** Smallest digit used to build a key before the first neighbor. */
 const firstDigit = alphabet[0] ?? "0";
-/** Центральная цифра, используемая как запасное значение при преобразовании. */
+/** Middle digit used as a fallback during conversion. */
 const middleDigit = alphabet[Math.floor(base / 2)] ?? "V";
 
 /**
- * Сравнивает задачи по ключу сортировки, а при равенстве — по времени создания.
+ * Compares tasks by sort key, then by creation time when the keys are equal.
  *
  * @param {Task} left
  * @param {Task} right
@@ -24,7 +24,7 @@ const compareTaskOrder = (left: Task, right: Task) =>
       : left.createdAt.localeCompare(right.createdAt);
 
 /**
- * Собирает узел дерева из исходных полей задачи и готовых дочерних узлов.
+ * Builds a tree node from a task’s fields and its prepared child nodes.
  *
  * @param {Task} task
  * @param {Array<TaskNode>} children
@@ -36,14 +36,14 @@ const freezeNode = (task: Task, children: Array<TaskNode>): TaskNode => ({
 });
 
 /**
- * Строит вложенное дерево задач и сортирует каждого родителя с его детьми.
+ * Builds a nested task tree and sorts each parent with its children.
  *
  * @param {Array<Task>} tasks
  * @returns {Array<TaskNode>}
  */
 export const buildTaskTree = (tasks: Array<Task>): Array<TaskNode> => {
   /**
-   * Рекурсивно находим задачи с указанным родителем и превращаем их в узлы.
+   * Recursively find tasks with the specified parent and convert them to nodes.
    *
    * @param {TaskId | null} parentId
    * @returns {Array<TaskNode>}
@@ -58,7 +58,7 @@ export const buildTaskTree = (tasks: Array<Task>): Array<TaskNode> => {
 };
 
 /**
- * Преобразует символ ключа сортировки в числовую позицию алфавита.
+ * Converts a sort key character to its numeric position in the alphabet.
  *
  * @param {string | undefined} char
  * @param {number} fallback
@@ -67,26 +67,26 @@ const charToValue = (char: string | undefined, fallback: number) =>
   char === undefined ? fallback : Math.max(0, alphabet.indexOf(char));
 
 /**
- * Преобразует позицию алфавита обратно в символ ключа сортировки.
+ * Converts an alphabet position back to a sort key character.
  *
  * @param {number} value
  */
 const valueToChar = (value: number) => alphabet[value] ?? middleDigit;
 
 /**
- * Возвращает новый ключ, который лексикографически расположен между соседями.
+ * Returns a new key that sorts lexicographically between its neighbors.
  *
  * @param {string | null} before
  * @param {string | null} after
  * @returns {string}
  */
 export const generateLexicalOrder = (before: string | null, after: string | null): string => {
-  /** Пустые границы позволяют тем же алгоритмом добавлять элементы в начало или конец. */
+  /** Empty bounds let the same algorithm insert items at either end. */
   const left = before ?? "";
   const right = after ?? "";
 
   /**
-   * Ищем первую позицию, в которой между цифрами границ есть свободное значение.
+   * Find the first position where the boundary digits leave room for another value.
    *
    * @param {number} index
    * @param {string} prefix
@@ -107,14 +107,14 @@ export const generateLexicalOrder = (before: string | null, after: string | null
 };
 
 /**
- * Параметры размещения задачи, вычисленные при перетаскивании или изменении вложенности.
+ * Task placement computed during a drag or indentation change.
  *
  * @typedef {Object} TaskPlacement
- * @property {TaskId | null} parentId - Данные «родитель id», используемые типом «TaskPlacement».
- * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «TaskPlacement».
- * @property {SectionId | null} sectionId - Данные «секция id», используемые типом «TaskPlacement».
- * @property {TaskId | null} beforeId - Данные «предыдущего id», используемые типом «TaskPlacement».
- * @property {TaskId | null} afterId - Данные «следующего id», используемые типом «TaskPlacement».
+ * @property {TaskId | null} parentId - Parent task ID, or `null` for a root task.
+ * @property {ProjectId | null} projectId - Project ID, or `null` for the Inbox.
+ * @property {SectionId | null} sectionId - Section ID, or `null` for the project root.
+ * @property {TaskId | null} beforeId - ID of the task before this placement, if any.
+ * @property {TaskId | null} afterId - ID of the task after this placement, if any.
  */
 export type TaskPlacement = {
   parentId: TaskId | null;
@@ -129,14 +129,14 @@ export type TaskPlacement = {
 };
 
 /**
- * Сторона целевой задачи, на которую пользователь сбрасывает перетаскиваемую задачу.
+ * Side of the target task where the dragged task is dropped.
  *
  * @typedef {"before" | "after"} DropPosition
  */
 export type DropPosition = "before" | "after";
 
 /**
- * Проверяет, совпадают ли родитель, проект и секция у задачи и целевого места.
+ * Checks whether a task and its target placement have the same parent, project, and section.
  *
  * @param {Task} task
  * @param {TaskId | null} parentId
@@ -152,7 +152,7 @@ const sameLocation = (
 ): boolean => task.parentId === parentId && task.projectId === projectId && task.sectionId === sectionId;
 
 /**
- * Возвращает задачи одного родителя и одного места, упорядоченные для отображения.
+ * Returns tasks with the same parent and placement, sorted for display.
  *
  * @param {Array<Task>} tasks
  * @param {TaskId | null} parentId
@@ -169,7 +169,7 @@ export const listSiblings = (
   tasks.filter((task) => sameLocation(task, parentId, projectId, sectionId)).toSorted(compareTaskOrder);
 
 /**
- * Проверяет по цепочке родителей, является ли задача потомком указанной задачи.
+ * Checks the parent chain to determine whether a task is a descendant of another task.
  *
  * @param {Array<Task>} tasks
  * @param {TaskId} ancestorId
@@ -177,7 +177,7 @@ export const listSiblings = (
  * @returns {boolean}
  */
 const isDescendantOf = (tasks: Array<Task>, ancestorId: TaskId, id: TaskId): boolean => {
-  /** Отсутствующая задача и корневая задача не могут быть потомками предка. */
+  /** A missing task or a root task cannot be a descendant of another task. */
   const task = tasks.find((candidate) => candidate.id === id);
 
   if (task === undefined || task.parentId === null) {
@@ -188,7 +188,7 @@ const isDescendantOf = (tasks: Array<Task>, ancestorId: TaskId, id: TaskId): boo
 };
 
 /**
- * Вычисляет новое место задачи при сбросе перед или после другой задачи.
+ * Computes a task’s new placement when it is dropped before or after another task.
  *
  * @param {Array<Task>} tasks
  * @param {Task} moved
@@ -202,7 +202,7 @@ export const computeDropPlacement = (
   target: Task,
   position: DropPosition,
 ): TaskPlacement | null => {
-  /** Запрещаем сброс на саму задачу и внутрь её поддерева, чтобы не создать цикл. */
+  /** Prevent drops onto the task itself or inside its subtree to avoid creating a cycle. */
   if (moved.id === target.id || isDescendantOf(tasks, moved.id, target.id)) {
     return null;
   }
@@ -223,7 +223,7 @@ export const computeDropPlacement = (
   const movedIndex = siblings.findIndex((task) => task.id === moved.id);
   const targetIndex = siblings.findIndex((task) => task.id === target.id);
 
-  /** При перемещении в том же списке соседние позиции уже соответствуют нужному порядку. */
+  /** When moving within the same list, the neighboring positions already reflect the desired order. */
   if (position === "before" && movedIndex === targetIndex - 1) {
     return null;
   }
@@ -236,7 +236,7 @@ export const computeDropPlacement = (
 };
 
 /**
- * Вычисляет размещение для отступа: задача становится ребёнком предыдущего соседа.
+ * Computes the placement for indenting a task under its previous sibling.
  *
  * @param {Array<Task>} tasks
  * @param {Task} task
@@ -247,7 +247,7 @@ export const computeIndentPlacement = (tasks: Array<Task>, task: Task): TaskPlac
   const index = siblings.findIndex((sibling) => sibling.id === task.id);
   const previous = index > 0 ? siblings[index - 1] : undefined;
 
-  /** Без предыдущего соседа не существует задачи, под которую можно сделать отступ. */
+  /** Without a previous sibling, there is no task to indent under. */
   if (previous === undefined) {
     return null;
   }
@@ -262,21 +262,21 @@ export const computeIndentPlacement = (tasks: Array<Task>, task: Task): TaskPlac
 };
 
 /**
- * Вычисляет размещение для снятия отступа: задача становится рядом со своим родителем.
+ * Computes the placement for outdenting a task to become a sibling of its parent.
  *
  * @param {Array<Task>} tasks
  * @param {Task} task
  * @returns {TaskPlacement | null}
  */
 export const computeOutdentPlacement = (tasks: Array<Task>, task: Task): TaskPlacement | null => {
-  /** Корневую задачу нельзя поднять выше: у неё уже нет родителя. */
+  /** A root task cannot be outdented because it has no parent. */
   if (task.parentId === null) {
     return null;
   }
 
   const parent = tasks.find((candidate) => candidate.id === task.parentId);
 
-  /** Родитель мог быть удалён или отсутствовать в переданном наборе задач. */
+  /** The parent may have been deleted or omitted from the supplied task set. */
   if (parent === undefined) {
     return null;
   }
@@ -291,14 +291,14 @@ export const computeOutdentPlacement = (tasks: Array<Task>, task: Task): TaskPla
 };
 
 /**
- * Возвращает символ чекбокса Markdown для текущего состояния задачи.
+ * Returns a Markdown checkbox marker for the task’s current status.
  *
  * @param {boolean} completed
  */
 const checkbox = (completed: boolean) => (completed ? "x" : " ");
 
 /**
- * Формирует Markdown-строки для задачи и всех её потомков с отступами по глубине.
+ * Builds Markdown lines for a task and all descendants, indented by depth.
  *
  * @param {TaskNode} task
  * @param {number} depth
@@ -310,7 +310,7 @@ const renderTaskMarkdown = (task: TaskNode, depth: number): Array<string> => [
 ];
 
 /**
- * Экспортирует заголовок, корневые задачи и секции в простой Markdown-чеклист.
+ * Exports the title, root tasks, and sections as a simple Markdown checklist.
  *
  * @param {string} title
  * @param {Array<TaskNode>} tasks
@@ -322,7 +322,7 @@ export const renderTaskMarkdownDocument = (
   tasks: Array<TaskNode>,
   sections: Array<{ title: string; tasks: Array<TaskNode> }> = [],
 ): string => {
-  /** Сначала готовим корневые задачи, затем добавляем заголовки и содержимое секций. */
+  /** Build root tasks first, then append section headings and their contents. */
   const body = tasks.flatMap((task) => renderTaskMarkdown(task, 0));
   const sectionContent = sections.flatMap((section, index) => [
     ...(body.length > 0 || index > 0 ? [""] : []),
@@ -342,7 +342,7 @@ export const renderTaskMarkdownDocument = (
 };
 
 /**
- * Превращает каждую строку текста в цитату Markdown с указанным отступом.
+ * Converts each text line to a Markdown quote with the specified indentation.
  *
  * @param {string} value
  * @param {string} prefix
@@ -352,14 +352,14 @@ const quoteMarkdownText = (value: string, prefix: string): Array<string> =>
   value.split("\n").map((line) => `${prefix}> ${line}`);
 
 /**
- * Формирует Markdown для задачи с описанием, сроком, метками, комментариями и детьми.
+ * Builds Markdown for a task with its description, due date, labels, comments, and children.
  *
  * @param {TaskNode} task
  * @param {number} depth
  * @returns {Array<string>}
  */
 const renderAdvancedTaskMarkdown = (task: TaskNode, depth: number): Array<string> => {
-  /** Детали выводятся как вложенная цитата, чтобы визуально относились к своей задаче. */
+  /** Render details as a nested quote so they remain visually associated with the task. */
   const indent = "  ".repeat(depth);
   const detailPrefix = `${indent}  `;
   const details = [
@@ -384,7 +384,7 @@ const renderAdvancedTaskMarkdown = (task: TaskNode, depth: number): Array<string
 };
 
 /**
- * Экспортирует расширенный Markdown с описаниями областей и полными деталями задач.
+ * Exports extended Markdown with area descriptions and full task details.
  *
  * @param {string} title
  * @param {Array<TaskNode>} tasks
@@ -398,7 +398,7 @@ export const renderAdvancedMarkdownDocument = (
   sections: Array<{ title: string; tasks: Array<TaskNode>; description?: string }> = [],
   description = "",
 ): string => {
-  /** Общие заметки и задачи верхнего уровня образуют основное тело документа. */
+  /** General notes and top-level tasks form the main body of the document. */
   const body = [
     ...(description.length > 0 ? quoteMarkdownText(`**Description:** ${description}`, "") : []),
     ...tasks.flatMap((task) => renderAdvancedTaskMarkdown(task, 0)),

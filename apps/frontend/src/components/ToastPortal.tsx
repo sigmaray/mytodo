@@ -2,7 +2,7 @@ import { createPortal } from "react-dom";
 import { ToastContainer } from "react-toastify";
 
 /**
- * Рендерит контейнер уведомлений вне основного DOM-поддерева приложения.
+ * Renders the notification container outside the application's main DOM tree.
  */
 export const ToastPortal = () =>
   createPortal(

@@ -9,11 +9,11 @@ import { isTaskDueToday, taskDueDateTone } from "../dateUtils";
 import { projectQueryKey, taskQueryKey } from "../queryKeys";
 
 /**
- * API и sidebar страницы архивных проектов.
+ * API and sidebar for the archived projects page.
  *
  * @typedef {Object} ArchivedProjectsPageProps
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {ReactNode} [sidebar] - Navigation sidebar.
  */
 type ArchivedProjectsPageProps = {
   api: ApplicationApi;
@@ -22,10 +22,10 @@ type ArchivedProjectsPageProps = {
 };
 
 /**
- * Показывает архивные проекты и позволяет восстановить или удалить выбранный проект.
+ * Shows archived projects and allows the selected project to be restored or deleted.
  *
  * @param {ArchivedProjectsPageProps} parameter1
- * @returns Результат выполнения функции.
+ * @returns The archived projects page.
  */
 export const ArchivedProjectsPage = ({ api, sidebar }: ArchivedProjectsPageProps) => {
   const queryClient = useQueryClient();
@@ -34,7 +34,7 @@ export const ArchivedProjectsPage = ({ api, sidebar }: ArchivedProjectsPageProps
   const tasks = useQuery({ queryKey: taskQueryKey, queryFn: api.listTasks });
   const archived = (projects.data ?? []).filter((project) => project.archived);
   /**
-   * Возвращает проект в активный список и обновляет query cache.
+   * Restores a project to the active list and updates the query cache.
    *
    * @param {Project} project
    */
@@ -43,19 +43,19 @@ export const ArchivedProjectsPage = ({ api, sidebar }: ArchivedProjectsPageProps
     await queryClient.invalidateQueries({ queryKey: projectQueryKey });
   };
   /**
-   * Удаляет проект вместе с задачами после подтверждения пользователя.
+   * Deletes a project and its tasks after user confirmation.
    *
    * @param {Project} project
    */
   const remove = async (project: Project) => {
-    /** Удаление очищает проектные данные, поэтому перед запросом требуется подтверждение. */
+    /** Deletion removes project data, so request confirmation before sending it. */
     if (!window.confirm(`Delete project “${project.title}” and all its tasks?`)) return;
     await api.deleteProject(project.id);
     await queryClient.invalidateQueries({ queryKey: projectQueryKey });
     await queryClient.invalidateQueries({ queryKey: taskQueryKey });
   };
   /**
-   * Рекурсивно показывает дерево задач выбранного архивного проекта.
+   * Recursively displays the task tree for the selected archived project.
    *
    * @param {Array<TaskNode>} nodes
    * @returns {ReactElement}
@@ -85,7 +85,7 @@ export const ArchivedProjectsPage = ({ api, sidebar }: ArchivedProjectsPageProps
     </ul>
   );
   const selectedProject = archived.find((project) => project.id === selectedProjectId);
-  /** Показываем корни проекта, а renderTasks рекурсивно выводит все вложенные задачи. */
+  /** Render the project roots; renderTasks recursively displays all nested tasks. */
   const archivedTaskRoots = (tasks.data ?? []).filter(
     (task) => task.projectId === selectedProjectId && task.parentId === null,
   );

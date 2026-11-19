@@ -2,12 +2,12 @@ import type { ApplicationApi } from "../api";
 import { TaskApp } from "../TaskApp";
 
 /**
- * Входные параметры корневого workspace, необходимые API-клиенту и функциональным флагам.
+ * Root workspace inputs required by the API client and feature flags.
  *
  * @typedef {Object} TaskAppWorkspaceProps
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {boolean} attachmentsEnabled - Разрешено ли приложению загружать и выдавать вложения.
- * @property {boolean} projectArchivingEnabled - Разрешено ли архивирование проектов.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {boolean} attachmentsEnabled - Whether the application can upload and serve attachments.
+ * @property {boolean} projectArchivingEnabled - Whether project archiving is enabled.
  */
 export type TaskAppWorkspaceProps = {
   api: ApplicationApi;
@@ -18,7 +18,7 @@ export type TaskAppWorkspaceProps = {
 };
 
 /**
- * Подключает TaskApp к клиенту и настройкам возможностей приложения.
+ * Connects TaskApp to the API client and application capability settings.
  *
  * @param {TaskAppWorkspaceProps} parameter1
  */

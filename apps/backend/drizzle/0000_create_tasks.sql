@@ -1,4 +1,4 @@
--- Создаёт базовые таблицы проектов, секций и задач исходной схемы приложения.
+-- Creates the initial application tables for projects, sections, and tasks.
 CREATE TABLE IF NOT EXISTS "projects" (
   "id" text PRIMARY KEY NOT NULL,
   "title" text NOT NULL,

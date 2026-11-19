@@ -1,14 +1,14 @@
 /**
- * Возвращает готовый PostgreSQL URL или собирает его из отдельных настроек окружения.
+ * Returns a complete PostgreSQL URL or builds one from individual environment settings.
  *
  * @param {Record<string, string | undefined>} [environment]
  * @returns {string}
  */
 export const getDatabaseUrl = (environment: Record<string, string | undefined> = process.env): string => {
-  /** Полная строка подключения имеет приоритет над набором отдельных переменных. */
+  /** A complete connection string takes precedence over individual variables. */
   if (environment.DATABASE_URL !== undefined) return environment.DATABASE_URL;
 
-  /** IPv6-хост обрамляется скобками, а пароль и имя пользователя кодируются как URL-компоненты. */
+  /** Bracket IPv6 hosts and encode the username and password as URL components. */
   const host = environment.MYTODO_DB_HOST ?? "localhost";
   const formattedHost = host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;
   const username = encodeURIComponent(environment.MYTODO_DB_USER ?? "todoist");

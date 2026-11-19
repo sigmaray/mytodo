@@ -1,12 +1,12 @@
 import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskNode } from "@todoist-clone/domain";
 
 /**
- * Данные комментария, которые frontend передаёт API при обновлении задачи.
+ * Comment data sent by the frontend API when updating a task.
  *
  * @typedef {Object} TaskCommentInput
- * @property {string} [id] - Идентификатор сущности, с которой работает модуль.
- * @property {string} body - Данные «body», используемые типом «TaskCommentInput».
- * @property {Comment["attachments"]} [attachments] - Данные «вложения», используемые типом «TaskCommentInput».
+ * @property {string} [id] - Identifier of the entity handled by this module.
+ * @property {string} body - Comment text provided to the API.
+ * @property {Comment["attachments"]} [attachments] - Attachments included with the comment.
  */
 export type TaskCommentInput = {
   id?: string;
@@ -17,21 +17,21 @@ export type TaskCommentInput = {
 };
 
 /**
- * Загружает дерево задач текущего пользователя.
+ * Loads the current user’s task tree.
  *
  * @callback TaskApiListTasks
  * @returns {Promise<Array<TaskNode>>}
  */
 
 /**
- * Загружает проекты пользователя.
+ * Loads the user’s projects.
  *
  * @callback TaskApiListProjects
  * @returns {Promise<Array<Project>>}
  */
 
 /**
- * Создаёт проект верхнего уровня или подпроект.
+ * Creates a top-level project or a subproject.
  *
  * @callback TaskApiCreateProject
  * @param {string} title
@@ -40,7 +40,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Меняет родителя проекта или переносит его в корень.
+ * Changes a project’s parent or moves it to the root.
  *
  * @callback TaskApiMoveProject
  * @param {ProjectId} id
@@ -49,7 +49,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Переставляет проект между соседями.
+ * Reorders a project relative to its neighbors.
  *
  * @callback TaskApiReorderProject
  * @param {ProjectId} id
@@ -59,25 +59,25 @@ export type TaskCommentInput = {
  */
 
 /**
- * Обновляет название и/или описание проекта.
+ * Updates a project’s name and/or description.
  *
  * @callback TaskApiUpdateProject
  * @param {ProjectId} id
  * @param {{ title?: string; description?: string }} patch
- * @param {string} patch.title - Новое название.
- * @param {string} patch.description - Новое описание.
+ * @param {string} patch.title - The new name.
+ * @param {string} patch.description - The new description.
  * @returns {Promise<Project>}
  */
 
 /**
- * Загружает описание списка Входящие.
+ * Loads the Inbox description.
  *
  * @callback TaskApiGetInboxDescription
  * @returns {Promise<string>}
  */
 
 /**
- * Сохраняет описание списка Входящие.
+ * Saves the Inbox description.
  *
  * @callback TaskApiUpdateInboxDescription
  * @param {string} description
@@ -85,7 +85,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Создаёт копию проекта вместе с его содержимым.
+ * Duplicates a project and its contents.
  *
  * @callback TaskApiDuplicateProject
  * @param {ProjectId} id
@@ -93,7 +93,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Меняет архивное состояние проекта.
+ * Changes whether a project is archived.
  *
  * @callback TaskApiArchiveProject
  * @param {ProjectId} id
@@ -102,7 +102,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Удаляет проект.
+ * Deletes a project.
  *
  * @callback TaskApiDeleteProject
  * @param {ProjectId} id
@@ -110,14 +110,14 @@ export type TaskCommentInput = {
  */
 
 /**
- * Загружает секции пользователя.
+ * Loads the user’s sections.
  *
  * @callback TaskApiListSections
  * @returns {Promise<Array<Section>>}
  */
 
 /**
- * Создаёт секцию во Входящих или выбранном проекте.
+ * Creates a section in the Inbox or the selected project.
  *
  * @callback TaskApiCreateSection
  * @param {string} title
@@ -126,7 +126,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Переставляет секцию относительно соседних секций.
+ * Reorders a section relative to its neighboring sections.
  *
  * @callback TaskApiReorderSection
  * @param {SectionId} id
@@ -136,7 +136,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Переименовывает секцию.
+ * Renames a section.
  *
  * @callback TaskApiUpdateSection
  * @param {SectionId} id
@@ -145,7 +145,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Удаляет секцию.
+ * Deletes a section.
  *
  * @callback TaskApiDeleteSection
  * @param {SectionId} id
@@ -153,18 +153,18 @@ export type TaskCommentInput = {
  */
 
 /**
- * Создаёт задачу с указанным проектом, секцией и родителем.
+ * Creates a task in the specified project and section, with the specified parent.
  *
  * @callback TaskApiCreateTask
- * @param {string} title - Заголовок новой задачи.
- * @param {ProjectId | null} projectId - Проект назначения либо `null` для Входящих.
- * @param {SectionId | null} sectionId - Секция назначения либо `null` для корня списка.
- * @param {string | null} parentId - Родительская задача либо `null` для корневой задачи.
+ * @param {string} title - The new task’s title.
+ * @param {ProjectId | null} projectId - The destination project, or `null` for the Inbox.
+ * @param {SectionId | null} sectionId - The destination section, or `null` for the list root.
+ * @param {string | null} parentId - The parent task, or `null` for a top-level task.
  * @returns {Promise<Task>}
  */
 
 /**
- * Добавляет комментарий и выбранные файлы к задаче.
+ * Adds a comment and the selected files to a task.
  *
  * @callback TaskApiCreateComment
  * @param {string} taskId
@@ -174,7 +174,7 @@ export type TaskCommentInput = {
  */
 
 /**
- * Меняет состояние завершения задачи.
+ * Changes a task’s completion status.
  *
  * @callback TaskApiPatchTask
  * @param {string} id
@@ -183,65 +183,65 @@ export type TaskCommentInput = {
  */
 
 /**
- * Обновляет текст, срок, метки или комментарии задачи.
+ * Updates a task’s text, due date, labels, or comments.
  *
  * @callback TaskApiUpdateTask
- * @param {string} id - Идентификатор обновляемой задачи.
- * @param {{ title?: string; description?: string; dueDate?: string | null; labels?: Array<string>; comments?: Array<TaskCommentInput>; }} patch - Поля задачи, которые требуется сохранить.
- * @param {string} patch.title - Новое название.
- * @param {string} patch.description - Новое описание.
- * @param {string | null} patch.dueDate - Новый срок или null для сброса срока.
- * @param {Array<string>} patch.labels - Полный список меток.
- * @param {Array<TaskCommentInput>} patch.comments - Упорядоченный список комментариев.
+ * @param {string} id - ID of the task to update.
+ * @param {{ title?: string; description?: string; dueDate?: string | null; labels?: Array<string>; comments?: Array<TaskCommentInput>; }} patch - Task fields to save.
+ * @param {string} patch.title - The new name.
+ * @param {string} patch.description - The new description.
+ * @param {string | null} patch.dueDate - The new due date, or `null` to clear it.
+ * @param {Array<string>} patch.labels - The complete list of labels.
+ * @param {Array<TaskCommentInput>} patch.comments - The ordered list of comments.
  * @returns {Promise<Task>}
  */
 
 /**
- * Перемещает задачу в проект/секцию и задаёт нового родителя или соседей.
+ * Moves a task to a project or section and sets its parent or neighboring tasks.
  *
  * @callback TaskApiMoveTask
- * @param {string} id - Перемещаемая задача.
- * @param {ProjectId | null} projectId - Целевой проект или `null` для Входящих.
- * @param {SectionId | null} sectionId - Целевая секция либо `null` для корня списка.
- * @param {string | null} parentId - Новый родитель либо `null` для корневого уровня.
- * @param {string | null} [beforeId] - Сосед, перед которым нужно поставить задачу.
- * @param {string | null} [afterId] - Сосед, после которого нужно поставить задачу.
+ * @param {string} id - The task to move.
+ * @param {ProjectId | null} projectId - The destination project, or `null` for the Inbox.
+ * @param {SectionId | null} sectionId - The destination section, or `null` for the list root.
+ * @param {string | null} parentId - The new parent, or `null` to move the task to the root.
+ * @param {string | null} [beforeId] - The neighboring task before which to place this task.
+ * @param {string | null} [afterId] - The neighboring task after which to place this task.
  * @returns {Promise<Task>}
  */
 
 /**
- * Удаляет задачу и её потомков.
+ * Deletes a task and its descendants.
  *
  * @callback TaskApiDeleteTask
  * @param {string} id
  * @returns {Promise<void>}
  */
 /**
- * Набор HTTP-операций задач, проектов и секций.
+ * HTTP operations for tasks, projects, and sections.
  *
  * @typedef {Object} TaskApi
- * @property {TaskApiListTasks} listTasks - Список задач, относящихся к список.
- * @property {TaskApiListProjects} listProjects - Список проектов для список.
- * @property {TaskApiCreateProject} createProject - Вызывает соответствующую операцию API.
- * @property {TaskApiMoveProject} moveProject - Вызывает соответствующую операцию API.
- * @property {TaskApiReorderProject} reorderProject - Вызывает соответствующую операцию API.
- * @property {TaskApiUpdateProject} updateProject - Вызывает соответствующую операцию API.
- * @property {TaskApiGetInboxDescription} getInboxDescription - Вызывает соответствующую операцию API.
- * @property {TaskApiUpdateInboxDescription} updateInboxDescription - Вызывает соответствующую операцию API.
- * @property {TaskApiDuplicateProject} duplicateProject - Вызывает соответствующую операцию API.
- * @property {TaskApiArchiveProject} archiveProject - Вызывает соответствующую операцию API.
- * @property {TaskApiDeleteProject} deleteProject - Вызывает соответствующую операцию API.
- * @property {TaskApiListSections} listSections - Список секций для список.
- * @property {TaskApiCreateSection} createSection - Вызывает соответствующую операцию API.
- * @property {TaskApiReorderSection} reorderSection - Вызывает соответствующую операцию API.
- * @property {TaskApiUpdateSection} updateSection - Вызывает соответствующую операцию API.
- * @property {TaskApiDeleteSection} deleteSection - Вызывает соответствующую операцию API.
- * @property {TaskApiCreateTask} createTask - Вызывает соответствующую операцию API.
- * @property {TaskApiCreateComment} createComment - Вызывает соответствующую операцию API.
- * @property {TaskApiPatchTask} patchTask - Вызывает соответствующую операцию API.
- * @property {TaskApiUpdateTask} updateTask - Вызывает соответствующую операцию API.
- * @property {TaskApiMoveTask} moveTask - Вызывает соответствующую операцию API.
- * @property {TaskApiDeleteTask} deleteTask - Вызывает соответствующую операцию API.
+ * @property {TaskApiListTasks} listTasks - Lists tasks in the selected list.
+ * @property {TaskApiListProjects} listProjects - Lists projects in the selected list.
+ * @property {TaskApiCreateProject} createProject - Calls the corresponding API operation.
+ * @property {TaskApiMoveProject} moveProject - Calls the corresponding API operation.
+ * @property {TaskApiReorderProject} reorderProject - Calls the corresponding API operation.
+ * @property {TaskApiUpdateProject} updateProject - Calls the corresponding API operation.
+ * @property {TaskApiGetInboxDescription} getInboxDescription - Calls the corresponding API operation.
+ * @property {TaskApiUpdateInboxDescription} updateInboxDescription - Calls the corresponding API operation.
+ * @property {TaskApiDuplicateProject} duplicateProject - Calls the corresponding API operation.
+ * @property {TaskApiArchiveProject} archiveProject - Calls the corresponding API operation.
+ * @property {TaskApiDeleteProject} deleteProject - Calls the corresponding API operation.
+ * @property {TaskApiListSections} listSections - Lists sections in the selected list.
+ * @property {TaskApiCreateSection} createSection - Calls the corresponding API operation.
+ * @property {TaskApiReorderSection} reorderSection - Calls the corresponding API operation.
+ * @property {TaskApiUpdateSection} updateSection - Calls the corresponding API operation.
+ * @property {TaskApiDeleteSection} deleteSection - Calls the corresponding API operation.
+ * @property {TaskApiCreateTask} createTask - Calls the corresponding API operation.
+ * @property {TaskApiCreateComment} createComment - Calls the corresponding API operation.
+ * @property {TaskApiPatchTask} patchTask - Calls the corresponding API operation.
+ * @property {TaskApiUpdateTask} updateTask - Calls the corresponding API operation.
+ * @property {TaskApiMoveTask} moveTask - Calls the corresponding API operation.
+ * @property {TaskApiDeleteTask} deleteTask - Calls the corresponding API operation.
  */
 export type TaskApi = {
   listTasks: () => Promise<Array<TaskNode>>;
@@ -277,13 +277,13 @@ export type TaskApi = {
   deleteSection: (id: SectionId) => Promise<void>;
 
   createTask: (
-    /** Заголовок новой задачи. */
+    /** The new task’s title. */
     title: string,
-    /** Проект назначения либо `null` для Входящих. */
+    /** The destination project, or `null` for the Inbox. */
     projectId: ProjectId | null,
-    /** Секция назначения либо `null` для корня списка. */
+    /** The destination section, or `null` for the list root. */
     sectionId: SectionId | null,
-    /** Родительская задача либо `null` для корневой задачи. */
+    /** The parent task, or `null` for a top-level task. */
     parentId: string | null,
   ) => Promise<Task>;
 
@@ -292,9 +292,9 @@ export type TaskApi = {
   patchTask: (id: string, completed: boolean) => Promise<Task>;
 
   updateTask: (
-    /** Идентификатор обновляемой задачи. */
+    /** ID of the task to update. */
     id: string,
-    /** Поля задачи, которые требуется сохранить. */
+    /** Task fields to save. */
     patch: {
       title?: string;
 
@@ -309,17 +309,17 @@ export type TaskApi = {
   ) => Promise<Task>;
 
   moveTask: (
-    /** Перемещаемая задача. */
+    /** The task to move. */
     id: string,
-    /** Целевой проект или `null` для Входящих. */
+    /** The destination project, or `null` for the Inbox. */
     projectId: ProjectId | null,
-    /** Целевая секция либо `null` для корня списка. */
+    /** The destination section, or `null` for the list root. */
     sectionId: SectionId | null,
-    /** Новый родитель либо `null` для корневого уровня. */
+    /** The new parent, or `null` to move the task to the root. */
     parentId: string | null,
-    /** Сосед, перед которым нужно поставить задачу. */
+    /** The neighboring task before which to place this task. */
     beforeId?: string | null,
-    /** Сосед, после которого нужно поставить задачу. */
+    /** The neighboring task after which to place this task. */
     afterId?: string | null,
   ) => Promise<Task>;
 
@@ -370,17 +370,17 @@ export type TaskApi = {
  * @returns {Promise<unknown>}
  */
 /**
- * Набор запросов административной страницы инструментов БД.
+ * Requests used by the database tools administration page.
  *
  * @typedef {Object} ToolsApi
- * @property {ToolsApiListTables} listTables - Возвращает список таблиц, доступных для администрирования.
- * @property {ToolsApiListRecords} listRecords - Загружает записи выбранной таблицы с ограничением по количеству.
- * @property {ToolsApiClearTable} clearTable - Удаляет записи выбранной таблицы.
- * @property {ToolsApiDropAllTables} dropAllTables - Удаляет таблицы базы данных.
- * @property {ToolsApiMigrate} migrate - Применяет миграции базы данных.
- * @property {ToolsApiClearAllTables} clearAllTables - Очищает все таблицы.
- * @property {ToolsApiSeed} seed - Заполняет базу демонстрационными данными.
- * @property {ToolsApiRunQuery} runQuery - Выполняет SQL-запрос администратора.
+ * @property {ToolsApiListTables} listTables - Returns the tables available for administration.
+ * @property {ToolsApiListRecords} listRecords - Loads records from the selected table, up to the requested limit.
+ * @property {ToolsApiClearTable} clearTable - Deletes records from the selected table.
+ * @property {ToolsApiDropAllTables} dropAllTables - Drops the database tables.
+ * @property {ToolsApiMigrate} migrate - Applies database migrations.
+ * @property {ToolsApiClearAllTables} clearAllTables - Clears all tables.
+ * @property {ToolsApiSeed} seed - Seeds the database with sample data.
+ * @property {ToolsApiRunQuery} runQuery - Runs an administrator-provided SQL query.
  */
 export type ToolsApi = {
   listTables: () => Promise<Array<string>>;
@@ -401,12 +401,12 @@ export type ToolsApi = {
 };
 
 /**
- * Настройки пользователя, отображаемые на странице настроек.
+ * User settings shown on the settings page.
  *
  * @typedef {Object} AppSettings
- * @property {boolean} confirmDelete - Настройка подтверждения перед удалением.
- * @property {"password"} accessMode - Режим входа, настроенный для приложения.
- * @property {string} username - Данные «имя пользователя», используемые типом «AppSettings».
+ * @property {boolean} confirmDelete - Whether to ask for confirmation before deleting.
+ * @property {"password"} accessMode - The authentication mode configured for the application.
+ * @property {string} username - The account username.
  */
 export type AppSettings = {
   confirmDelete: boolean;
@@ -417,12 +417,12 @@ export type AppSettings = {
 };
 
 /**
- * Публичная запись аккаунта для управления пользователями.
+ * Public account details used by user management.
  *
  * @typedef {Object} ManagedUser
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} username - Данные «имя пользователя», используемые типом «ManagedUser».
- * @property {boolean} isAdmin - Признак: is административный.
+ * @property {string} id - Identifier of the entity handled by this module.
+ * @property {string} username - The account username.
+ * @property {boolean} isAdmin - Whether the user is an administrator.
  */
 export type ManagedUser = {
   id: string;
@@ -433,14 +433,14 @@ export type ManagedUser = {
 };
 
 /**
- * Текущий статус входа и возможности, включённые на сервере.
+ * Current authentication status and capabilities enabled by the server.
  *
  * @typedef {Object} AuthStatus
- * @property {"anonymous" | "password"} accessMode - Режим входа, настроенный для приложения.
- * @property {boolean} authenticated - Признак действующей сессии пользователя.
- * @property {ManagedUser | null} user - Текущий пользователь или null, если сессия не создана.
- * @property {boolean} [attachmentsEnabled] - Разрешено ли приложению загружать и выдавать вложения.
- * @property {boolean} [projectArchivingEnabled] - Разрешено ли архивирование проектов.
+ * @property {"anonymous" | "password"} accessMode - The authentication mode configured for the application.
+ * @property {boolean} authenticated - Whether the user has an active session.
+ * @property {ManagedUser | null} user - The current user, or `null` when no session exists.
+ * @property {boolean} [attachmentsEnabled] - Whether the application can upload and serve attachments.
+ * @property {boolean} [projectArchivingEnabled] - Whether project archiving is enabled.
  */
 export type AuthStatus = {
   accessMode: "anonymous" | "password";
@@ -455,24 +455,24 @@ export type AuthStatus = {
 };
 
 /**
- * Поля настроек, которые клиент отправляет для сохранения.
+ * Settings fields sent by the client to be saved.
  *
  * @typedef {Object} SettingsUpdate
- * @property {boolean} confirmDelete - Настройка подтверждения перед удалением.
+ * @property {boolean} confirmDelete - Whether to ask for confirmation before deleting.
  */
 export type SettingsUpdate = {
   confirmDelete: boolean;
 };
 
 /**
- * Загружает настройки текущего пользователя.
+ * Loads the current user’s settings.
  *
  * @callback ApplicationApiGetSettings
  * @returns {Promise<AppSettings>}
  */
 
 /**
- * Сохраняет настройки и возвращает результат сервера.
+ * Saves the settings and returns the server response.
  *
  * @callback ApplicationApiUpdateSettings
  * @param {SettingsUpdate} settings
@@ -480,14 +480,14 @@ export type SettingsUpdate = {
  */
 
 /**
- * Проверяет состояние сессии и доступные возможности приложения.
+ * Checks the session status and the application’s available capabilities.
  *
  * @callback ApplicationApiGetAuthStatus
  * @returns {Promise<AuthStatus>}
  */
 
 /**
- * Входит в аккаунт и сохраняет сессионную cookie на сервере.
+ * Signs in and stores the session cookie on the server.
  *
  * @callback ApplicationApiLogin
  * @param {string} username
@@ -496,73 +496,73 @@ export type SettingsUpdate = {
  */
 
 /**
- * Завершает текущую сессию.
+ * Ends the current session.
  *
  * @callback ApplicationApiLogout
  * @returns {Promise<void>}
  */
 
 /**
- * Меняет собственное имя пользователя или пароль.
+ * Changes the user’s own username or password.
  *
  * @callback ApplicationApiUpdateOwnAccount
  * @param {{ username: string; password?: string; }} account
- * @param {string} account.username - Значение поля «username».
- * @param {string} account.password - Значение поля «password».
+ * @param {string} account.username - The username field value.
+ * @param {string} account.password - The password field value.
  * @returns {Promise<ManagedUser>}
  */
 
 /**
- * Получает пользователей, доступных администратору.
+ * Lists users available to the administrator.
  *
  * @callback ApplicationApiListUsers
  * @returns {Promise<Array<ManagedUser>>}
  */
 
 /**
- * Создаёт аккаунт пользователя.
+ * Creates a user account.
  *
  * @callback ApplicationApiCreateUser
  * @param {{ username: string; password: string; isAdmin: boolean; }} user
- * @param {string} user.username - Значение поля «username».
- * @param {string} user.password - Значение поля «password».
- * @param {boolean} user.isAdmin - Признак «is admin».
+ * @param {string} user.username - The username field value.
+ * @param {string} user.password - The password field value.
+ * @param {boolean} user.isAdmin - Whether the user is an administrator.
  * @returns {Promise<ManagedUser>}
  */
 
 /**
- * Меняет имя, пароль или административные права пользователя.
+ * Changes a user’s username, password, or administrator privileges.
  *
  * @callback ApplicationApiUpdateUser
- * @param {string} id - Идентификатор редактируемого аккаунта.
- * @param {{ username?: string; password?: string; isAdmin?: boolean; }} user - Переданные поля аккаунта; отсутствующие значения не меняются.
- * @param {string} user.username - Значение поля «username».
- * @param {string} user.password - Значение поля «password».
- * @param {boolean} user.isAdmin - Признак «is admin».
+ * @param {string} id - ID of the account to update.
+ * @param {{ username?: string; password?: string; isAdmin?: boolean; }} user - Account fields to update; omitted fields remain unchanged.
+ * @param {string} user.username - The username field value.
+ * @param {string} user.password - The password field value.
+ * @param {boolean} user.isAdmin - Whether the user is an administrator.
  * @returns {Promise<ManagedUser>}
  */
 
 /**
- * Удаляет аккаунт пользователя.
+ * Deletes a user account.
  *
  * @callback ApplicationApiDeleteUser
  * @param {string} id
  * @returns {Promise<void>}
  */
 /**
- * Полный контракт API клиентского приложения и административных аккаунтов.
+ * Complete API contract for the client application and account administration.
  *
  * @typedef {Object} ApplicationApi
- * @property {ApplicationApiGetSettings} getSettings - Вызывает соответствующую операцию API.
- * @property {ApplicationApiUpdateSettings} updateSettings - Вызывает соответствующую операцию API.
- * @property {ApplicationApiGetAuthStatus} getAuthStatus - Вызывает соответствующую операцию API.
- * @property {ApplicationApiLogin} login - Вызывает соответствующую операцию API.
- * @property {ApplicationApiLogout} logout - Вызывает соответствующую операцию API.
- * @property {ApplicationApiUpdateOwnAccount} updateOwnAccount - Вызывает соответствующую операцию API.
- * @property {ApplicationApiListUsers} listUsers - Вызывает соответствующую операцию API.
- * @property {ApplicationApiCreateUser} createUser - Вызывает соответствующую операцию API.
- * @property {ApplicationApiUpdateUser} updateUser - Вызывает соответствующую операцию API.
- * @property {ApplicationApiDeleteUser} deleteUser - Вызывает соответствующую операцию API.
+ * @property {ApplicationApiGetSettings} getSettings - Calls the corresponding API operation.
+ * @property {ApplicationApiUpdateSettings} updateSettings - Calls the corresponding API operation.
+ * @property {ApplicationApiGetAuthStatus} getAuthStatus - Calls the corresponding API operation.
+ * @property {ApplicationApiLogin} login - Calls the corresponding API operation.
+ * @property {ApplicationApiLogout} logout - Calls the corresponding API operation.
+ * @property {ApplicationApiUpdateOwnAccount} updateOwnAccount - Calls the corresponding API operation.
+ * @property {ApplicationApiListUsers} listUsers - Calls the corresponding API operation.
+ * @property {ApplicationApiCreateUser} createUser - Calls the corresponding API operation.
+ * @property {ApplicationApiUpdateUser} updateUser - Calls the corresponding API operation.
+ * @property {ApplicationApiDeleteUser} deleteUser - Calls the corresponding API operation.
  */
 export type ApplicationApi = TaskApi & {
   getSettings: () => Promise<AppSettings>;
@@ -592,9 +592,9 @@ export type ApplicationApi = TaskApi & {
   }) => Promise<ManagedUser>;
 
   updateUser: (
-    /** Идентификатор редактируемого аккаунта. */
+    /** ID of the account to update. */
     id: string,
-    /** Переданные поля аккаунта; отсутствующие значения не меняются. */
+    /** Account fields to update; omitted fields remain unchanged. */
     user: {
       username?: string;
 
@@ -608,7 +608,7 @@ export type ApplicationApi = TaskApi & {
 };
 
 /**
- * Проверяет HTTP-ответ и преобразует его JSON-тело в ожидаемый тип.
+ * Checks an HTTP response and converts its JSON body to the expected type.
  *
  * @param {Response} response
  * @returns {Promise<T>}
@@ -622,7 +622,7 @@ const readJson = async <T>(response: Response): Promise<T> => {
 };
 
 /**
- * Создаёт HTTP-клиент приложения с необязательным префиксом API.
+ * Creates an application HTTP client with an optional API prefix.
  *
  * @param [baseUrl]
  * @returns {ApplicationApi}
@@ -859,7 +859,7 @@ export const createTaskApi = (baseUrl = ""): ApplicationApi => ({
 });
 
 /**
- * Отправляет JSON POST и проверяет ответ по общим правилам клиента.
+ * Sends a JSON POST request and validates the response using the client’s common rules.
  *
  * @param {string} url
  * @param {unknown} [body]
@@ -875,7 +875,7 @@ const postJson = async <T>(url: string, body: unknown = {}): Promise<T> =>
   );
 
 /**
- * Создаёт HTTP-клиент административных инструментов базы данных.
+ * Creates an HTTP client for database administration tools.
  *
  * @param [baseUrl]
  * @returns {ToolsApi}

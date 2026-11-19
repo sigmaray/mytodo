@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 });
 
-/** Для нового аккаунта подтверждение удаления включено по умолчанию. */
+/** Deletion confirmation is enabled by default for a new account. */
 test("opens settings with deletion confirmation enabled by default", async ({ page }) => {
   await page.goto("/settings");
 
@@ -16,7 +16,7 @@ test("opens settings with deletion confirmation enabled by default", async ({ pa
   await expect(page.getByText(/Set the initial administrator password with the backend CLI/)).toHaveCount(0);
 });
 
-/** Администратор управляет аккаунтами на отдельной странице. */
+/** Administrators manage accounts on a dedicated page. */
 test("administrators manage accounts on a separate page", async ({ page }, testInfo) => {
   const username = `managed-${testInfo.workerIndex}-${Date.now()}`;
   await page.goto("/");
@@ -29,7 +29,7 @@ test("administrators manage accounts on a separate page", async ({ page }, testI
   await expect(page.locator(`.managed-users input[value="${username}"]`)).toBeVisible();
 });
 
-/** Удаление аккаунта также удаляет связанные записи пользователя в базе. */
+/** Deleting an account also removes its related database records. */
 test("deleting a user from User management removes all of their database records", async ({
   page,
   browser,

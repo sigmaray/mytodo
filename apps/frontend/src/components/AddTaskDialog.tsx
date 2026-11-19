@@ -3,35 +3,35 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { AutoGrowTextarea, DatePickerPanel, LabelPicker } from "./TaskFormFields";
 
 /**
- * Значения и setters полей, которыми управляет форма новой задачи.
+ * Values and setters for fields managed by the new task form.
  *
  * @typedef {Object} AddTaskDraft
- * @property {boolean} open - Признак или настройка «открытие».
- * @property {Dispatch<SetStateAction<boolean>>} setOpen - Обновляет значение соответствующего состояния.
- * @property {string} title - Данные «заголовок», используемые типом «AddTaskDraft».
- * @property {Dispatch<SetStateAction<string>>} setTitle - Обновляет значение соответствующего состояния.
- * @property {string} description - Данные «описание», используемые типом «AddTaskDraft».
- * @property {Dispatch<SetStateAction<string>>} setDescription - Обновляет значение соответствующего состояния.
- * @property {Array<File>} files - Список выбранных файлов.
- * @property {Dispatch<SetStateAction<Array<File>>>} setFiles - Обновляет значение соответствующего состояния.
- * @property {string} date - Дата календарного дня.
- * @property {Dispatch<SetStateAction<string>>} setDate - Обновляет значение соответствующего состояния.
- * @property {boolean} datePickerOpen - Признак, что календарь выбора срока открыт.
- * @property {Dispatch<SetStateAction<boolean>>} setDatePickerOpen - Обновляет значение соответствующего состояния.
- * @property {string} dateBeforePicker - Дата, выбранная до открытия календаря.
- * @property {Dispatch<SetStateAction<string>>} setDateBeforePicker - Обновляет значение соответствующего состояния.
- * @property {Array<string>} labels - Список метки.
- * @property {Dispatch<SetStateAction<Array<string>>>} setLabels - Обновляет значение соответствующего состояния.
- * @property {string} labelInput - Черновик названия метки.
- * @property {Dispatch<SetStateAction<string>>} setLabelInput - Обновляет значение соответствующего состояния.
- * @property {boolean} showDescription - Признак отображения поля описания.
- * @property {Dispatch<SetStateAction<boolean>>} setShowDescription - Обновляет значение соответствующего состояния.
- * @property {boolean} showDate - Признак отображения выбора срока.
- * @property {Dispatch<SetStateAction<boolean>>} setShowDate - Обновляет значение соответствующего состояния.
- * @property {boolean} showLabels - Признак отображения выбора меток.
- * @property {Dispatch<SetStateAction<boolean>>} setShowLabels - Обновляет значение соответствующего состояния.
- * @property {string} placement - Позиция элемента в дереве или списке.
- * @property {Dispatch<SetStateAction<string>>} setPlacement - Обновляет значение соответствующего состояния.
+ * @property {boolean} open - Whether the dialog is open.
+ * @property {Dispatch<SetStateAction<boolean>>} setOpen - Updates the dialog visibility.
+ * @property {string} title - Draft task title.
+ * @property {Dispatch<SetStateAction<string>>} setTitle - Updates the task title.
+ * @property {string} description - Draft task description.
+ * @property {Dispatch<SetStateAction<string>>} setDescription - Updates the task description.
+ * @property {Array<File>} files - Selected files.
+ * @property {Dispatch<SetStateAction<Array<File>>>} setFiles - Updates the selected files.
+ * @property {string} date - Selected calendar date.
+ * @property {Dispatch<SetStateAction<string>>} setDate - Updates the selected date.
+ * @property {boolean} datePickerOpen - Whether the due date picker is open.
+ * @property {Dispatch<SetStateAction<boolean>>} setDatePickerOpen - Updates the date picker visibility.
+ * @property {string} dateBeforePicker - Date selected before opening the picker.
+ * @property {Dispatch<SetStateAction<string>>} setDateBeforePicker - Updates the saved date.
+ * @property {Array<string>} labels - Selected labels.
+ * @property {Dispatch<SetStateAction<Array<string>>>} setLabels - Updates the selected labels.
+ * @property {string} labelInput - Draft label text.
+ * @property {Dispatch<SetStateAction<string>>} setLabelInput - Updates the label input.
+ * @property {boolean} showDescription - Whether to show the description field.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowDescription - Updates description field visibility.
+ * @property {boolean} showDate - Whether to show the due date picker.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowDate - Updates due date picker visibility.
+ * @property {boolean} showLabels - Whether to show the label picker.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowLabels - Updates label picker visibility.
+ * @property {string} placement - Position in the tree or list.
+ * @property {Dispatch<SetStateAction<string>>} setPlacement - Updates the task placement.
  */
 type AddTaskDraft = {
   open: boolean;
@@ -105,18 +105,18 @@ type AddTaskDraft = {
  * @returns {void}
  */
 /**
- * Входные данные диалога, включая возможности приложения и действия формы.
+ * Dialog inputs, including application capabilities and form actions.
  *
  * @typedef {Object} AddTaskDialogProps
- * @property {AddTaskDraft} draft - Черновик вводимых пользователем данных.
- * @property {boolean} attachmentsEnabled - Разрешено ли приложению загружать и выдавать вложения.
- * @property {Array<string>} availableLabels - Метки, доступные для назначения задаче.
- * @property {Array<{ value: string; label: string }>} placementOptions - Список позиция options.
- * @property {string} placementOptions.value - Данные «позиция options value», используемые типом «AddTaskDialogProps».
- * @property {string} placementOptions.label - Данные «позиция options метка», используемые типом «AddTaskDialogProps».
- * @property {AddTaskDialogPropsOnSubmit} onSubmit - Отправляет форму.
- * @property {AddTaskDialogPropsPastedFiles} pastedFiles - Файлы, вставленные из буфера обмена.
- * @property {AddTaskDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Сообщает о выбранных файлах.
+ * @property {AddTaskDraft} draft - Draft values entered by the user.
+ * @property {boolean} attachmentsEnabled - Whether the application can upload and serve attachments.
+ * @property {Array<string>} availableLabels - Labels available to assign to the task.
+ * @property {Array<{ value: string; label: string }>} placementOptions - Available task placements.
+ * @property {string} placementOptions.value - Placement identifier.
+ * @property {string} placementOptions.label - Human-readable placement name.
+ * @property {AddTaskDialogPropsOnSubmit} onSubmit - Submits the form.
+ * @property {AddTaskDialogPropsPastedFiles} pastedFiles - Files pasted from the clipboard.
+ * @property {AddTaskDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Reports the selected files.
  */
 type AddTaskDialogProps = {
   draft: AddTaskDraft;
@@ -135,10 +135,10 @@ type AddTaskDialogProps = {
 };
 
 /**
- * Отображает форму создания задачи с описанием, сроком, метками и файлами.
+ * Renders the task creation form with a description, due date, labels, and files.
  *
  * @param {AddTaskDialogProps} parameter1
- * @returns Результат выполнения функции.
+ * @returns The task creation dialog.
  */
 export const AddTaskDialog = ({
   draft,
@@ -183,7 +183,7 @@ export const AddTaskDialog = ({
       className="task-details-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        /** Клик внутри формы не должен закрывать диалог. */
+        /** Clicking inside the form must not close the dialog. */
         if (event.target === event.currentTarget) setAddTaskOpen(false);
       }}
     >
@@ -193,19 +193,19 @@ export const AddTaskDialog = ({
         aria-modal="true"
         aria-label="Add task"
         onPasteCapture={(event) => {
-          /** Файлы из буфера обмена принимаются только при включённой поддержке вложений. */
+          /** Accept clipboard files only when attachment support is enabled. */
           if (!attachmentsEnabled) return;
           const files = pastedFiles(event.clipboardData);
           if (files.length > 0) {
             event.preventDefault();
-            /** Ограничиваем буфер оставшимся лимитом, чтобы форма не превысила серверный максимум. */
+            /** Respect the remaining capacity so the form does not exceed the server limit. */
             const acceptedFiles = files.slice(0, Math.max(0, 10 - addTaskFiles.length));
             setAddTaskFiles([...addTaskFiles, ...acceptedFiles]);
             notifyAttachedFiles(acceptedFiles);
           }
         }}
         onKeyDown={(event) => {
-          /** Escape не закрывает основную форму, пока открыт вложенный выбор даты. */
+          /** Escape does not close the main form while the nested date picker is open. */
           if (event.key === "Escape" && !addTaskDatePickerOpen) setAddTaskOpen(false);
         }}
       >
@@ -226,7 +226,7 @@ export const AddTaskDialog = ({
               required
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
-                  /** Enter отправляет форму, а Shift+Enter вставляет перенос строки. */
+                  /** Enter submits the form; Shift+Enter inserts a new line. */
                   event.preventDefault();
                   event.currentTarget.form?.requestSubmit();
                 }

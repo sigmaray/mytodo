@@ -2,13 +2,13 @@ import { createE2eApi } from "./api";
 import { expect, test } from "./fixtures";
 
 /**
- * Создаёт уникальное имя для объектов, которые тест сохраняет в приложении.
+ * Creates a unique name for objects saved by the test.
  *
  * @param {string} label
  */
 const unique = (label: string) => `${label} ${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
 
-/** Подробности задачи редактируются, а полный Markdown копируется в буфер. */
+/** Edit task details and copy the full Markdown export to the clipboard. */
 test("edits task details and copies all Markdown", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   page.on("dialog", (dialog) => dialog.accept());
@@ -177,7 +177,7 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   expect(copiedMarkdown.match(/^# /gm)).toHaveLength(1);
 });
 
-/** Переименование проекта и секции не меняет их визуальный порядок после перезагрузки. */
+/** Renaming a project and section preserves their visual order after reload. */
 test("renaming projects and sections preserves their visual order after reload", async ({ page }) => {
   await page.goto("/");
   const projectNames = [unique("Order project A"), unique("Order project B"), unique("Order project C")];
@@ -249,7 +249,7 @@ test("renaming projects and sections preserves their visual order after reload",
   await verifySectionOrder();
 });
 
-/** Архивирование и восстановление проекта работает вместе с просмотром таблиц. */
+/** Project archiving and restoration work alongside table browsing. */
 test("archives and restores projects, and views table records", async ({ page }) => {
   await page.goto("/");
   const title = unique("Archive candidate");

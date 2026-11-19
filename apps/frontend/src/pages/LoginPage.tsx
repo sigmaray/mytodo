@@ -4,10 +4,10 @@ import type { ApplicationApi } from "../api";
 import { authStatusQueryKey } from "../queryKeys";
 
 /**
- * Отображает форму входа и обновляет состояние сессии после успеха.
+ * Renders the sign-in form and updates the session state on success.
  *
  * @param {{ api: ApplicationApi }} parameter1
- * @returns Результат выполнения функции.
+ * @returns The sign-in page.
  */
 export const LoginPage = ({ api }: { api: ApplicationApi }) => {
   const queryClient = useQueryClient();

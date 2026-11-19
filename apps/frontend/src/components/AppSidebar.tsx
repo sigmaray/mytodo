@@ -32,16 +32,16 @@ import { SearchPalette } from "./SearchPalette";
 import { SidebarProjects } from "./SidebarProjects";
 import { useSidebarProjectManagement } from "./useSidebarProjectManagement";
 
-/** Показывает инструменты базы только в разработке и тестовой среде. */
+/** Shows database tools only in development and test environments. */
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
-/** Позиция прокрутки sidebar, сохраняемая при переходах между страницами. */
+/** Sidebar scroll position preserved while navigating between pages. */
 let rememberedSidebarScrollTop = 0;
 
 /**
- * Восстанавливает прокрутку панели навигации и запоминает её при изменении.
+ * Restores the navigation panel scroll position and saves it when it changes.
  *
- * @returns Результат выполнения функции.
+ * @returns The scroll persistence handler.
  */
 const useSidebarScrollPosition = () => {
   const sidebarRef = useRef<HTMLElement>(null);
@@ -106,24 +106,24 @@ const useSidebarScrollPosition = () => {
  * @returns {React.DragEventHandler<HTMLElement>}
  */
 /**
- * Навигационные данные и обработчики sidebar общего workspace.
+ * Navigation data and handlers for the shared workspace sidebar.
  *
  * @typedef {Object} AppSidebarProps
- * @property {ApplicationApi | null} api - Набор API-операций для серверных данных.
- * @property {ProjectId | null} [selectedProjectId] - Данные «выбранные проект id», используемые типом «AppSidebarProps».
- * @property {AppSidebarPropsOnInboxSelect} [onInboxSelect] - Переходит во Входящие.
- * @property {AppSidebarPropsOnProjectSelect} [onProjectSelect] - Открывает проект.
- * @property {AppSidebarPropsOnTaskSelect} [onTaskSelect] - Выбирает задачу.
- * @property {AppSidebarPropsOnAddTask} [onAddTask] - Добавляет задачу.
- * @property {AppSidebarPropsIsProjectDropActive} [isProjectDropActive] - Признак, что проект является активной целью перетаскивания.
- * @property {React.DragEventHandler<HTMLElement>} [onInboxDragEnter] - Обработчик события «Входящие drag enter».
- * @property {React.DragEventHandler<HTMLElement>} [onInboxDragOver] - Обработчик события «Входящие drag over».
- * @property {React.DragEventHandler<HTMLElement>} [onInboxDragLeave] - Обработчик события «Входящие drag leave».
- * @property {React.DragEventHandler<HTMLElement>} [onInboxDrop] - Обработчик события «Входящие удаление».
- * @property {AppSidebarPropsOnProjectDragEnter} [onProjectDragEnter] - Обрабатывает наведение при перетаскивании проекта.
- * @property {AppSidebarPropsOnProjectDragOver} [onProjectDragOver] - Обновляет целевую область проекта при перетаскивании.
- * @property {AppSidebarPropsOnProjectDragLeave} [onProjectDragLeave] - Сбрасывает состояние наведения проекта.
- * @property {AppSidebarPropsOnProjectDrop} [onProjectDrop] - Обрабатывает сброс проекта.
+ * @property {ApplicationApi | null} api - API operations for server data.
+ * @property {ProjectId | null} [selectedProjectId] - ID of the selected project.
+ * @property {AppSidebarPropsOnInboxSelect} [onInboxSelect] - Navigates to the Inbox.
+ * @property {AppSidebarPropsOnProjectSelect} [onProjectSelect] - Opens a project.
+ * @property {AppSidebarPropsOnTaskSelect} [onTaskSelect] - Selects a task.
+ * @property {AppSidebarPropsOnAddTask} [onAddTask] - Adds a task.
+ * @property {AppSidebarPropsIsProjectDropActive} [isProjectDropActive] - Whether a project is an active drag target.
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragEnter] - Handles entering the Inbox during a drag.
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragOver] - Handles dragging over the Inbox.
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDragLeave] - Handles leaving the Inbox during a drag.
+ * @property {React.DragEventHandler<HTMLElement>} [onInboxDrop] - Handles dropping onto the Inbox.
+ * @property {AppSidebarPropsOnProjectDragEnter} [onProjectDragEnter] - Handles entering a project during a drag.
+ * @property {AppSidebarPropsOnProjectDragOver} [onProjectDragOver] - Updates the project drop target during a drag.
+ * @property {AppSidebarPropsOnProjectDragLeave} [onProjectDragLeave] - Clears the project hover state.
+ * @property {AppSidebarPropsOnProjectDrop} [onProjectDrop] - Handles dropping onto a project.
  */
 type AppSidebarProps = {
   api: ApplicationApi | null;
@@ -158,10 +158,10 @@ type AppSidebarProps = {
 };
 
 /**
- * Отображает навигацию, поиск, Inbox и дерево проектов.
+ * Renders navigation, search, the Inbox, and the project tree.
  *
  * @param {AppSidebarProps} parameter1
- * @returns Результат выполнения функции.
+ * @returns The workspace sidebar.
  */
 export const AppSidebar = ({
   api,
@@ -241,7 +241,7 @@ export const AppSidebar = ({
   useEffect(() => {
     if (openProjectMenuId === null) return;
     const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
-      /** Проверяем ближайший контейнер меню, чтобы клики по его кнопкам не закрывали его заранее. */
+      /** Check the nearest menu container so clicks on its buttons do not close it prematurely. */
       if (event.target instanceof Element && event.target.closest(".project-menu") === null)
         setOpenProjectMenuId(null);
     };
@@ -256,7 +256,7 @@ export const AppSidebar = ({
     };
   }, [openProjectMenuId]);
 
-  /** Вычисляем навигационный раздел для активной подсветки ссылок sidebar. */
+  /** Determine the navigation section used to highlight active sidebar links. */
   const activePage = location.pathname.startsWith("/tools")
     ? "tools"
     : location.pathname.startsWith("/settings")
@@ -278,7 +278,7 @@ export const AppSidebar = ({
                     : "";
   const handleTaskSelect = (task: Task) => {
     closeSidebar();
-    /** Встраивание может обработать задачу самостоятельно; иначе открываем её через deep link. */
+    /** An embedded handler may process the task; otherwise, open it through a deep link. */
     if (onTaskSelect !== undefined) onTaskSelect(task);
     else navigate(`/?task=${encodeURIComponent(task.id)}`);
   };

@@ -7,11 +7,11 @@ import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { tablesQueryKey } from "../queryKeys";
 
 /**
- * API обслуживания базы и sidebar страницы инструментов.
+ * Database maintenance API and sidebar for the tools page.
  *
  * @typedef {Object} ToolsPageProps
- * @property {ToolsApi} api - Набор API-операций для серверных данных.
- * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ * @property {ToolsApi} api - API operations for database tools.
+ * @property {ReactNode} [sidebar] - Navigation sidebar.
  */
 type ToolsPageProps = {
   api: ToolsApi;
@@ -19,14 +19,14 @@ type ToolsPageProps = {
   sidebar?: ReactNode;
 };
 
-/** Ограничивает страницу инструментов средами разработки и тестирования. */
+/** Restricts the tools page to development and test environments. */
 const toolsEnabled = import.meta.env.DEV || import.meta.env.MODE === "test";
 
 /**
- * Даёт администратору интерфейс просмотра таблиц, запросов и обслуживания базы.
+ * Provides administrators with database table, query, and maintenance tools.
  *
  * @param {ToolsPageProps} parameter1
- * @returns Результат выполнения функции.
+ * @returns The database tools page.
  */
 export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
   useQuickAddShortcut();
@@ -41,12 +41,12 @@ export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
   });
 
   /**
-   * Выполняет действие обслуживания и обновляет список таблиц после завершения.
+   * Runs a maintenance action and refreshes the table list when it completes.
    *
    * @param {() => Promise<unknown>} action
    */
   const runAction = (action: () => Promise<unknown>) => async () => {
-    /** Отображаем результат операции и обновляем перечень таблиц после изменений базы. */
+    /** Show the operation result and refresh the table list after database changes. */
     const data = await action();
 
     setResult(data);
@@ -72,7 +72,7 @@ export const ToolsPage = ({ api, sidebar }: ToolsPageProps) => {
   });
 
   if (!toolsEnabled) {
-    /** Не показываем инструменты в production даже при прямом переходе по URL. */
+    /** Hide these tools in production, including when the URL is opened directly. */
     return (
       <main className="shell app-layout">
         {sidebar}

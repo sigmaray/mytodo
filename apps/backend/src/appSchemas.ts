@@ -1,85 +1,85 @@
 import { z } from "zod";
 
-/** Проверяет данные создания задачи и подставляет пустой контекст по умолчанию. */
+/** Validates task creation data and supplies empty default context values. */
 export const createTaskSchema = z.object({
-  /** Название новой задачи после удаления пробелов по краям. */
+  /** New task title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** ID родительской задачи или корневое значение по умолчанию. */
+  /** Parent task ID, or the default root value. */
   parentId: z.string().nullable().default(null),
-  /** ID проекта или Входящие по умолчанию. */
+  /** Project ID, or the Inbox by default. */
   projectId: z.string().nullable().default(null),
-  /** ID секции или корень проекта по умолчанию. */
+  /** Section ID, or the project root by default. */
   sectionId: z.string().nullable().default(null),
 });
 
-/** Проверяет данные проекта или подпроекта перед созданием. */
+/** Validates project or subproject data before creation. */
 export const createProjectSchema = z.object({
-  /** Непустое название нового проекта. */
+  /** Non-empty title for the new project. */
   title: z.string().trim().min(1),
-  /** Родительский проект либо `null` для корня. */
+  /** Parent project, or `null` for a top-level project. */
   parentId: z.string().nullable().default(null),
 });
-/** Проверяет название новой секции и её проект. */
+/** Validates a new section title and its project. */
 export const createSectionSchema = z.object({
-  /** Непустое название секции. */
+  /** Non-empty section title. */
   title: z.string().trim().min(1),
-  /** Проект-владелец или Входящие по умолчанию. */
+  /** Owning project, or the Inbox by default. */
   projectId: z.string().nullable().default(null),
 });
 
-/** Проверяет имя и пароль, полученные при входе пользователя. */
+/** Validates the username and password submitted at sign-in. */
 export const loginSchema = z.object({
-  /** Имя входа без пробелов по краям. */
+  /** Login name with surrounding whitespace removed. */
   username: z.string().trim().min(1).max(64),
-  /** Пароль в исходном виде для проверки хеша. */
+  /** Plaintext password used to verify the stored hash. */
   password: z.string().min(1),
 });
 
-/** Проверяет параметры пользовательских настроек. */
+/** Validates user settings. */
 export const updateSettingsSchema = z.object({
-  /** Требовать ли подтверждение перед удалением. */
+  /** Whether to ask for confirmation before deleting. */
   confirmDelete: z.boolean(),
 });
-/** Проверяет изменение имени или пароля и запрещает пустое обновление. */
+/** Validates a username or password change and rejects an empty update. */
 export const updateAccountSchema = z
   .object({ username: z.string().trim().min(1).max(64).optional(), password: z.string().min(1).optional() })
-  /** Требуем хотя бы одно поле, иначе запрос не изменил бы аккаунт. */
+  /** Require at least one field so the request changes the account. */
   .refine((patch) => Object.keys(patch).length > 0);
-/** Проверяет новую учётную запись, которую создаёт администратор. */
+/** Validates a new account created by an administrator. */
 export const createUserSchema = z.object({
-  /** Уникальное имя новой учётной записи. */
+  /** Unique username for the new account. */
   username: z.string().trim().min(1).max(64),
-  /** Исходный пароль, который backend захеширует перед записью. */
+  /** Plaintext password that the backend hashes before storing. */
   password: z.string().min(1),
-  /** Нужно ли выдать новой учётной записи административные права. */
+  /** Whether to grant administrator privileges to the new account. */
   isAdmin: z.boolean().default(false),
 });
-/** Проверяет набор изменений существующей учётной записи. */
+/** Validates a set of changes to an existing account. */
 export const updateUserSchema = z
   .object({
-    /** Новое имя пользователя, если оно меняется. */
+    /** New username, if it is changing. */
     username: z.string().trim().min(1).max(64).optional(),
-    /** Новый пароль до серверного хеширования. */
+    /** New password before server-side hashing. */
     password: z.string().min(1).optional(),
-    /** Новая роль пользователя, если администратор её меняет. */
+    /** New user role, if the administrator is changing it. */
     isAdmin: z.boolean().optional(),
   })
-  /** Запрещаем пустой PATCH, чтобы каждый принятый запрос менял хотя бы одно поле. */
+  /** Reject an empty PATCH so each accepted request changes at least one field. */
   .refine((patch) => Object.keys(patch).length > 0);
-/** Проверяет описание Входящих и ограничивает объём хранимого текста. */
+/** Validates the Inbox description and limits the amount of stored text. */
 export const inboxDescriptionSchema = z.object({
-  /** Текст описания, ограниченный 20 000 символами. */
+  /** Description text, limited to 20,000 characters. */
   description: z.string().max(20000),
 });
 
 /**
- * Читает JSON-тело запроса, а при другом типе содержимого возвращает пустой объект.
+ * Reads a JSON request body, or returns an empty object for other content types.
  *
  * @param {Request} request
- * @returns Результат выполнения функции.
+ * @returns The parsed JSON body or an empty object.
  */
 export const parseJson = async (request: Request) => {
-  /** Маршруты могут принимать запросы без тела, поэтому сначала проверяем заголовок. */
+  /** Routes may accept requests without a body, so check the header first. */
   const contentType = request.headers.get("content-type") ?? "";
 
   if (!contentType.includes("application/json")) {

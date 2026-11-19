@@ -7,7 +7,7 @@ import { firstProject, nullableEq, projectOrder, rowOrder, sectionOrder, toProje
 import { projects as projectsTable, sections as sectionsTable, tasks as tasksTable } from "./schema";
 
 /**
- * Создаёт набор запросов проектов, ограниченный UUID текущего пользователя.
+ * Creates project queries scoped to the current user's UUID.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {postgres.Sql} client
@@ -30,7 +30,7 @@ export const createPostgresProjectMethods = (
   | "duplicateProject"
   | "setProjectArchived"
 > => ({
-  /** Возвращает проекты пользователя в порядке их lexicalOrder. */
+  /** Returns the user's projects ordered by lexicalOrder. */
   listProjects: async () => {
     const rows = await db
       .select()
@@ -40,7 +40,7 @@ export const createPostgresProjectMethods = (
 
     return rows.map(toProject);
   },
-  /** Создаёт корневой проект после последнего проекта того же уровня. */
+  /** Creates a top-level project after the last project at that level. */
   createProject: async (title) => {
     const siblings = await db
       .select()
@@ -66,7 +66,7 @@ export const createPostgresProjectMethods = (
 
     return project;
   },
-  /** Создаёт дочерний проект с ключом после существующих подпроектов. */
+  /** Creates a child project with a sort key after the existing subprojects. */
   createSubproject: async (title, parentId) => {
     const parent = await db
       .select({ id: projectsTable.id })
@@ -94,7 +94,7 @@ export const createPostgresProjectMethods = (
     if (project === null) throw new Error("Project insert failed");
     return project;
   },
-  /** Перемещает проект, проверяя владельца, наличие родителя и циклы иерархии. */
+  /** Moves a project after checking ownership, parent existence, and hierarchy cycles. */
   moveProject: async (id, parentId) => {
     if (parentId === id) return null;
     if (parentId !== null) {
@@ -132,7 +132,7 @@ export const createPostgresProjectMethods = (
       .returning();
     return firstProject(rows);
   },
-  /** Переставляет проект среди соседей и вычисляет новый дробный ключ порядка. */
+  /** Reorders a project among its siblings and computes a new fractional sort key. */
   reorderProject: async (id, beforeId, afterId) => {
     const existingRows = await db
       .select()
@@ -164,7 +164,7 @@ export const createPostgresProjectMethods = (
       .returning();
     return firstProject(rows);
   },
-  /** Обновляет переданные поля проекта и возвращает запись из базы. */
+  /** Updates the supplied project fields and returns the database record. */
   updateProject: async (id, patch) => {
     const rows = await db
       .update(projectsTable)
@@ -177,7 +177,7 @@ export const createPostgresProjectMethods = (
 
     return firstProject(rows);
   },
-  /** Удаляет проект; каскадные ограничения сохраняют целостность ссылок. */
+  /** Deletes a project; cascading constraints preserve referential integrity. */
   deleteProject: async (id) => {
     return client.begin(async (transaction) => {
       const projectRows = await transaction<
@@ -205,7 +205,7 @@ export const createPostgresProjectMethods = (
       return deleted.length > 0;
     });
   },
-  /** Копирует проект, секции и задачи, заменяя идентификаторы и внутренние связи. */
+  /** Copies a project, its sections, and tasks while replacing IDs and internal references. */
   duplicateProject: async (id) => {
     const projectRows = await db
       .select()
@@ -266,7 +266,7 @@ export const createPostgresProjectMethods = (
     const project = copiedProject[0];
     return project === undefined ? null : toProject(project);
   },
-  /** Обновляет архивный признак проекта. */
+  /** Updates the project's archived flag. */
   setProjectArchived: async (id, archived) => {
     const rows = await db
       .update(projectsTable)

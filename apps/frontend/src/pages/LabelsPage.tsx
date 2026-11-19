@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
 /**
- * Списки и действия для страницы фильтрации задач по метке.
+ * Lists and actions for the task label filter page.
  *
  * @typedef {Object} LabelsPageProps
- * @property {string} selectedLabel - Метка, по которой отфильтрованы задачи.
- * @property {string} viewTitle - Заголовок страницы метки.
- * @property {Array<Task>} flatTasks - Плоский список задач для фильтрации по метке.
- * @property {Array<TaskNode>} viewTasks - Дерево задач, отфильтрованное по метке.
- * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Обработчики действий над задачами.
+ * @property {string} selectedLabel - Label used to filter tasks.
+ * @property {string} viewTitle - Label page title.
+ * @property {Array<Task>} flatTasks - Flat task list used for label filtering.
+ * @property {Array<TaskNode>} viewTasks - Task tree filtered by the selected label.
+ * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Task action handlers.
  */
 export type LabelsPageProps = {
   selectedLabel: string;
@@ -25,7 +25,7 @@ export type LabelsPageProps = {
 };
 
 /**
- * Показывает доступные метки и дерево задач для выбранного фильтра.
+ * Shows available labels and the task tree for the selected filter.
  *
  * @param {LabelsPageProps} parameter1
  */

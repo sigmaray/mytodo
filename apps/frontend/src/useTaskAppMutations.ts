@@ -8,15 +8,15 @@ import { inboxPlacement, parsePlacement, taskPlacement } from "./taskAppUtils";
 import type { TaskAppMutationsState } from "./useTaskAppState";
 
 /**
- * Поля назначения для перемещения задачи через API.
+ * Destination fields used to move a task through the API.
  *
  * @typedef {Object} MoveInput
- * @property {TaskId} taskId - Данные «задача id», используемые типом «MoveInput».
- * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «MoveInput».
- * @property {SectionId | null} sectionId - Данные «секция id», используемые типом «MoveInput».
- * @property {TaskId | null} parentId - Данные «родитель id», используемые типом «MoveInput».
- * @property {TaskId | null} beforeId - Данные «предыдущего id», используемые типом «MoveInput».
- * @property {TaskId | null} afterId - Данные «следующего id», используемые типом «MoveInput».
+ * @property {TaskId} taskId - ID of the task to move.
+ * @property {ProjectId | null} projectId - Destination project ID, or `null` for the Inbox.
+ * @property {SectionId | null} sectionId - Destination section ID, or `null` for the project root.
+ * @property {TaskId | null} parentId - New parent task ID, or `null` for a root task.
+ * @property {TaskId | null} beforeId - ID of a neighboring task to place this task before.
+ * @property {TaskId | null} afterId - ID of a neighboring task to place this task after.
  */
 type MoveInput = {
   taskId: TaskId;
@@ -33,15 +33,15 @@ type MoveInput = {
 };
 
 /**
- * Аргументы для создания набора React Query мутаций workspace.
+ * Arguments for creating the workspace React Query mutations.
  *
  * @typedef {Object} TaskAppMutationInput
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
- * @property {TaskAppMutationsState} state - Данные текущего рабочего пространства.
- * @property {Array<Section> | undefined} sectionData - Секции, полученные из серверного запроса.
- * @property {{ confirmDelete: boolean } | undefined} settings - Обновляет значение соответствующего состояния.
- * @property {boolean} settings.confirmDelete - Настройка, определяющая необходимость подтверждать удаление.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {QueryClient} queryClient - Cache client for server queries.
+ * @property {TaskAppMutationsState} state - Current workspace data.
+ * @property {Array<Section> | undefined} sectionData - Sections returned by the server query.
+ * @property {{ confirmDelete: boolean } | undefined} settings - User settings.
+ * @property {boolean} settings.confirmDelete - Whether deletion requires confirmation.
  */
 type TaskAppMutationInput = {
   api: ApplicationApi;
@@ -56,10 +56,10 @@ type TaskAppMutationInput = {
 };
 
 /**
- * Создаёт мутации и оптимистичные обновления для задач, проектов и секций.
+ * Creates mutations and optimistic updates for tasks, projects, and sections.
  *
  * @param {TaskAppMutationInput} parameter1
- * @returns Результат выполнения функции.
+ * @returns Workspace mutations.
  */
 export const useTaskAppMutations = ({
   api,
@@ -90,7 +90,7 @@ export const useTaskAppMutations = ({
   } = state;
 
   /**
-   * Отсутствующая настройка сохраняет безопасное поведение и требует подтверждения.
+   * If the setting is missing, use the safe behavior and require confirmation.
    *
    * @param {string} message
    */
@@ -173,12 +173,12 @@ export const useTaskAppMutations = ({
   const toggleMutation = useMutation({
     mutationFn: (task: TaskNode) => api.patchTask(task.id, !task.completed),
     onMutate: async (task) => {
-      /** Отменяем устаревший запрос, чтобы он не перезаписал оптимистичное состояние. */
+      /** Cancel stale queries so they do not overwrite the optimistic state. */
       await queryClient.cancelQueries({ queryKey: taskQueryKey });
       const previousTasks = queryClient.getQueryData<Array<TaskNode>>(taskQueryKey);
 
       /**
-       * Обновляем выбранную задачу в дереве, не меняя состояние её потомков.
+       * Update the selected task in the tree without changing its descendants.
        *
        * @param {Array<TaskNode>} nodes
        * @returns {Array<TaskNode>}
@@ -195,7 +195,7 @@ export const useTaskAppMutations = ({
       return { previousTasks };
     },
     onError: (_error, _task, context) => {
-      /** Восстанавливаем снимок кэша, если сервер отклонил переключение. */
+      /** Restore the cache snapshot if the server rejects the toggle. */
       queryClient.setQueryData(taskQueryKey, context?.previousTasks);
     },
     onSettled: async () => {
@@ -205,7 +205,7 @@ export const useTaskAppMutations = ({
 
   const editMutation = useMutation({
     mutationFn: async (task: TaskNode) => {
-      /** Сначала обновляем текст; перемещение вызывается отдельно только при смене списка. */
+      /** Update the text first; move separately only when the list changes. */
       const placement = parsePlacement(editPlacement, allSections);
       const titleTask = await api.updateTask(task.id, { title: editTitle.trim() });
 
@@ -258,7 +258,7 @@ export const useTaskAppMutations = ({
       projectId: ProjectId | null;
       sectionId: SectionId | null;
     }) => {
-      /** Последовательность сохраняет предсказуемый порядок и изолирует ошибки каждого переноса. */
+      /** Sequential moves preserve predictable order and isolate failures for each item. */
       for (const taskId of input.taskIds) {
         await api.moveTask(taskId, input.projectId, input.sectionId, null, null, null);
       }
@@ -273,7 +273,7 @@ export const useTaskAppMutations = ({
 
   const selectedDeleteMutation = useMutation({
     mutationFn: async (taskIds: Array<TaskId>) =>
-      /** Все выбранные корни удаляются, а состояние интерфейса очищается после успеха. */
+      /** Delete all selected roots and clear the interface state after success. */
       Promise.all(taskIds.map((taskId) => api.deleteTask(taskId))),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });

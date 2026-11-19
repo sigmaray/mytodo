@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 });
 
-/** Создаём задачу через интерфейс и убеждаемся, что она появляется в списке. */
+/** Create a task through the UI and verify that it appears in the list. */
 test("creates a task in the browser", async ({ page }, testInfo) => {
   const title = `Write the first MVP task ${testInfo.retry}-${Date.now()}`;
   const editedTitle = `Write the first persistent MVP task ${testInfo.retry}-${Date.now()}`;
@@ -30,7 +30,7 @@ test("creates a task in the browser", async ({ page }, testInfo) => {
   await expect(page.getByText(editedTitle)).not.toBeVisible();
 });
 
-/** Проверяем, что детали задачи остаются доступными на узком экране. */
+/** Verify that task details remain accessible on a narrow screen. */
 test("adapts task details to a small mobile viewport", async ({ page }, testInfo) => {
   const title = `Mobile task details with a long wrapping title ${testInfo.workerIndex}-${Date.now()}`;
   await createE2eApi(page.request).createTask(title);
@@ -101,7 +101,7 @@ test("adapts task details to a small mobile viewport", async ({ page }, testInfo
   await expect(dateDialog.getByLabel("New date")).toBeFocused();
 });
 
-/** Проверяем размещение выбора даты на мобильном экране. */
+/** Verify the date picker placement on a mobile screen. */
 test("adapts the Add date picker to a small mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
@@ -156,7 +156,7 @@ test("adapts the Add date picker to a small mobile viewport", async ({ page }) =
   await expect(addTaskDialog).toBeVisible();
 });
 
-/** Необязательные поля создания задачи открываются по запросу на мобильном экране. */
+/** Optional task creation fields can be opened on a mobile screen. */
 test("keeps optional Add task fields collapsed on mobile until requested", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 360, height: 640 },
@@ -199,7 +199,7 @@ test("keeps optional Add task fields collapsed on mobile until requested", async
   }
 });
 
-/** На широком экране мобильные ярлыки дополнительных полей не отображаются. */
+/** Hide mobile shortcuts for additional fields on a wide screen. */
 test("does not show mobile Add task shortcuts in the desktop dialog", async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 900 });
   await page.goto("/");
@@ -211,7 +211,7 @@ test("does not show mobile Add task shortcuts in the desktop dialog", async ({ p
   await expect(dialog.getByLabel("New task labels")).toBeVisible();
 });
 
-/** Строка задачи показывает обрезанное описание и число комментариев. */
+/** A task row shows a truncated description and the comment count. */
 test("shows truncated descriptions and comment counts in task rows", async ({ page }, testInfo) => {
   const title = `Task row details ${testInfo.workerIndex}-${Date.now()}`;
   const description = Array.from({ length: 24 }, () => "A long task description").join(" ");
@@ -260,7 +260,7 @@ test("shows truncated descriptions and comment counts in task rows", async ({ pa
   await expect(comments.first()).toContainText("Edited first comment");
 });
 
-/** Вложения комментария сохраняются и доступны через авторизованный API. */
+/** Comment attachments are saved and available through the authenticated API. */
 test("saves comment attachments on submit and serves them through the authenticated API", async ({
   page,
 }, testInfo) => {
@@ -321,7 +321,7 @@ test("saves comment attachments on submit and serves them through the authentica
   expect(await response.text()).toBe("# Notes");
 });
 
-/** Общий выбор меток добавляет, предлагает и удаляет метки задачи. */
+/** The shared label picker can add, suggest, and remove task labels. */
 test("adds, suggests, and removes labels with the shared label picker", async ({ page }, testInfo) => {
   const sourceTitle = `Label source ${testInfo.workerIndex}-${Date.now()}`;
   const targetTitle = `Label target ${testInfo.workerIndex}-${Date.now()}`;

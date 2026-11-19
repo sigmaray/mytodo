@@ -1282,3 +1282,33 @@ Verification:
 - Пояснения полей собраны в документации перед типом/структурой вместо размещения между полями. Директива `/// <reference>` сохранена как требование TypeScript.
 - Типы таблиц Drizzle также описаны через `@typedef`/`@property`; для callback-свойств добавлены именованные `@callback`-типы. Формулировки автогенерируемых описаний callback и setter-полей упрощены.
 - Проверки после этой части: `pnpm lint`, `pnpm format:check`, `pnpm build` и `git diff --check` прошли; тесты не запускались.
+
+## 2026-11-14 — Translate source comments into English
+
+- Translated comments in `apps/frontend/src/api.ts`, `apps/frontend/src/components/TaskTreeView.tsx`, `apps/backend/src/db/schema.ts`, `packages/domain/src/types.ts`, and `packages/domain/src/pure.ts`, and `apps/frontend/src/components/TaskDetailsDialog.tsx`. JSDoc tags and code behavior were preserved.
+- Also translated comments in `apps/backend/src/repository.ts`, `apps/backend/src/memoryTaskRepository.ts`, `apps/backend/src/users.ts`, and `apps/backend/src/tools.ts`.
+- This pass also translated `taskRoutes.ts`, `attachmentRoutes.ts`, `authRoutes.ts`, `attachmentStorage.ts`, `app.ts`, `auth.ts`, `database-url.ts`, `server.ts`, `users-cli.ts`, `playwrightRoutes.ts`, and `db/postgresHelpers.ts`.
+- Translated all remaining Russian comments in `apps/backend/src`; the backend source scan now finds none. Also translated the board type contracts and task form fields in `apps/frontend/src/components/TaskAppBoardTypes.ts` and `TaskFormFields.tsx`.
+- Continued frontend translation in `TaskCommentsPanel.tsx`, `AddTaskDialog.tsx`, `TaskAppOverlays.tsx`, `CalendarPanel.tsx`, `AppSidebar.tsx`, and `DatesPage.tsx`; verified these files contain no Cyrillic comments.
+- Translation is in progress across the remaining source files.
+
+## 2026-11-15 — Continue translating source comments into English
+
+- Translated frontend comments in `taskAppStateGroups.ts`, `taskAppUtils.ts`, `useTaskAppActions.ts`, `useTaskAppMutations.ts`, `useTaskAppDragActions.ts`, `useSidebarProjectManagement.ts`, `SidebarProjects.tsx`, `TaskAppScreen.tsx`, `taskAppPageModel.ts`, `taskAppExportModel.ts`, and `useTaskAppViewModel.tsx`.
+- Verified the previously translated frontend panels and pages still contain no Cyrillic. `pnpm format:check`, `pnpm lint`, `pnpm build`, and `git diff --check` passed. Translation is still in progress.
+
+## 2026-11-15 — Continue English comment translation
+
+- Translated comments in `TaskApp.tsx`, `TaskAppAttachments.test.tsx`, `TaskAppInteractions.test.tsx`, and `TaskAppProjects.test.tsx`, plus the previously listed frontend state, action, export, page, calendar, sidebar, and form modules. Russian UI strings and keyboard-layout test inputs were preserved.
+- `pnpm format:check`, `pnpm lint`, `pnpm build`, and `git diff --check` passed. Translation remains in progress.
+
+## 2026-11-15 — Translate remaining repository comments into English
+
+- Continued translation across frontend pages, components, tests, utilities, CSS, and configuration; translated E2E helpers/specs and domain tests/configuration. Backend source and all code comments checked so far are now English.
+- Translated comments in SQL migrations, `Taskfile.yml`, Docker Compose files, the LXD setup script, and Playwright/Vite/Vitest/Drizzle configs. Remaining Cyrillic matches are intentional Russian UI notification text and keyboard-layout test inputs/assertions, not comments.
+- `pnpm format:check`, `pnpm lint`, and `git diff --check` passed; the production build is running. Tests were not run.
+
+## 2026-11-15 — Replace prose field lists with JSDoc tags
+
+- Removed inline “Fields in this object” lists where parameter fields were already documented with JSDoc `@param` tags. Extracted the admin user draft fields into a `UserDraft` JSDoc typedef.
+- `pnpm format:check`, `pnpm lint`, `pnpm build`, and `git diff --check` passed. Tests were not run.

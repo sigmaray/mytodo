@@ -927,7 +927,7 @@ h1 {
   }
 }
 
-/** Компактная рабочая область задач с компоновкой, вдохновлённой Todoist. */
+/** Compact task workspace with a Todoist-inspired layout. */
 :root {
   color: #202020;
   background: #fff;
@@ -1798,7 +1798,7 @@ body {
   }
 }
 
-/** Детали задачи разделены на основное содержимое и боковую колонку метаданных. */
+/** Task details are split between the main content and a metadata sidebar. */
 .task-details-modal { position: relative; display: flex; flex-direction: column; width: min(1080px, calc(100vw - 40px)); height: min(740px, calc(100vh - 48px)); max-height: calc(100vh - 48px); overflow: hidden; padding: 0; border-radius: 14px; }
 .task-details-modal .task-details-header { flex: 0 0 auto; min-height: 58px; margin: 0; padding: 10px 20px; border-bottom: 1px solid #eee9e5; }
 .task-details-header > a { color: #625952; font-weight: 600; text-decoration: none; }
@@ -1942,7 +1942,7 @@ body {
 .task-details-modal .task-details-header { justify-content: space-between; }
 .task-details-sidebar select[aria-label="Project or Inbox"] { min-height: 38px; border: 0; padding: 7px 10px; background-color: transparent; color: #514a45; }
 
-/** Компактные элементы создания задачи и выбора срока. */
+/** Compact task creation and due date controls. */
 .sidebar-create-block { margin: 10px 0 16px; }
 .add-project-trigger, .add-section-trigger { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 7px; padding: 8px 11px; color: #fff; background: #d6362b; font-weight: 650; cursor: pointer; }
 .add-project-trigger:hover, .add-section-trigger:hover { background: #bd2b22; }
@@ -1979,7 +1979,7 @@ body {
 .scope-description-editor textarea { width: 100%; box-sizing: border-box; border: 1px solid #d7d0ca; border-radius: 7px; padding: 9px 11px; background: #fff; font: inherit; }
 .scope-description-editor > div { justify-content: flex-end; }
 
-/** Возвращаем цветовые состояния даты после общих стилей кнопок диалога. */
+/** Restore date color states after the shared dialog button styles. */
 .task-date-picker .date-picker-grid [role="gridcell"] button { box-sizing: border-box; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 50%; padding: 0; color: #302c29; background: transparent; font: inherit; font-weight: 400; }
 .task-details-modal .task-date-picker .date-picker-grid [role="gridcell"] button.today:not(.selected),
 .add-task-dialog .task-date-picker .date-picker-grid [role="gridcell"] button.today:not(.selected) { border: 2px solid #c83a2d !important; color: #9f241a !important; background: #ffd6d0 !important; font-weight: 750; }
@@ -2014,7 +2014,7 @@ body {
 .export-copy-status { margin: 0; color: #625a54; font-size: .9rem; }
 @media (max-width: 620px) { .task-header-actions { gap: 8px; } .export-options-modal .export-format-card { align-items: stretch; flex-direction: column; gap: 14px; } .export-options-modal .export-format-actions { justify-content: flex-start; } }
 
-/** На мобильном экране навигация остаётся доступной, а элементы управления удобны для касания. */
+/** Keep navigation accessible and controls easy to tap on mobile screens. */
 @media (max-width: 700px) {
   .shell.app-layout {
     display: flex;
@@ -2375,7 +2375,7 @@ body {
   }
 }
 
-/** Заголовок, описание и метаданные остаются вместе в растягиваемой колонке задачи. */
+/** Keep the task title, description, and metadata together in a flexible column. */
 .task-content { display: grid; grid-column: 2; gap: 2px; min-width: 0; align-content: center; }
 
 @media (max-width: 700px) {

@@ -10,32 +10,32 @@ import {
 } from "./schema";
 
 /**
- * Тип строки задачи, возвращаемой Drizzle из PostgreSQL.
+ * Shape of a task row returned by Drizzle from PostgreSQL.
  *
  * @typedef {typeof tasksTable.$inferSelect} TaskRow
  */
 type TaskRow = typeof tasksTable.$inferSelect;
 /**
- * Тип строки комментария из таблицы обсуждений.
+ * Shape of a comment row from the comments table.
  *
  * @typedef {typeof taskCommentsTable.$inferSelect} TaskCommentRow
  */
 type TaskCommentRow = typeof taskCommentsTable.$inferSelect;
 /**
- * Тип строки проекта из таблицы проектов.
+ * Shape of a project row from the projects table.
  *
  * @typedef {typeof projectsTable.$inferSelect} ProjectRow
  */
 type ProjectRow = typeof projectsTable.$inferSelect;
 /**
- * Тип строки секции из таблицы секций.
+ * Shape of a section row from the sections table.
  *
  * @typedef {typeof sectionsTable.$inferSelect} SectionRow
  */
 type SectionRow = typeof sectionsTable.$inferSelect;
 
 /**
- * Приводит дату из драйвера к единому ISO-формату доменной модели.
+ * Converts a driver date value to the ISO format used by the domain model.
  *
  * @param {Date | string} value
  * @returns {string}
@@ -44,7 +44,7 @@ export const normalizeDate = (value: Date | string): string =>
   typeof value === "string" ? new Date(value).toISOString() : value.toISOString();
 
 /**
- * Преобразует строку PostgreSQL в публичную модель задачи.
+ * Converts a PostgreSQL row to the public task model.
  *
  * @param {TaskRow} row
  * @param {Array<Task["comments"][number]>} [comments]
@@ -67,7 +67,7 @@ export const toTask = (row: TaskRow, comments: Array<Task["comments"][number]> =
 });
 
 /**
- * Преобразует строку PostgreSQL в доменную модель проекта.
+ * Converts a PostgreSQL row to the project domain model.
  *
  * @param {ProjectRow} row
  * @returns {Project}
@@ -84,7 +84,7 @@ export const toProject = (row: ProjectRow): Project => ({
 });
 
 /**
- * Преобразует строку PostgreSQL в доменную модель секции.
+ * Converts a PostgreSQL row to the section domain model.
  *
  * @param {SectionRow} row
  * @returns {Section}
@@ -98,15 +98,15 @@ export const toSection = (row: SectionRow): Section => ({
   updatedAt: normalizeDate(row.updatedAt),
 });
 
-/** SQL-сортировка задач по ASCII-порядку ключа lexicalOrder. */
+/** SQL ordering for tasks by the ASCII order of the lexicalOrder key. */
 export const rowOrder = asc(sql`${tasksTable.lexicalOrder} COLLATE "C"`);
-/** SQL-сортировка проектов по тому же порядку, что использует доменная логика. */
+/** SQL ordering for projects using the same order as the domain logic. */
 export const projectOrder = asc(sql`${projectsTable.lexicalOrder} COLLATE "C"`);
-/** SQL-сортировка секций по лексикографическому ключу. */
+/** SQL ordering for sections by their lexical key. */
 export const sectionOrder = asc(sql`${sectionsTable.lexicalOrder} COLLATE "C"`);
 
 /**
- * Строит условие равенства, поддерживающее как строковое значение, так и SQL NULL.
+ * Builds an equality condition that supports both string values and SQL NULL.
  *
  * @param {TColumn} column
  * @param {string | null} value
@@ -115,7 +115,7 @@ export const nullableEq = <TColumn>(column: TColumn, value: string | null) =>
   value === null ? isNull(column as never) : eq(column as never, value);
 
 /**
- * Проверяет, что секция принадлежит тому же проекту и пользователю, что задача.
+ * Checks that a section belongs to the same project and user as a task.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {string} userId
@@ -129,7 +129,7 @@ export const hasValidTaskPlacement = async (
   projectId: string | null,
   sectionId: string | null,
 ): Promise<boolean> => {
-  /** Отсутствие секции допустимо для корня проекта или Входящих. */
+  /** A missing section is allowed for a project root or the Inbox. */
   if (sectionId === null) return true;
   const [section] = await db
     .select({ projectId: sectionsTable.projectId })
@@ -140,7 +140,7 @@ export const hasValidTaskPlacement = async (
 };
 
 /**
- * Вычисляет лексикографический ключ задачи между указанными соседями.
+ * Computes a task's lexical key between the specified neighbors.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {TaskId | null} parentId
@@ -149,7 +149,7 @@ export const hasValidTaskPlacement = async (
  * @param {TaskId | null} beforeId
  * @param {TaskId | null} afterId
  * @param {string} userId
- * @returns Результат выполнения функции.
+ * @returns The computed lexical key.
  */
 export const findSiblingOrder = async (
   db: ReturnType<typeof drizzle>,
@@ -160,7 +160,7 @@ export const findSiblingOrder = async (
   afterId: TaskId | null,
   userId: string,
 ) => {
-  /** Берём только соседей того же пользователя, уровня вложенности и проектного списка. */
+  /** Use only neighbors belonging to the same user, nesting level, and project list. */
   const siblings = await db
     .select()
     .from(tasksTable)
@@ -173,7 +173,7 @@ export const findSiblingOrder = async (
       ),
     )
     .orderBy(rowOrder);
-  /** Ненайденный сосед не задаёт границу; при пустых аргументах новый элемент идёт в конец. */
+  /** A missing neighbor does not set a boundary; with no neighbors, append the new item. */
   const successorIndex = beforeId === null ? -1 : siblings.findIndex((task) => task.id === beforeId);
   const predecessorIndex = afterId === null ? -1 : siblings.findIndex((task) => task.id === afterId);
   const low =
@@ -188,7 +188,7 @@ export const findSiblingOrder = async (
 };
 
 /**
- * Рекурсивно собирает идентификаторы задачи и всех её потомков для каскадных операций.
+ * Recursively collects a task ID and all descendant IDs for cascading operations.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {TaskId} id
@@ -200,7 +200,7 @@ export const collectDescendantIds = async (
   id: TaskId,
   userId: string,
 ): Promise<Array<TaskId>> => {
-  /** Ищем только задачи того же пользователя, чтобы не пересечь границу владения данными. */
+  /** Search only this user's tasks to preserve the data ownership boundary. */
   const children = await db
     .select({ id: tasksTable.id })
     .from(tasksTable)
@@ -213,13 +213,13 @@ export const collectDescendantIds = async (
 };
 
 /**
- * Преобразует первую строку результата в задачу или возвращает `null` при пустом результате.
+ * Converts the first result row to a task, or returns `null` when there are no rows.
  *
  * @param {Array<TaskRow>} rows
  */
 export const firstTask = (rows: Array<TaskRow>) => (rows[0] === undefined ? null : toTask(rows[0]));
 /**
- * Преобразует строку базы в доменную модель комментария.
+ * Converts a database row to the comment domain model.
  *
  * @param {TaskCommentRow} row
  * @returns {Task["comments"][number]}
@@ -235,13 +235,13 @@ export const toComment = (row: TaskCommentRow): Task["comments"][number] => ({
     : {}),
 });
 /**
- * Возвращает первый проект результата запроса или `null`.
+ * Returns the first project from a query result, or `null`.
  *
  * @param {Array<ProjectRow>} rows
  */
 export const firstProject = (rows: Array<ProjectRow>) => (rows[0] === undefined ? null : toProject(rows[0]));
 /**
- * Возвращает первую секцию результата запроса или `null`.
+ * Returns the first section from a query result, or `null`.
  *
  * @param {Array<SectionRow>} rows
  */

@@ -21,16 +21,16 @@ import { createPortal } from "react-dom";
  * @returns {void}
  */
 /**
- * Задача, позиция и действия всплывающего контекстного меню.
+ * Task, position, and actions for the floating context menu.
  *
  * @typedef {Object} TaskContextMenuPortalProps
- * @property {TaskNode | null} task - Данные «задача», используемые типом «TaskContextMenuPortalProps».
- * @property {number} left - Горизонтальная координата меню.
- * @property {number} top - Вертикальная координата меню.
- * @property {TaskContextMenuPortalPropsOnOpen} onOpen - Открывает диалог или элемент.
- * @property {TaskContextMenuPortalPropsOnQuickEdit} onQuickEdit - Открывает быстрое редактирование задачи.
- * @property {TaskContextMenuPortalPropsOnAddSubtask} onAddSubtask - Создаёт подзадачу.
- * @property {TaskContextMenuPortalPropsOnDelete} onDelete - Удаляет выбранный элемент.
+ * @property {TaskNode | null} task - Task shown in the context menu.
+ * @property {number} left - Horizontal position of the menu.
+ * @property {number} top - Vertical position of the menu.
+ * @property {TaskContextMenuPortalPropsOnOpen} onOpen - Opens the dialog or item.
+ * @property {TaskContextMenuPortalPropsOnQuickEdit} onQuickEdit - Opens the task quick editor.
+ * @property {TaskContextMenuPortalPropsOnAddSubtask} onAddSubtask - Creates a subtask.
+ * @property {TaskContextMenuPortalPropsOnDelete} onDelete - Deletes the selected item.
  */
 type TaskContextMenuPortalProps = {
   task: TaskNode | null;
@@ -49,7 +49,7 @@ type TaskContextMenuPortalProps = {
 };
 
 /**
- * Рендерит меню действий в portal рядом с выбранной задачей.
+ * Renders the action menu in a portal next to the selected task.
  *
  * @param {TaskContextMenuPortalProps} parameter1
  */

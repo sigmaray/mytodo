@@ -2,13 +2,13 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 
 /**
- * Метаданные вложения, сохраняемые в комментарии и возвращаемые через API.
+ * Attachment metadata stored with a comment and returned by the API.
  *
  * @typedef {Object} AttachmentMetadata
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} name - Данные «name», используемые типом «AttachmentMetadata».
- * @property {string} mimeType - Данные «mime type», используемые типом «AttachmentMetadata».
- * @property {number} size - Данные «size», используемые типом «AttachmentMetadata».
+ * @property {string} id - Unique attachment identifier.
+ * @property {string} name - Original file name.
+ * @property {string} mimeType - File MIME type.
+ * @property {number} size - File size in bytes.
  */
 export type AttachmentMetadata = {
   id: string;
@@ -21,15 +21,15 @@ export type AttachmentMetadata = {
 };
 
 /**
- * Проверяет имена, MIME-типы и предельные размеры загружаемых файлов.
+ * Validates uploaded file names, MIME types, and size limits.
  *
  * @param {Array<File>} files
  * @returns {"invalid-file" | "limits-exceeded" | null}
  */
 export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "limits-exceeded" | null => {
-  /** Сначала проверяем метаданные файлов, затем их количество и суммарный объём. */
+  /** Validate file metadata first, then check the file count and total size. */
   const invalidFile = files.some((file) => {
-    /** Проверяем суффикс отдельно, потому что basename уже ограничивает путь ниже. */
+    /** Validate the suffix separately; basename is used below to constrain the path. */
     const extension = extname(file.name);
     const validName =
       file.name.length > 0 &&
@@ -40,9 +40,9 @@ export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "l
       /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/i.test(file.type);
     return !validName || !validMime;
   });
-  /** Сначала возвращаем ошибку метаданных, чтобы причины отказа были однозначными. */
+  /** Return metadata errors first so each rejection has a clear reason. */
   if (invalidFile) return "invalid-file";
-  /** Лимиты ограничивают количество файлов, размер каждого файла и общий объём запроса. */
+  /** Limits apply to the file count, individual file sizes, and total request size. */
   if (
     files.length > 10 ||
     files.some((file) => file.size > 10 * 1024 * 1024) ||
@@ -53,13 +53,13 @@ export const validateAttachmentFiles = (files: Array<File>): "invalid-file" | "l
 };
 
 /**
- * Определяет тип изображения по сигнатуре байтов, не доверяя расширению файла.
+ * Detects an image type from its byte signature instead of trusting the file extension.
  *
  * @param {Buffer} contents
  * @returns {string | null}
  */
 export const detectSafeImageMimeType = (contents: Buffer): string | null => {
-  /** MIME определяется по сигнатурам форматов, а не по имени или заголовку клиента. */
+  /** Determine MIME from the format signature, not the name or client-provided header. */
   const isPng =
     contents.length >= 8 && contents.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   const isJpeg = contents.length >= 3 && contents[0] === 255 && contents[1] === 216 && contents[2] === 255;
@@ -72,16 +72,16 @@ export const detectSafeImageMimeType = (contents: Buffer): string | null => {
 };
 
 /**
- * Создаёт файловое хранилище вложений, доступ к которому адресуется UUID.
+ * Creates file storage for attachments addressed by UUID.
  *
  * @param {string | null} directory
- * @returns Результат выполнения функции.
+ * @returns The configured attachment storage.
  */
 export const createAttachmentStorage = (directory: string | null) => {
-  /** Разрешаем каталог при создании, чтобы операции не зависели от текущей директории. */
+  /** Resolve the directory once so operations do not depend on the current working directory. */
   const resolvedDirectory = directory?.trim() ? resolve(directory) : null;
   /**
-   * Проверка UUID не позволяет использовать идентификатор как путь к произвольному файлу.
+   * UUID validation prevents an identifier from being used as an arbitrary file path.
    *
    * @param {string} id
    */
@@ -89,7 +89,7 @@ export const createAttachmentStorage = (directory: string | null) => {
     resolvedDirectory !== null && /^[0-9a-f-]{36}$/i.test(id) ? resolve(resolvedDirectory, id) : null;
 
   /**
-   * Удаляет файл вложения, если его идентификатор допустим.
+   * Deletes an attachment file if its identifier is valid.
    *
    * @param {string} id
    */
@@ -99,14 +99,14 @@ export const createAttachmentStorage = (directory: string | null) => {
   };
 
   /**
-   * Удаляет несколько файлов, например при очистке удалённых комментариев.
+   * Deletes multiple files, for example when cleaning up deleted comments.
    *
    * @param {Array<string>} ids
    */
   const removeMany = async (ids: Array<string>) => Promise.all(ids.map(remove));
 
   /**
-   * Записывает один файл с закрытыми правами и возвращает его метаданные.
+   * Writes one file with restricted permissions and returns its metadata.
    *
    * @param {File} file
    * @returns {Promise<AttachmentMetadata>}
@@ -120,23 +120,23 @@ export const createAttachmentStorage = (directory: string | null) => {
     await writeFile(path, new Uint8Array(await file.arrayBuffer()), { flag: "wx", mode: 0o600 });
     return {
       id,
-      /** Нормализуем разделители пути и оставляем только имя файла для интерфейса. */
+      /** Normalize path separators and keep only the file name for display. */
       name: basename(file.name.replaceAll("\\", "/")).slice(0, 255) || "attachment",
-      /** Ограничиваем длину типа и задаём нейтральное значение при пустом MIME. */
+      /** Limit the MIME type length and use a neutral value when it is empty. */
       mimeType: file.type.slice(0, 128) || "application/octet-stream",
       size: file.size,
     };
   };
 
   /**
-   * Сохраняет файлы набора; при ошибке удаляет все уже записанные файлы этого набора.
+   * Saves a batch of files and removes any files already written if an error occurs.
    *
    * @param {Array<File>} files
    * @returns {Promise<Array<AttachmentMetadata>>}
    */
   const saveMany = async (files: Array<File>): Promise<Array<AttachmentMetadata>> => {
     /**
-     * Последовательная запись позволяет откатить именно успешно сохранённую часть набора.
+     * Sequential writes make it possible to roll back exactly the files already saved.
      *
      * @param {number} index
      * @param {Array<AttachmentMetadata>} saved
@@ -159,10 +159,10 @@ export const createAttachmentStorage = (directory: string | null) => {
   };
 
   /**
-   * Читает содержимое файла или возвращает `null`, если его нельзя получить.
+   * Reads a file's contents or returns `null` if it cannot be retrieved.
    *
    * @param {string} id
-   * @returns Результат выполнения функции.
+   * @returns The file contents, or `null` when unavailable.
    */
   const read = async (id: string) => {
     const path = pathForId(id);
@@ -185,7 +185,7 @@ export const createAttachmentStorage = (directory: string | null) => {
 };
 
 /**
- * Тип операций, предоставляемых настроенным файловым хранилищем.
+ * Operations provided by the configured file storage.
  *
  * @typedef {ReturnType<typeof createAttachmentStorage>} AttachmentStorage
  */

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 /**
- * Регистрирует глобальную клавишу быстрого открытия формы новой задачи.
+ * Registers a global keyboard shortcut for quickly opening the new task form.
  */
 export const useQuickAddShortcut = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export const useQuickAddShortcut = () => {
   useEffect(() => {
     const openQuickAdd = (event: globalThis.KeyboardEvent) => {
       const target = event.target;
-      /** Не перехватываем клавишу, когда пользователь вводит текст или редактирует содержимое. */
+      /** Do not intercept the key while the user is typing or editing content. */
       const typing =
         target instanceof HTMLElement &&
         (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
@@ -21,7 +21,7 @@ export const useQuickAddShortcut = () => {
         !event.altKey &&
         ["q", "й"].includes(event.key.toLocaleLowerCase())
       ) {
-        /** Поддерживаем обе раскладки, открывая форму через URL-параметр. */
+        /** Support both keyboard layouts by opening the form through a URL parameter. */
         navigate("/?addTask=1");
       }
     };

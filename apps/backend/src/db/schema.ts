@@ -14,15 +14,15 @@ import {
 import { sql } from "drizzle-orm";
 
 /**
- * Таблица учётных записей, владеющих задачами и настройками приложения.
+ * Table of accounts that own tasks and application settings.
  *
  * @typedef {Object} UsersTable
- * @property {string} id - UUID пользователя служит ключом для данных и сессий.
- * @property {string} username - Уникальное имя для входа; регистронезависимая уникальность закреплена индексом ниже.
- * @property {string} passwordHash - Хеш пароля; сам пароль не хранится.
- * @property {string} isAdmin - Разрешение управлять другими учётными записями.
- * @property {string} confirmDelete - Настройка подтверждения перед удалением.
- * @property {string} inboxDescription - Описание списка Входящие.
+ * @property {string} id - User UUID used to associate application data and sessions.
+ * @property {string} username - Unique login name; the index below enforces case-insensitive uniqueness.
+ * @property {string} passwordHash - Password hash; the plaintext password is never stored.
+ * @property {string} isAdmin - Permission to manage other accounts.
+ * @property {string} confirmDelete - Whether to ask for confirmation before deleting.
+ * @property {string} inboxDescription - Description of the Inbox.
  */
 export const users = pgTable(
   "users",
@@ -40,18 +40,18 @@ export const users = pgTable(
     inboxDescription: text("inbox_description").notNull().default(""),
   },
   (table) => [
-    /** Запрещает дубликаты имён, различающиеся только регистром. */
+    /** Prevents duplicate usernames that differ only by letter case. */
     uniqueIndex("users_username_lower_unique").on(sql`lower(${table.username})`),
   ],
 );
 
 /**
- * Таблица активных сессий; хранится только хеш выданного клиенту токена.
+ * Table of active sessions; only the hash of the token issued to the client is stored.
  *
  * @typedef {Object} SessionsTable
- * @property {string} tokenHash - SHA-256 токена, используемый для поиска сессии без хранения секрета.
- * @property {string} userId - Пользователь, которому принадлежит сессия.
- * @property {string} expiresAt - Время истечения сессии, после которого токен больше не принимается.
+ * @property {string} tokenHash - SHA-256 hash used to look up a session without storing the secret token.
+ * @property {string} userId - User who owns the session.
+ * @property {string} expiresAt - Session expiration time, after which the token is no longer accepted.
  */
 export const sessions = pgTable(
   "sessions",
@@ -63,11 +63,11 @@ export const sessions = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [
-    /** Ускоряет поиск сессий конкретного пользователя. */
+    /** Speeds up lookups of a user’s sessions. */
     index("sessions_user_id_idx").on(table.userId),
-    /** Помогает удалять или чистить истёкшие сессии. */
+    /** Supports deletion and cleanup of expired sessions. */
     index("sessions_expires_at_idx").on(table.expiresAt),
-    /** Удаляет сессии автоматически вместе с учётной записью. */
+    /** Deletes sessions automatically when their account is deleted. */
     foreignKey({
       name: "sessions_user_id_users_id_fk",
       columns: [table.userId],
@@ -77,18 +77,18 @@ export const sessions = pgTable(
 );
 
 /**
- * Таблица проектов пользователя с поддержкой иерархии и архива.
+ * Table of user projects, including hierarchy and archive state.
  *
  * @typedef {Object} ProjectsTable
- * @property {string} id - Идентификатор проекта.
- * @property {string} userId - Владелец проекта; все запросы к проектам ограничиваются этим UUID.
- * @property {string} title - Название проекта.
- * @property {string} description - Описание проекта, по умолчанию пустое.
- * @property {string} archived - Признак, что проект помещён в архив.
- * @property {string} parentId - Родительский проект для вложенных проектов.
- * @property {string} lexicalOrder - Дробный ключ сортировки среди соседних проектов.
- * @property {string} createdAt - Время создания записи.
- * @property {string} updatedAt - Время последнего изменения записи.
+ * @property {string} id - Project identifier.
+ * @property {string} userId - Project owner; project queries are scoped to this UUID.
+ * @property {string} title - Project name.
+ * @property {string} description - Project description, empty by default.
+ * @property {string} archived - Whether the project is archived.
+ * @property {string} parentId - Parent project for nested projects.
+ * @property {string} lexicalOrder - Fractional sort key among neighboring projects.
+ * @property {string} createdAt - Record creation time.
+ * @property {string} updatedAt - Time when the record was last updated.
  */
 export const projects = pgTable(
   "projects",
@@ -112,19 +112,19 @@ export const projects = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    /** Нужен составным внешним ключам, которые проверяют владельца проекта. */
+    /** Used by composite foreign keys to validate project ownership. */
     uniqueIndex("projects_id_user_id_uq").on(table.id, table.userId),
-    /** Находит дочерние проекты пользователя. */
+    /** Finds a user’s child projects. */
     index("projects_user_parent_idx").on(table.userId, table.parentId),
-    /** Поддерживает проверки ссылок на проект с учётом владельца. */
+    /** Supports project reference checks that include the owner. */
     index("projects_parent_user_idx").on(table.parentId, table.userId),
-    /** Удаляет проекты пользователя вместе с его аккаунтом. */
+    /** Deletes a user’s projects when their account is deleted. */
     foreignKey({
       name: "projects_user_id_users_id_fk",
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-    /** Не позволяет вложить проект в родителя другого пользователя. */
+    /** Prevents nesting a project under another user’s project. */
     foreignKey({
       name: "projects_parent_user_fk",
       columns: [table.parentId, table.userId],
@@ -134,16 +134,16 @@ export const projects = pgTable(
 );
 
 /**
- * Таблица секций, сгруппированных внутри проектов одного пользователя.
+ * Table of sections grouped within a user’s projects.
  *
  * @typedef {Object} SectionsTable
- * @property {string} id - Идентификатор секции.
- * @property {string} userId - Владелец секции, используемый для проверки доступа.
- * @property {string} title - Заголовок секции.
- * @property {string} projectId - Проект секции или NULL для секции во Входящих.
- * @property {string} lexicalOrder - Дробный ключ порядка секций внутри проекта.
- * @property {string} createdAt - Время создания секции.
- * @property {string} updatedAt - Время последнего изменения секции.
+ * @property {string} id - Section identifier.
+ * @property {string} userId - Section owner, used for access checks.
+ * @property {string} title - Section title.
+ * @property {string} projectId - Section project, or `NULL` for an Inbox section.
+ * @property {string} lexicalOrder - Fractional sort key for sections within a project.
+ * @property {string} createdAt - Section creation time.
+ * @property {string} updatedAt - Time when the section was last updated.
  */
 export const sections = pgTable(
   "sections",
@@ -163,19 +163,19 @@ export const sections = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    /** Обеспечивает ссылочную целостность составных связей по ID и владельцу. */
+    /** Enforces referential integrity for composite relationships by ID and owner. */
     uniqueIndex("sections_id_user_id_uq").on(table.id, table.userId),
-    /** Ускоряет получение секций пользователя в выбранном проекте. */
+    /** Speeds up queries for a user’s sections in a selected project. */
     index("sections_user_project_idx").on(table.userId, table.projectId),
-    /** Индекс для проверок внешнего ключа на секцию. */
+    /** Index used by section foreign key checks. */
     index("sections_project_user_idx").on(table.projectId, table.userId),
-    /** Удаляет секции вместе с их пользователем. */
+    /** Deletes sections when their user is deleted. */
     foreignKey({
       name: "sections_user_id_users_id_fk",
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-    /** Проверяет, что проект секции принадлежит тому же пользователю. */
+    /** Ensures the section’s project belongs to the same user. */
     foreignKey({
       name: "sections_project_user_fk",
       columns: [table.projectId, table.userId],
@@ -185,22 +185,22 @@ export const sections = pgTable(
 );
 
 /**
- * Таблица задач с иерархией, размещением и лексикографическим порядком.
+ * Table of tasks with hierarchy, placement, and lexical ordering.
  *
  * @typedef {Object} TasksTable
- * @property {string} id - Идентификатор задачи.
- * @property {string} userId - Владелец задачи, ограничивающий её видимость одним аккаунтом.
- * @property {string} title - Краткое название задачи.
- * @property {string} description - Подробное описание задачи.
- * @property {string} dueDate - Срок задачи в SQL DATE, передаваемый приложению как строка.
- * @property {string} labels - Метки задачи, хранящиеся в PostgreSQL-массиве строк.
- * @property {string} completed - Признак завершения задачи.
- * @property {string} parentId - Родительская задача либо NULL для корневой задачи.
- * @property {string} projectId - Проект задачи либо NULL для Входящих.
- * @property {string} sectionId - Секция задачи либо NULL для корня проекта.
- * @property {string} lexicalOrder - Строковый ключ порядка среди задач того же списка и родителя.
- * @property {string} createdAt - Время создания задачи.
- * @property {string} updatedAt - Время последнего изменения задачи.
+ * @property {string} id - Task identifier.
+ * @property {string} userId - Task owner, which scopes its visibility to one account.
+ * @property {string} title - Short task title.
+ * @property {string} description - Detailed task description.
+ * @property {string} dueDate - Task due date stored as SQL DATE and exposed to the application as a string.
+ * @property {string} labels - Task labels stored as a PostgreSQL text array.
+ * @property {string} completed - Whether the task is complete.
+ * @property {string} parentId - Parent task, or `NULL` for a top-level task.
+ * @property {string} projectId - Task project, or `NULL` for the Inbox.
+ * @property {string} sectionId - Task section, or `NULL` for the project root.
+ * @property {string} lexicalOrder - String sort key among tasks in the same list and under the same parent.
+ * @property {string} createdAt - Task creation time.
+ * @property {string} updatedAt - Time when the task was last updated.
  */
 export const tasks = pgTable(
   "tasks",
@@ -232,21 +232,21 @@ export const tasks = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    /** Даёт составным внешним ключам проверить ID задачи и её владельца. */
+    /** Allows composite foreign keys to validate the task ID and owner. */
     uniqueIndex("tasks_id_user_id_uq").on(table.id, table.userId),
-    /** Ускоряет обход дерева задач пользователя. */
+    /** Speeds up traversal of a user’s task tree. */
     index("tasks_user_parent_idx").on(table.userId, table.parentId),
-    /** Поддерживает выборки задач по проекту и владельцу. */
+    /** Supports task queries by project and owner. */
     index("tasks_user_project_idx").on(table.userId, table.projectId),
-    /** Поддерживает выборки задач по секции и владельцу. */
+    /** Supports task queries by section and owner. */
     index("tasks_user_section_idx").on(table.userId, table.sectionId),
-    /** Обслуживает проверки внешнего ключа родительской задачи. */
+    /** Supports parent task foreign key checks. */
     index("tasks_parent_user_idx").on(table.parentId, table.userId),
-    /** Обслуживает проверки внешнего ключа проекта. */
+    /** Supports project foreign key checks. */
     index("tasks_project_user_idx").on(table.projectId, table.userId),
-    /** Обслуживает проверки внешнего ключа секции. */
+    /** Supports section foreign key checks. */
     index("tasks_section_user_idx").on(table.sectionId, table.userId),
-    /** Поддерживает упорядоченную выборку соседей в том же списке. */
+    /** Supports ordered queries for neighboring tasks in the same list. */
     index("tasks_user_parent_project_section_order_idx").on(
       table.userId,
       table.parentId,
@@ -254,25 +254,25 @@ export const tasks = pgTable(
       table.sectionId,
       table.lexicalOrder,
     ),
-    /** Удаляет задачи пользователя при удалении аккаунта. */
+    /** Deletes a user’s tasks when their account is deleted. */
     foreignKey({
       name: "tasks_user_id_users_id_fk",
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-    /** Не допускает родителя задачи из чужого аккаунта. */
+    /** Prevents a task from having a parent owned by another account. */
     foreignKey({
       name: "tasks_parent_user_fk",
       columns: [table.parentId, table.userId],
       foreignColumns: [table.id, table.userId],
     }),
-    /** Не допускает размещение задачи в чужом проекте. */
+    /** Prevents placing a task in another user’s project. */
     foreignKey({
       name: "tasks_project_user_fk",
       columns: [table.projectId, table.userId],
       foreignColumns: [projects.id, projects.userId],
     }),
-    /** Не допускает размещение задачи в чужой секции. */
+    /** Prevents placing a task in another user’s section. */
     foreignKey({
       name: "tasks_section_user_fk",
       columns: [table.sectionId, table.userId],
@@ -282,15 +282,15 @@ export const tasks = pgTable(
 );
 
 /**
- * Таблица комментариев, принадлежащих задаче и тому же пользователю.
+ * Table of comments owned by the same user as their task.
  *
  * @typedef {Object} TaskCommentsTable
- * @property {string} id - Идентификатор комментария.
- * @property {string} taskId - Задача, к обсуждению которой относится комментарий.
- * @property {string} userId - Владелец комментария; составной FK связывает его с владельцем задачи.
- * @property {string} body - Текст сообщения.
- * @property {string} createdAt - Время создания комментария.
- * @property {string} attachments - JSON-массив метаданных прикреплённых файлов.
+ * @property {string} id - Comment identifier.
+ * @property {string} taskId - Task discussion to which the comment belongs.
+ * @property {string} userId - Comment owner; a composite foreign key ties it to the task owner.
+ * @property {string} body - Message text.
+ * @property {string} createdAt - Comment creation time.
+ * @property {string} attachments - JSON array of attached file metadata.
  */
 export const taskComments = pgTable(
   "task_comments",
@@ -308,23 +308,23 @@ export const taskComments = pgTable(
     attachments: jsonb("attachments").notNull().default([]),
   },
   (table) => [
-    /** Выбирает комментарии задачи в стабильном хронологическом порядке. */
+    /** Selects task comments in a stable chronological order. */
     index("task_comments_task_user_created_idx").on(table.taskId, table.userId, table.createdAt, table.id),
-    /** Ускоряет поиск всех комментариев аккаунта для очистки его данных. */
+    /** Speeds up finding all comments for account data cleanup. */
     index("task_comments_user_id_idx").on(table.userId),
-    /** Каскадно удаляет комментарии вместе с задачей того же пользователя. */
+    /** Cascades comment deletion when the same user’s task is deleted. */
     foreignKey({
       name: "task_comments_task_user_fk",
       columns: [table.taskId, table.userId],
       foreignColumns: [tasks.id, tasks.userId],
     }).onDelete("cascade"),
-    /** Удаляет комментарии пользователя вместе с аккаунтом. */
+    /** Deletes a user’s comments when their account is deleted. */
     foreignKey({
       name: "task_comments_user_fk",
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-    /** Гарантирует, что метаданные вложений всегда представлены JSON-массивом. */
+    /** Ensures attachment metadata is always represented as a JSON array. */
     check("task_comments_attachments_array_check", sql`jsonb_typeof(${table.attachments}) = 'array'`),
   ],
 );

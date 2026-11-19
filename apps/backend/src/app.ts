@@ -16,34 +16,23 @@ import type { UserRepository } from "./users";
 import { createMemoryUserRepository } from "./users";
 
 /**
- * Собирает Hono API, подключая аутентификацию и маршруты приложения.
+ * Builds the Hono API with authentication and application routes.
  *
  * @param {TaskRepository | ((userId: string) => TaskRepository)} [repository]
  * @param {{ databaseUrl?: string; mode?: string; secureCookies?: boolean; userRepository?: UserRepository; attachmentsDir?: string; attachmentsEnabled?: boolean; projectArchivingEnabled?: boolean; playwrightApiEnabled?: boolean; }} [options]
- * @param {string} options.databaseUrl - URL PostgreSQL для production-репозитория и административных инструментов.
- * @param {string} options.mode - Режим запуска; production включает защищённые настройки по умолчанию.
- * @param {boolean} options.secureCookies - Явное переопределение Secure-флага сессионной cookie.
- * @param {UserRepository} options.userRepository - Хранилище аккаунтов; по умолчанию используется реализация в памяти.
- * @param {string} options.attachmentsDir - Каталог приватного хранения файлов комментариев.
- * @param {boolean} options.attachmentsEnabled - Разрешает работу с вложениями при настроенном хранилище.
- * @param {boolean} options.projectArchivingEnabled - Разрешает операции архивирования проектов.
- * @param {boolean} options.playwrightApiEnabled - Включает вспомогательный API подготовки Playwright-тестов.
- * @returns Результат выполнения функции.
+ * @param {string} options.databaseUrl - PostgreSQL URL for the production repository and database tools.
+ * @param {string} options.mode - Runtime mode; production enables secure defaults.
+ * @param {boolean} options.secureCookies - Explicit override for the session cookie Secure flag.
+ * @param {UserRepository} options.userRepository - Account store; defaults to the in-memory implementation.
+ * @param {string} options.attachmentsDir - Directory for private comment attachment storage.
+ * @param {boolean} options.attachmentsEnabled - Enables attachments when storage is configured.
+ * @param {boolean} options.projectArchivingEnabled - Enables project archive operations.
+ * @param {boolean} options.playwrightApiEnabled - Enables helper APIs used to prepare Playwright tests.
+ * @returns The configured Hono application.
  */
 export const createApp = (
   repository: TaskRepository | ((userId: string) => TaskRepository) = createMemoryTaskRepository(),
-  options: /**
-   * Поля этой структуры:
-   * - `databaseUrl`: URL PostgreSQL для production-репозитория и административных инструментов.
-   * - `mode`: Режим запуска; production включает защищённые настройки по умолчанию.
-   * - `secureCookies`: Явное переопределение Secure-флага сессионной cookie.
-   * - `userRepository`: Хранилище аккаунтов; по умолчанию используется реализация в памяти.
-   * - `attachmentsDir`: Каталог приватного хранения файлов комментариев.
-   * - `attachmentsEnabled`: Разрешает работу с вложениями при настроенном хранилище.
-   * - `projectArchivingEnabled`: Разрешает операции архивирования проектов.
-   * - `playwrightApiEnabled`: Включает вспомогательный API подготовки Playwright-тестов.
-   */
-  {
+  options: {
     databaseUrl?: string;
 
     mode?: string;
@@ -61,17 +50,17 @@ export const createApp = (
     playwrightApiEnabled?: boolean;
   } = {},
 ) => {
-  /** Контекст запроса хранит пользователя, установленного ниже middleware аутентификации. */
+  /** Request context holds the user set by the authentication middleware below. */
   const app = new Hono<{ Variables: { userId: string; authenticated: boolean } }>();
   const userRepository = options.userRepository ?? createMemoryUserRepository();
-  /** В production cookie защищена флагом Secure, если настройка явно не переопределена. */
+  /** In production, cookies use the Secure flag unless explicitly overridden. */
   const secureCookies = options.secureCookies ?? options.mode === "production";
   const attachmentStorage = createAttachmentStorage(options.attachmentsDir ?? null);
   const attachmentsEnabled = (options.attachmentsEnabled ?? true) && attachmentStorage.enabled;
   const attachmentStorageAvailable = attachmentsEnabled;
   const projectArchivingEnabled = options.projectArchivingEnabled === true;
   const playwrightApiEnabled = options.playwrightApiEnabled === true;
-  /** API Playwright доступен только для изолированной тестовой базы вне production-среды. */
+  /** The Playwright API is available only for an isolated test database outside production. */
   if (playwrightApiEnabled && options.mode === "production")
     throw new Error("The Playwright API cannot be enabled in production");
   if (playwrightApiEnabled && options.databaseUrl === undefined)
@@ -81,17 +70,17 @@ export const createApp = (
       ? postgres(options.databaseUrl, { max: 1 })
       : null;
   /**
-   * Один репозиторий подходит тестам с общими данными; фабрика изолирует данные по пользователям.
+   * A shared repository works for tests with common data; the factory scopes data by user.
    *
    * @param {string} userId
    */
   const repositoryFor = (userId: string) =>
     typeof repository === "function" ? repository(userId) : repository;
   /**
-   * Проверяет административные права для защищённых настроек и инструментов.
+   * Checks administrator privileges for protected settings and tools.
    *
    * @param {string} userId
-   * @returns Результат выполнения функции.
+   * @returns Whether the user has administrator privileges.
    */
   const requireAdmin = async (userId: string) => {
     const user = await userRepository.getById(userId);
@@ -101,7 +90,7 @@ export const createApp = (
   app.use("*", cors());
 
   app.use("*", async (context, next) => {
-    /** Публичные auth-маршруты и preflight-запросы не требуют активной сессии. */
+    /** Public authentication routes and preflight requests do not require an active session. */
     const path = context.req.path;
     const method = context.req.method;
     const publicRoute =
@@ -115,12 +104,12 @@ export const createApp = (
       return;
     }
 
-    /** До настройки первого пароля администратором API блокируется, кроме маршрутов входа. */
+    /** Until the administrator sets the first password, block the API except for login routes. */
     if (!(await userRepository.hasPasswordUsers())) {
       return context.json({ error: "Administrator password must be configured before using the API" }, 503);
     }
 
-    /** В хранилище проверяется хеш токена, а не значение cookie в открытом виде. */
+    /** Look up the token hash in storage instead of storing the raw cookie value. */
     const token = getCookie(context, sessionCookieName);
     const userId =
       token === undefined ? null : await userRepository.getSessionUserId(hashSessionToken(token), new Date());
@@ -129,7 +118,7 @@ export const createApp = (
       return context.json({ error: "Authentication required" }, 401);
     }
 
-    /** После проверки сессии передаём идентификатор пользователя маршрутам ниже по цепочке. */
+    /** After validating the session, pass the user ID to downstream routes. */
     context.set("userId", userId);
     context.set("authenticated", true);
     await next();
@@ -159,7 +148,7 @@ export const createApp = (
 
   if (options.databaseUrl !== undefined) {
     app.use("/tools-api/*", async (context, next) => {
-      /** Инструменты работы с базой доступны только вошедшему администратору. */
+      /** Database tools are available only to an authenticated administrator. */
       const administrator = await requireAdmin(context.get("userId"));
       if (!context.get("authenticated") || !administrator)
         return context.json({ error: "Administrator access required" }, 403);
@@ -178,21 +167,21 @@ export const createApp = (
   );
 
   app.delete("/tasks/:id", async (context) => {
-    /** Собираем дерево удаляемой задачи, чтобы после каскадного удаления очистить файлы потомков. */
+    /** Collect the task tree so descendant files can be cleaned up after cascading deletion. */
     const taskRepository = repositoryFor(context.get("userId"));
     const allTasks = await taskRepository.list();
     const collect = (id: string): Array<string> => [
       id,
       ...allTasks.filter((task) => task.parentId === id).flatMap((task) => collect(task.id)),
     ];
-    /** Репозиторий удаляет задачу вместе с потомками; здесь заранее запоминаем их вложения. */
+    /** The repository deletes the task and descendants; collect their attachments beforehand. */
     const descendantIds = new Set(collect(context.req.param("id")));
     const removedAttachmentIds = allTasks
       .filter((task) => descendantIds.has(task.id))
       .flatMap((task) =>
         task.comments.flatMap((comment) => comment.attachments?.map((attachment) => attachment.id) ?? []),
       );
-    /** Файлы удаляются только после успешного удаления записей, чтобы не потерять доступные вложения. */
+    /** Delete files only after the records are removed successfully so valid attachments remain available on failure. */
     const deleted = await taskRepository.delete(context.req.param("id"));
     if (deleted && attachmentStorageAvailable) await attachmentStorage.removeMany(removedAttachmentIds);
 

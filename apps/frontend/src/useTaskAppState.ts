@@ -15,7 +15,7 @@ import {
 export type { DropZoneId } from "./taskAppStateGroups";
 
 /**
- * Вычисляет тип объединённых свойств нескольких групп объектов состояния.
+ * Computes the combined property type for multiple state object groups.
  *
  * @typedef {(T extends unknown ? (value: T) => void : never) extends (value: infer M) => void ? M : never} MergeGroups
  * @template T
@@ -25,7 +25,7 @@ type MergeGroups<T> = (T extends unknown ? (value: T) => void : never) extends (
   : never;
 
 /**
- * Объединяет группы состояния и сохраняет точный тип их доступных свойств.
+ * Combines state groups while preserving the exact type of their available properties.
  *
  * @param {...TGroups} ...groups
  */
@@ -33,12 +33,12 @@ const mergeStateGroups = <TGroups extends Array<object>>(...groups: TGroups) =>
   Object.assign({}, ...groups) as MergeGroups<TGroups[number]>;
 
 /**
- * Компонуёт тематические хуки состояния в контракты для частей workspace.
+ * Composes domain-specific state hooks into contracts for workspace areas.
  *
- * @returns Результат выполнения функции.
+ * @returns Composed workspace state and focused state contracts.
  */
 export const useTaskAppState = () => {
-  /** Каждому потребителю возвращается подходящий набор групп, без общего монолитного объекта. */
+  /** Return only the relevant state groups to each consumer instead of one monolithic object. */
   const calendar = useCalendarState();
   const addTask = useAddTaskState();
   const sections = useSectionsState();
@@ -94,43 +94,43 @@ export const useTaskAppState = () => {
 };
 
 /**
- * Полная форма состояния, выведенная из хука-композиции.
+ * Complete state shape inferred from the composition hook.
  *
  * @typedef {ReturnType<typeof useTaskAppState>} TaskAppState
  */
 export type TaskAppState = ReturnType<typeof useTaskAppState>;
 /**
- * Состояние экранного компонента.
+ * State used by the screen component.
  *
  * @typedef {TaskAppState["screen"]} TaskAppScreenState
  */
 export type TaskAppScreenState = TaskAppState["screen"];
 /**
- * Контракт данных и действий пользовательских операций.
+ * Data and action contract for user operations.
  *
  * @typedef {TaskAppState["actions"]} TaskAppActionsState
  */
 export type TaskAppActionsState = TaskAppState["actions"];
 /**
- * Контракт локального состояния мутаций.
+ * Local state contract for mutations.
  *
  * @typedef {TaskAppState["mutations"]} TaskAppMutationsState
  */
 export type TaskAppMutationsState = TaskAppState["mutations"];
 /**
- * Контракт состояния drag-and-drop.
+ * State contract for drag and drop.
  *
  * @typedef {TaskAppState["dragActions"]} TaskAppDragState
  */
 export type TaskAppDragState = TaskAppState["dragActions"];
 /**
- * Контракт вычисленных данных для отображения.
+ * Contract for computed display data.
  *
  * @typedef {TaskAppState["viewModel"]} TaskAppViewModelState
  */
 export type TaskAppViewModelState = TaskAppState["viewModel"];
 /**
- * Контракт данных и действий, используемый моделями страниц.
+ * Data and action contract used by page models.
  *
  * @typedef {TaskAppState["pageModel"]} TaskAppPageModelState
  */

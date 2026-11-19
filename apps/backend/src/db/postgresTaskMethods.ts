@@ -22,7 +22,7 @@ import {
 } from "./schema";
 
 /**
- * Создаёт запросы задач и комментариев с изоляцией по UUID пользователя.
+ * Creates task and comment queries scoped to the user's UUID.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {postgres.Sql} client
@@ -34,7 +34,7 @@ export const createPostgresTaskMethods = (
   client: postgres.Sql,
   userId: string,
 ): Pick<TaskRepository, "list" | "create" | "patch" | "addComment" | "move" | "delete"> => ({
-  /** Загружает задачи и связанные комментарии пользователя в стабильном порядке. */
+  /** Loads the user's tasks and related comments in a stable order. */
   list: async () => {
     const rows = await db.select().from(tasksTable).where(eq(tasksTable.userId, userId)).orderBy(rowOrder);
     const taskIds = rows.map((row) => row.id);
@@ -52,7 +52,7 @@ export const createPostgresTaskMethods = (
     );
     return rows.map((row) => toTask(row, commentsByTask[row.id] ?? []));
   },
-  /** Проверяет контекст и создаёт задачу с новым ключом порядка. */
+  /** Validates the context and creates a task with a new sort key. */
   create: async (title, parentId, projectId, sectionId) => {
     if (
       parentId !== null &&
@@ -113,7 +113,7 @@ export const createPostgresTaskMethods = (
 
     return task;
   },
-  /** Обновляет задачу и согласованно синхронизирует её комментарии. */
+  /** Updates a task and synchronizes its comments consistently. */
   patch: async (id, patch: TaskPatch) => {
     const [currentTask] = await db
       .select({ projectId: tasksTable.projectId, sectionId: tasksTable.sectionId })
@@ -186,7 +186,7 @@ export const createPostgresTaskMethods = (
       .orderBy(asc(taskCommentsTable.createdAt), asc(taskCommentsTable.id));
     return toTask(taskRow, commentRows.map(toComment));
   },
-  /** Добавляет комментарий к задаче, принадлежащей текущему пользователю. */
+  /** Adds a comment to a task owned by the current user. */
   addComment: async (id, comment) =>
     client.begin(async (transaction) => {
       const existing = await transaction<
@@ -197,7 +197,7 @@ export const createPostgresTaskMethods = (
       await transaction`UPDATE tasks SET updated_at = now() WHERE id = ${id} AND user_id = ${userId}`;
       return true;
     }),
-  /** Проверяет целевой контекст и перемещает задачу с новым ключом порядка. */
+  /** Validates the destination context and moves the task with a new sort key. */
   move: async (id, move: TaskMove) => {
     const movedId = await client.begin(async (transaction) => {
       await transaction`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
@@ -272,7 +272,7 @@ export const createPostgresTaskMethods = (
       .limit(1);
     return firstTask(rows);
   },
-  /** Удаляет задачу вместе с поддеревом и возвращает признак успеха. */
+  /** Deletes a task and its subtree, and reports whether it existed. */
   delete: async (id) => {
     const deletedIds = await collectDescendantIds(db, id, userId);
 

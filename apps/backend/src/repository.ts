@@ -1,12 +1,12 @@
 import type { Comment, Project, ProjectId, Section, SectionId, Task, TaskId } from "@todoist-clone/domain";
 
 /**
- * Набор изменений комментария при обновлении задачи.
+ * Comment fields that can be changed when updating a task.
  *
  * @typedef {Object} TaskCommentPatch
- * @property {string} [id] - Идентификатор сущности, с которой работает модуль.
- * @property {string} body - Данные «body», используемые типом «TaskCommentPatch».
- * @property {Comment["attachments"]} [attachments] - Данные «вложения», используемые типом «TaskCommentPatch».
+ * @property {string} [id] - Comment ID, when updating an existing comment.
+ * @property {string} body - Comment text.
+ * @property {Comment["attachments"]} [attachments] - Files attached to the comment.
  */
 export type TaskCommentPatch = {
   id?: string;
@@ -17,17 +17,17 @@ export type TaskCommentPatch = {
 };
 
 /**
- * Поля задачи, которые разрешено менять частичным обновлением.
+ * Task fields that can be changed by a partial update.
  *
  * @typedef {Object} TaskPatch
- * @property {string} [title] - Данные «заголовок», используемые типом «TaskPatch».
- * @property {string} [description] - Данные «описание», используемые типом «TaskPatch».
- * @property {string | null} [dueDate] - Данные «due дата», используемые типом «TaskPatch».
- * @property {Array<string>} [labels] - Список метки.
- * @property {Array<TaskCommentPatch>} [comments] - Список комментарии.
- * @property {boolean} [completed] - Признак или настройка «completed».
- * @property {ProjectId | null} [projectId] - Данные «проект id», используемые типом «TaskPatch».
- * @property {SectionId | null} [sectionId] - Данные «секция id», используемые типом «TaskPatch».
+ * @property {string} [title] - New task title.
+ * @property {string} [description] - New task description.
+ * @property {string | null} [dueDate] - New due date, or `null` to clear it.
+ * @property {Array<string>} [labels] - Replacement list of task labels.
+ * @property {Array<TaskCommentPatch>} [comments] - Updated list of task comments.
+ * @property {boolean} [completed] - New completion status.
+ * @property {ProjectId | null} [projectId] - Destination project ID, or `null` for the Inbox.
+ * @property {SectionId | null} [sectionId] - Destination section ID, or `null` for the project root.
  */
 export type TaskPatch = {
   title?: string;
@@ -48,14 +48,14 @@ export type TaskPatch = {
 };
 
 /**
- * Целевое место задачи и соседи, между которыми нужно её поставить.
+ * Task destination and neighboring tasks used to determine its position.
  *
  * @typedef {Object} TaskMove
- * @property {TaskId | null} parentId - Данные «родитель id», используемые типом «TaskMove».
- * @property {ProjectId | null} projectId - Данные «проект id», используемые типом «TaskMove».
- * @property {SectionId | null} sectionId - Данные «секция id», используемые типом «TaskMove».
- * @property {TaskId | null} beforeId - Данные «предыдущего id», используемые типом «TaskMove».
- * @property {TaskId | null} afterId - Данные «следующего id», используемые типом «TaskMove».
+ * @property {TaskId | null} parentId - New parent task ID, or `null` for a top-level task.
+ * @property {ProjectId | null} projectId - Destination project ID, or `null` for the Inbox.
+ * @property {SectionId | null} sectionId - Destination section ID, or `null` for the project root.
+ * @property {TaskId | null} beforeId - Neighboring task ID to place this task before.
+ * @property {TaskId | null} afterId - Neighboring task ID to place this task after.
  */
 export type TaskMove = {
   parentId: TaskId | null;
@@ -70,21 +70,21 @@ export type TaskMove = {
 };
 
 /**
- * Возвращает все задачи пользователя, которому принадлежит репозиторий.
+ * Returns all tasks belonging to the repository's user.
  *
  * @callback TaskRepositoryList
  * @returns {Promise<Array<Task>>}
  */
 
 /**
- * Возвращает все проекты пользователя.
+ * Returns all projects belonging to the user.
  *
  * @callback TaskRepositoryListProjects
  * @returns {Promise<Array<Project>>}
  */
 
 /**
- * Создаёт проект верхнего уровня.
+ * Creates a top-level project.
  *
  * @callback TaskRepositoryCreateProject
  * @param {string} title
@@ -92,7 +92,7 @@ export type TaskMove = {
  */
 
 /**
- * Создаёт вложенный проект с указанным родителем.
+ * Creates a nested project under the specified parent.
  *
  * @callback TaskRepositoryCreateSubproject
  * @param {string} title
@@ -101,7 +101,7 @@ export type TaskMove = {
  */
 
 /**
- * Меняет родителя проекта или переносит его в корень.
+ * Changes a project's parent or moves it to the root.
  *
  * @callback TaskRepositoryMoveProject
  * @param {ProjectId} id
@@ -110,7 +110,7 @@ export type TaskMove = {
  */
 
 /**
- * Переставляет проект между соседями на том же уровне дерева.
+ * Reorders a project among its siblings at the same tree level.
  *
  * @callback TaskRepositoryReorderProject
  * @param {ProjectId} id
@@ -120,18 +120,18 @@ export type TaskMove = {
  */
 
 /**
- * Изменяет название и/или описание проекта.
+ * Updates a project's name and/or description.
  *
  * @callback TaskRepositoryUpdateProject
  * @param {ProjectId} id
  * @param {{ title?: string; description?: string; }} patch
- * @param {string} patch.title - Новое название.
- * @param {string} patch.description - Новое описание.
+ * @param {string} patch.title - New project title.
+ * @param {string} patch.description - New project description.
  * @returns {Promise<Project | null>}
  */
 
 /**
- * Удаляет проект и возвращает признак его наличия.
+ * Deletes a project and reports whether it existed.
  *
  * @callback TaskRepositoryDeleteProject
  * @param {ProjectId} id
@@ -139,7 +139,7 @@ export type TaskMove = {
  */
 
 /**
- * Создаёт копию существующего проекта и его содержимого.
+ * Duplicates an existing project and its contents.
  *
  * @callback TaskRepositoryDuplicateProject
  * @param {ProjectId} id
@@ -147,7 +147,7 @@ export type TaskMove = {
  */
 
 /**
- * Архивирует проект или возвращает его в активный список.
+ * Archives a project or restores it to the active list.
  *
  * @callback TaskRepositorySetProjectArchived
  * @param {ProjectId} id
@@ -156,14 +156,14 @@ export type TaskMove = {
  */
 
 /**
- * Возвращает все секции пользователя.
+ * Returns all sections belonging to the user.
  *
  * @callback TaskRepositoryListSections
  * @returns {Promise<Array<Section>>}
  */
 
 /**
- * Переставляет секцию относительно соседних секций того же списка.
+ * Reorders a section relative to other sections in the same list.
  *
  * @callback TaskRepositoryReorderSection
  * @param {SectionId} id
@@ -173,7 +173,7 @@ export type TaskMove = {
  */
 
 /**
- * Создаёт секцию в проекте либо во Входящих.
+ * Creates a section in a project or in the Inbox.
  *
  * @callback TaskRepositoryCreateSection
  * @param {string} title
@@ -182,7 +182,7 @@ export type TaskMove = {
  */
 
 /**
- * Переименовывает секцию.
+ * Renames a section.
  *
  * @callback TaskRepositoryUpdateSection
  * @param {SectionId} id
@@ -191,7 +191,7 @@ export type TaskMove = {
  */
 
 /**
- * Удаляет секцию и возвращает признак её наличия.
+ * Deletes a section and reports whether it existed.
  *
  * @callback TaskRepositoryDeleteSection
  * @param {SectionId} id
@@ -199,7 +199,7 @@ export type TaskMove = {
  */
 
 /**
- * Создаёт задачу в заданном родительском и проектном контексте.
+ * Creates a task in the specified parent and project context.
  *
  * @callback TaskRepositoryCreate
  * @param {string} title
@@ -210,7 +210,7 @@ export type TaskMove = {
  */
 
 /**
- * Применяет частичное изменение к задаче.
+ * Applies a partial update to a task.
  *
  * @callback TaskRepositoryPatch
  * @param {TaskId} id
@@ -219,7 +219,7 @@ export type TaskMove = {
  */
 
 /**
- * Добавляет комментарий и сообщает, удалось ли найти задачу.
+ * Adds a comment and reports whether the task was found.
  *
  * @callback TaskRepositoryAddComment
  * @param {TaskId} id
@@ -228,7 +228,7 @@ export type TaskMove = {
  */
 
 /**
- * Перемещает задачу и возвращает обновлённую запись.
+ * Moves a task and returns the updated record.
  *
  * @callback TaskRepositoryMove
  * @param {TaskId} id
@@ -237,36 +237,36 @@ export type TaskMove = {
  */
 
 /**
- * Удаляет задачу и возвращает признак её наличия.
+ * Deletes a task and reports whether it existed.
  *
  * @callback TaskRepositoryDelete
  * @param {TaskId} id
  * @returns {Promise<boolean>}
  */
 /**
- * Контракт хранилища задач, проектов и секций для серверных маршрутов.
+ * Task, project, and section repository contract used by server routes.
  *
  * @typedef {Object} TaskRepository
- * @property {TaskRepositoryList} list - Возвращает задачи пользователя в порядке для построения дерева.
- * @property {TaskRepositoryListProjects} listProjects - Возвращает проекты пользователя.
- * @property {TaskRepositoryCreateProject} createProject - Создаёт проект верхнего уровня.
- * @property {TaskRepositoryCreateSubproject} createSubproject - Создаёт вложенный проект.
- * @property {TaskRepositoryMoveProject} moveProject - Меняет родителя проекта или переносит его в корень.
- * @property {TaskRepositoryReorderProject} reorderProject - Переставляет проект среди соседей.
- * @property {TaskRepositoryUpdateProject} updateProject - Обновляет название и описание проекта.
- * @property {TaskRepositoryDeleteProject} deleteProject - Удаляет проект.
- * @property {TaskRepositoryDuplicateProject} duplicateProject - Создаёт копию проекта вместе с содержимым.
- * @property {TaskRepositorySetProjectArchived} setProjectArchived - Архивирует проект или возвращает его в активный список.
- * @property {TaskRepositoryListSections} listSections - Возвращает секции пользователя.
- * @property {TaskRepositoryReorderSection} reorderSection - Переставляет секцию среди соседних секций.
- * @property {TaskRepositoryCreateSection} createSection - Создаёт секцию в проекте или во Входящих.
- * @property {TaskRepositoryUpdateSection} updateSection - Переименовывает секцию.
- * @property {TaskRepositoryDeleteSection} deleteSection - Удаляет секцию.
- * @property {TaskRepositoryCreate} create - Создаёт задачу в заданном контексте.
- * @property {TaskRepositoryPatch} patch - Применяет частичные изменения к задаче.
- * @property {TaskRepositoryAddComment} addComment - Добавляет комментарий к задаче.
- * @property {TaskRepositoryMove} move - Перемещает задачу в новое место дерева.
- * @property {TaskRepositoryDelete} delete - Удаляет задачу и возвращает признак её наличия.
+ * @property {TaskRepositoryList} list - Returns the user's tasks in an order suitable for building the tree.
+ * @property {TaskRepositoryListProjects} listProjects - Returns the user's projects.
+ * @property {TaskRepositoryCreateProject} createProject - Creates a top-level project.
+ * @property {TaskRepositoryCreateSubproject} createSubproject - Creates a nested project.
+ * @property {TaskRepositoryMoveProject} moveProject - Changes a project's parent or moves it to the root.
+ * @property {TaskRepositoryReorderProject} reorderProject - Reorders a project among its siblings.
+ * @property {TaskRepositoryUpdateProject} updateProject - Updates a project's name and description.
+ * @property {TaskRepositoryDeleteProject} deleteProject - Deletes a project.
+ * @property {TaskRepositoryDuplicateProject} duplicateProject - Duplicates a project and its contents.
+ * @property {TaskRepositorySetProjectArchived} setProjectArchived - Archives a project or restores it to the active list.
+ * @property {TaskRepositoryListSections} listSections - Returns the user's sections.
+ * @property {TaskRepositoryReorderSection} reorderSection - Reorders a section among its siblings.
+ * @property {TaskRepositoryCreateSection} createSection - Creates a section in a project or in the Inbox.
+ * @property {TaskRepositoryUpdateSection} updateSection - Renames a section.
+ * @property {TaskRepositoryDeleteSection} deleteSection - Deletes a section.
+ * @property {TaskRepositoryCreate} create - Creates a task in the specified context.
+ * @property {TaskRepositoryPatch} patch - Applies partial updates to a task.
+ * @property {TaskRepositoryAddComment} addComment - Adds a comment to a task.
+ * @property {TaskRepositoryMove} move - Moves a task to a new position in the tree.
+ * @property {TaskRepositoryDelete} delete - Deletes a task and reports whether it existed.
  */
 export type TaskRepository = {
   list: () => Promise<Array<Task>>;
@@ -338,5 +338,5 @@ export type TaskRepository = {
   delete: (id: TaskId) => Promise<boolean>;
 };
 
-/** Экспортирует in-memory репозиторий для разработки и тестовой среды. */
+/** Exports the in-memory repository for development and tests. */
 export { createMemoryTaskRepository } from "./memoryTaskRepository";

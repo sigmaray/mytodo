@@ -1,2 +1,2 @@
--- Разрешает создавать вложенные проекты через ссылку на родительский проект.
+-- Allows nested projects by adding a parent project reference.
 ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "parent_id" text;

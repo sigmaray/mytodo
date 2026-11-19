@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 });
 
-/** Задачи можно создавать прямо в секции, а подтверждённое удаление очищает scope. */
+/** Tasks can be created directly in a section, and confirmed deletion clears the scope. */
 test("adds tasks directly to sections and deletes all tasks within Inbox or a project", async ({
   page,
 }, testInfo) => {
@@ -70,7 +70,7 @@ test("adds tasks directly to sections and deletes all tasks within Inbox or a pr
   await expect(page.getByRole("button", { name: inboxSectionTask, exact: true })).not.toBeVisible();
 });
 
-/** Основной сценарий проекта создаёт секции/подзадачи и проверяет экспорт Markdown. */
+/** The main project flow creates sections and subtasks, then verifies Markdown export. */
 test("creates projects, sections, subtasks, and exports markdown", async ({ context, page }, testInfo) => {
   const suffix = `${testInfo.workerIndex}-${Date.now()}`;
   const projectTitle = `Roadmap ${suffix}`;
@@ -244,7 +244,7 @@ test("creates projects, sections, subtasks, and exports markdown", async ({ cont
   await expect(page.getByRole("button", { name: `${projectTitle} edited`, exact: true })).not.toBeVisible();
 });
 
-/** Длинные названия обрезаются, а меню проекта остаётся внутри окна. */
+/** Truncate long titles and keep the project menu within the viewport. */
 test("truncates long project names and keeps the project menu inside the viewport", async ({
   page,
 }, testInfo) => {
@@ -286,7 +286,7 @@ test("truncates long project names and keeps the project menu inside the viewpor
 });
 
 for (const scopeName of ["Inbox", "project"] as const) {
-  /** Верхняя и нижняя кнопки создают задачи в правильных позициях секции. */
+  /** The top and bottom buttons create tasks in the correct section positions. */
   test(`adds tasks at the top and bottom of a section in ${scopeName}`, async ({ page }, testInfo) => {
     const suffix = `${scopeName}-${testInfo.workerIndex}-${Date.now()}`;
     const project =
@@ -328,7 +328,7 @@ for (const scopeName of ["Inbox", "project"] as const) {
 }
 
 for (const scopeName of ["Inbox", "project"] as const) {
-  /** Корневые задачи проекта или Входящих создаются в начале и в конце списка. */
+  /** Create project or Inbox root tasks at the beginning and end of the list. */
   test(`adds unsectioned tasks at the top and bottom of ${scopeName}`, async ({ page }, testInfo) => {
     const suffix = `root-${scopeName}-${testInfo.workerIndex}-${Date.now()}`;
     const project =

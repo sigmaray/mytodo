@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    /** Backend-тесты работают в Node.js и не нуждаются в браузерном DOM. */
+    /** Backend tests run in Node.js and do not require a browser DOM. */
     environment: "node",
   },
 });

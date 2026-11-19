@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
-  /** Выбранные корневые задачи удаляются вместе с потомками после одного подтверждения. */
+  /** Selected root tasks and their descendants are deleted after a single confirmation. */
   it("deletes selected roots with the existing confirmation and their subtasks", async () => {
     const deleteTask = vi.fn(async () => undefined);
     renderApp({
@@ -40,7 +40,7 @@ describe("TaskApp", () => {
     expect(deleteTask).toHaveBeenCalledWith("root");
   });
 
-  /** Новый проект немедленно появляется в интерфейсе по ответу операции создания. */
+  /** A new project appears immediately from the create operation response. */
   it("shows a created project from the create response", async () => {
     const createProject = vi.fn(
       async (title: string): Promise<Project> => project({ id: "project-1", title }),
@@ -60,7 +60,7 @@ describe("TaskApp", () => {
     expect(await screen.findByRole("button", { name: "Roadmap" })).toBeInTheDocument();
   });
 
-  /** Проверяем переименование, обновление описания и удаление проекта из sidebar. */
+  /** Cover renaming, updating the description, and deleting a project from the sidebar. */
   it("updates and deletes projects from the sidebar", async () => {
     const updateProject = vi.fn(
       async (id: string, patch: { title?: string; description?: string }): Promise<Project> =>
@@ -97,7 +97,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(deleteProject).toHaveBeenCalledWith("project-1"));
   });
 
-  /** Заголовок открытого проекта переименовывается без отдельного диалога. */
+  /** Rename the open project title without opening a separate dialog. */
   it("renames the selected project inline from its heading", async () => {
     const updateProject = vi.fn(
       async (id: string, patch: { title?: string; description?: string }): Promise<Project> =>
@@ -123,7 +123,7 @@ describe("TaskApp", () => {
     expect(await screen.findByRole("heading", { name: "Launch plan" })).toBeInTheDocument();
   });
 
-  /** Описание Входящих можно добавить, изменить и очистить. */
+  /** The Inbox description can be added, edited, and cleared. */
   it("saves, edits, and removes the Inbox description", async () => {
     let description = "";
     renderApp({
@@ -149,7 +149,7 @@ describe("TaskApp", () => {
     expect(await screen.findByRole("button", { name: "Add description" })).toBeInTheDocument();
   });
 
-  /** Меню проекта закрывается клавишей Escape и нажатием за его пределами. */
+  /** The project menu closes with Escape or when clicking outside it. */
   it("closes an open project menu with Escape and outside click", async () => {
     renderApp({
       ...baseApi([]),
@@ -170,7 +170,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(menu).not.toHaveAttribute("open"));
   });
 
-  /** Меню у нижней границы экрана раскрывается вверх, оставаясь видимым. */
+  /** A menu near the bottom of the screen opens upward and stays visible. */
   it("opens the project menu upward when there is not enough room below", async () => {
     renderApp({
       ...baseApi([]),
@@ -194,7 +194,7 @@ describe("TaskApp", () => {
     expect(summary.parentElement).toHaveClass("opens-up");
   });
 
-  /** Архивные проекты видимы, а управление архивированием скрыто до включения функции. */
+  /** Archived projects are visible, while archive controls stay hidden until enabled. */
   it("hides project archiving controls by default and keeps archived projects visible", async () => {
     renderApp({
       ...baseApi([]),
@@ -208,7 +208,7 @@ describe("TaskApp", () => {
     expect(roadmap).toBeVisible();
   });
 
-  /** Копия проекта открывается отдельно и получает собственное описание. */
+  /** A project duplicate opens separately and receives its own description. */
   it("opens a duplicated project and saves its description independently", async () => {
     let projects: Array<Project> = [
       project({ id: "source", title: "Source", description: "Original notes" }),
@@ -254,7 +254,7 @@ describe("TaskApp", () => {
     expect(screen.queryByText("Copy notes only")).not.toBeInTheDocument();
   });
 
-  /** Создаём секцию Входящих и перемещаем в неё задачу. */
+  /** Create an Inbox section and move a task into it. */
   it("creates inbox sections and moves inbox tasks into them", async () => {
     let sections = [] as Array<Section>;
     const moveTask = vi.fn(
@@ -288,7 +288,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("task-1", null, "section-1", null, null, null));
   });
 
-  /** Созданная секция сразу отображается в списке по ответу API. */
+  /** The created section appears immediately from the API response. */
   it("shows a created inbox section from the create response", async () => {
     const createSection = vi.fn(
       async (title: string): Promise<Section> => section({ id: "section-1", title }),
@@ -308,7 +308,7 @@ describe("TaskApp", () => {
     expect(await screen.findByRole("heading", { name: "Someday" })).toBeInTheDocument();
   });
 
-  /** Drag-and-drop перемещает задачи между Входящими и проектом. */
+  /** Drag and drop moves tasks between the Inbox and a project. */
   it("moves tasks between inbox and projects with drag and drop", async () => {
     const moveTask = vi.fn(
       async (
@@ -333,7 +333,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("task-1", null, null, null, null, null));
   });
 
-  /** Во время перетаскивания задачи проект назначения получает визуальную подсветку. */
+  /** Highlight the destination project while dragging a task. */
   it("highlights a project while a task is dragged over it", async () => {
     renderApp({
       ...baseApi([task({ id: "task-1", title: "Plan launch" })]),
@@ -349,7 +349,7 @@ describe("TaskApp", () => {
     expect(projectButton).toHaveClass("drop-active");
   });
 
-  /** Touch-жест в мобильном sidebar позволяет вложить проект в другой проект. */
+  /** A touch gesture in the mobile sidebar nests one project under another. */
   it("nests a project inside the mobile project drop target", async () => {
     const moveProject = vi.fn(
       async (id: string, parentId: string | null): Promise<Project> =>
@@ -372,7 +372,7 @@ describe("TaskApp", () => {
       value: vi.fn(() => targetButton),
     });
     /**
-     * В этом искусственном PointerEvent от касания нет `button`, но перетаскивание должно начаться.
+     * This synthetic touch PointerEvent has no `button` value, but dragging should still start.
      *
      * @param {number} clientY
      */

@@ -1,4 +1,4 @@
-# Самодостаточный production-стек: приложение, PostgreSQL и обратный прокси Caddy.
+# Self-contained production stack with the application, PostgreSQL, and the Caddy reverse proxy.
 services:
   postgres:
     image: postgres:16-alpine

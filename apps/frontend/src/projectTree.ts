@@ -1,7 +1,7 @@
 import type { Project, ProjectId } from "@todoist-clone/domain";
 
 /**
- * Считает глубину проекта по цепочке родителей, ограничивая обход размером списка.
+ * Computes project depth by following parent links, bounded by the list size.
  *
  * @param {Array<Project>} projects
  * @param {Project} project
@@ -20,7 +20,7 @@ export const projectDepth = (projects: Array<Project>, project: Project): number
 };
 
 /**
- * Проверяет, входит ли проект в поддерево указанного предка.
+ * Checks whether a project belongs to the specified ancestor's subtree.
  *
  * @param {Array<Project>} projects
  * @param {ProjectId | null} projectId
@@ -43,14 +43,14 @@ export const isProjectWithinTree = (
 };
 
 /**
- * Возвращает проекты в порядке обхода дерева, сохраняя порядок соседей.
+ * Returns projects in tree traversal order while preserving sibling order.
  *
  * @param {Array<Project>} projects
  * @returns {Array<Project>}
  */
 export const projectTreeOrder = (projects: Array<Project>): Array<Project> => {
   /**
-   * Проекты с отсутствующим родителем считаются корневыми, чтобы не потерять их из интерфейса.
+   * Treat projects with missing parents as roots so they remain visible in the interface.
    *
    * @param {ProjectId | null} parentId
    */
@@ -65,7 +65,7 @@ export const projectTreeOrder = (projects: Array<Project>): Array<Project> => {
       )
       .toSorted((a, b) => (a.lexicalOrder < b.lexicalOrder ? -1 : a.lexicalOrder > b.lexicalOrder ? 1 : 0));
   /**
-   * Добавляем каждого родителя перед рекурсивно отсортированными дочерними проектами.
+   * Add each parent before its recursively sorted child projects.
    *
    * @param {ProjectId | null} parentId
    * @returns {Array<Project>}

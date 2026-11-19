@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
-  /** При выключенных вложениях сведения о них скрыты в подробностях задачи. */
+  /** Hide attachment details in task details when attachments are disabled. */
   it("hides stored attachments in task details when attachments are disabled", async () => {
     const attachmentComment = {
       id: "comment-attachment",
@@ -41,7 +41,7 @@ describe("TaskApp", () => {
     ).not.toBeInTheDocument();
   });
 
-  /** Комментарий, состоящий только из файла, не создаёт пустой Markdown-блок. */
+  /** A file-only comment does not produce an empty Markdown block. */
   it("does not render an empty Markdown block for an attachment-only comment", async () => {
     const attachmentComment = {
       id: "comment-attachment",
@@ -60,7 +60,7 @@ describe("TaskApp", () => {
     expect(dialog.querySelector(".comment-attachment a[download]")).toBeVisible();
   });
 
-  /** В строке задачи отображается значок, если у комментариев есть файлы. */
+  /** Show an icon in the task row when comments contain files. */
   it("shows a paperclip on tasks that have attachments", async () => {
     const attachmentComment = {
       id: "comment-attachment",
@@ -72,7 +72,7 @@ describe("TaskApp", () => {
     expect(await screen.findByLabelText("Task has attachments")).toBeVisible();
   });
 
-  /** Библиотека показывает предпросмотр файла, задачу, размер и дату загрузки. */
+  /** The library shows a file preview, task, size, and upload date. */
   it("lists attachments with previews, task links, size, and upload date", async () => {
     window.history.replaceState({}, "", "/attachments");
     const attachmentComment = {
@@ -113,7 +113,7 @@ describe("TaskApp", () => {
     expect(window.location.pathname).toBe("/attachments");
   });
 
-  /** Удаление последнего файла также удаляет комментарий без текста. */
+  /** Removing the last file also removes its textless comment. */
   it("removes individual attachments and deletes an empty attachment-only comment", async () => {
     const comments = [
       {
@@ -152,7 +152,7 @@ describe("TaskApp", () => {
     );
   });
 
-  /** Файл можно отправить отдельным комментарием без текстового содержимого. */
+  /** A file can be submitted as a separate comment without text. */
   it("allows submitting an attachment without comment text", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(
@@ -182,7 +182,7 @@ describe("TaskApp", () => {
     expect(within(dialog).queryByText("notes.txt")).not.toBeInTheDocument();
   });
 
-  /** Вставленное изображение сразу сохраняется как комментарий существующей задачи. */
+  /** A pasted image is immediately saved as a comment on an existing task. */
   it("immediately saves a pasted clipboard image as a comment on an existing task", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp(
@@ -204,7 +204,7 @@ describe("TaskApp", () => {
     expect(createComment).toHaveBeenCalledTimes(1);
   });
 
-  /** Диалог новой задачи принимает вставленное изображение, не создавая пустой комментарий. */
+  /** The new task dialog accepts a pasted image without creating an empty comment. */
   it("pastes clipboard images into the task creation dialog without an initial comment field", async () => {
     const createComment = vi.fn(async () => undefined);
     renderApp({ ...baseApi([]), createComment }, true);
@@ -223,7 +223,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(createComment).toHaveBeenCalledWith("created", "", [image]));
   });
 
-  /** Мобильные сокращения раскрывают необязательные поля новой задачи и фокусируют ввод. */
+  /** Mobile shortcuts reveal optional new task fields and focus the input. */
   it("reveals optional Add task fields from mobile shortcuts and focuses their inputs", async () => {
     renderApp(baseApi([]));
     await userEvent.click(await screen.findByRole("button", { name: "Add task Q" }));
@@ -247,7 +247,7 @@ describe("TaskApp", () => {
     expect(shortcuts.getByRole("button", { name: "Date" })).toBeInTheDocument();
   });
 
-  /** Мобильное действие подзадач показывает и фокусирует её редактор. */
+  /** The mobile subtask action shows and focuses its editor. */
   it("reveals and focuses the subtask editor from the Subtasks shortcut", async () => {
     renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
@@ -272,7 +272,7 @@ describe("TaskApp", () => {
     expect(within(dialog).getByRole("button", { name: "Subtasks" })).toBeInTheDocument();
   });
 
-  /** Закрытие мобильного раздела подзадач удаляет уже сохранённые подзадачи. */
+  /** Closing the mobile subtasks section deletes already-saved subtasks. */
   it("deletes existing subtasks when their mobile section is closed", async () => {
     let childDeleted = false;
     const child = task({ id: "child-1", title: "Write tests", parentId: "task-1" });
@@ -296,7 +296,7 @@ describe("TaskApp", () => {
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "Subtasks" })).toBeInTheDocument());
   });
 
-  /** Поле метки получает фокус после раскрытия редактора. */
+  /** Focus the label field after opening the editor. */
   it("focuses the label input when Add labels reveals the editor", async () => {
     renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
@@ -309,7 +309,7 @@ describe("TaskApp", () => {
     expect(within(dialog).getByLabelText("Labels")).toHaveFocus();
   });
 
-  /** Поле комментария получает фокус после раскрытия раздела обсуждения. */
+  /** Focus the comment field after opening the discussion section. */
   it("focuses the comment input when Add comments reveals the editor", async () => {
     renderApp(baseApi([task({ id: "task-1", title: "Plan release" })]));
     await userEvent.click(await screen.findByRole("button", { name: "Plan release" }));
@@ -322,7 +322,7 @@ describe("TaskApp", () => {
     expect(within(dialog).getByLabelText("Add comment")).toHaveFocus();
   });
 
-  /** Закрытие мобильных разделов применяет удаление меток, комментариев и срока. */
+  /** Closing mobile sections applies removals of labels, comments, and due dates. */
   it("removes labels, comments, and date when their mobile sections are closed", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>

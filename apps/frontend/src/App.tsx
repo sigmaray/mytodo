@@ -5,12 +5,12 @@ import { AppRouter } from "./AppRouter";
 export { TaskApp } from "./TaskApp";
 
 /**
- * Создаёт клиент React Query с отключённым автоматическим повтором запросов.
+ * Creates a React Query client with automatic query retries disabled.
  */
 export const createQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 /**
- * Корневое приложение, подключающее маршрутизацию и общий кэш запросов.
+ * Root application that provides routing and the shared query cache.
  */
 export const App = () => (
   <QueryClientProvider client={createQueryClient()}>

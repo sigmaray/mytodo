@@ -1,4 +1,4 @@
-# Production-стек приложения; PostgreSQL и Caddy предоставляет общий инфраструктурный стек.
+# Application production stack; PostgreSQL and Caddy are provided by the shared infrastructure stack.
 services:
   todoist-api:
     build:

@@ -11,7 +11,7 @@ import {
 import type { Task } from "./types";
 
 /**
- * Создаёт задачу для тестов, подставляя значения по умолчанию для необязательных полей.
+ * Creates a test task with defaults for optional fields.
  *
  * @param {Partial<Task> & Pick<Task, "id" | "title" | "lexicalOrder">} values
  * @returns {Task}
@@ -31,7 +31,7 @@ const task = (values: Partial<Task> & Pick<Task, "id" | "title" | "lexicalOrder"
 });
 
 describe("buildTaskTree", () => {
-  /** Проверяем сортировку корневой задачи и её детей при сборке дерева. */
+  /** Verify that the root task and its children are sorted when building the tree. */
   it("builds a sorted task tree", () => {
     const tree = buildTaskTree([
       task({ id: "child-b", title: "Child B", parentId: "root", lexicalOrder: "b" }),
@@ -45,7 +45,7 @@ describe("buildTaskTree", () => {
 });
 
 describe("generateLexicalOrder", () => {
-  /** Новый ключ должен строго находиться между двумя переданными ключами. */
+  /** The new key must sort strictly between the two supplied keys. */
   it("creates sortable values between neighbors", () => {
     const middle = generateLexicalOrder("A", "C");
 
@@ -53,7 +53,7 @@ describe("generateLexicalOrder", () => {
     expect(middle < "C").toBe(true);
   });
 
-  /** Граничные случаи проверяют добавление в начало, конец и пустой список. */
+  /** Boundary cases cover inserting at the beginning, at the end, and into an empty list. */
   it("creates values for empty ranges", () => {
     expect(generateLexicalOrder(null, null)).toBeTruthy();
     expect(generateLexicalOrder(null, "1") < "1").toBe(true);
@@ -62,14 +62,14 @@ describe("generateLexicalOrder", () => {
 });
 
 describe("computeDropPlacement", () => {
-  /** Используем три соседние задачи, чтобы проверить размещение относительно цели. */
+  /** Use three neighboring tasks to verify placement relative to the target. */
   const siblings = [
     task({ id: "a", title: "A", lexicalOrder: "a" }),
     task({ id: "b", title: "B", lexicalOrder: "b" }),
     task({ id: "c", title: "C", lexicalOrder: "c" }),
   ];
 
-  /** Размещение должно указывать на правильную сторону целевой задачи. */
+  /** The placement must indicate the correct side of the target task. */
   it("places the moved task before or after the target", () => {
     expect(computeDropPlacement(siblings, siblings[1] as Task, siblings[0] as Task, "before")).toEqual({
       parentId: null,
@@ -87,14 +87,14 @@ describe("computeDropPlacement", () => {
     });
   });
 
-  /** Если порядок уже правильный, повторное перемещение не должно создавать обновление. */
+  /** If the order is already correct, moving again must not create an update. */
   it("returns null for no-op drops next to the current position", () => {
     expect(computeDropPlacement(siblings, siblings[0] as Task, siblings[1] as Task, "before")).toBeNull();
     expect(computeDropPlacement(siblings, siblings[1] as Task, siblings[0] as Task, "after")).toBeNull();
     expect(computeDropPlacement(siblings, siblings[1] as Task, siblings[1] as Task, "before")).toBeNull();
   });
 
-  /** Перемещение предка внутрь собственного поддерева создало бы цикл в дереве. */
+  /** Moving an ancestor into its own subtree would create a cycle. */
   it("returns null when the target is a descendant of the moved task", () => {
     const tree = [
       task({ id: "root", title: "Root", lexicalOrder: "a" }),
@@ -107,7 +107,7 @@ describe("computeDropPlacement", () => {
 });
 
 describe("computeIndentPlacement", () => {
-  /** Отступ превращает предыдущую задачу того же уровня в родителя. */
+  /** Indenting makes the previous task at the same level the parent. */
   it("makes the task a child of the sibling above it", () => {
     const tasks = [
       task({ id: "a", title: "A", lexicalOrder: "a" }),
@@ -123,7 +123,7 @@ describe("computeIndentPlacement", () => {
     });
   });
 
-  /** Первая задача списка не имеет предыдущего соседа для назначения родителем. */
+  /** The first task in a list has no previous sibling to become its parent. */
   it("returns null for the first sibling", () => {
     const tasks = [task({ id: "a", title: "A", lexicalOrder: "a" })];
 
@@ -132,7 +132,7 @@ describe("computeIndentPlacement", () => {
 });
 
 describe("computeOutdentPlacement", () => {
-  /** После снятия отступа задача должна стать соседом родителя сразу под ним. */
+  /** After outdenting, the task should become the parent's next sibling. */
   it("moves the task below its parent as a sibling", () => {
     const tasks = [
       task({ id: "parent", title: "Parent", lexicalOrder: "a" }),
@@ -155,7 +155,7 @@ describe("computeOutdentPlacement", () => {
     });
   });
 
-  /** У корневой задачи нет родителя, поэтому снять отступ невозможно. */
+  /** A root task has no parent, so it cannot be outdented. */
   it("returns null for root tasks", () => {
     const tasks = [task({ id: "a", title: "A", lexicalOrder: "a" })];
 
@@ -164,7 +164,7 @@ describe("computeOutdentPlacement", () => {
 });
 
 describe("renderTaskMarkdownDocument", () => {
-  /** Вложенность дерева представляется отступами, а завершение — отмеченным чекбоксом. */
+  /** Represent tree nesting with indentation and completion with a checked box. */
   it("renders nested tasks as a markdown checklist", () => {
     const tree = buildTaskTree([
       task({ id: "root", title: "Plan release", lexicalOrder: "a", completed: true }),
@@ -176,7 +176,7 @@ describe("renderTaskMarkdownDocument", () => {
     );
   });
 
-  /** Экспорт проекта должен иметь один общий заголовок и отдельные заголовки секций. */
+  /** A project export should have one overall heading and separate section headings. */
   it("renders sections under one document title", () => {
     const root = buildTaskTree([task({ id: "root", title: "Root task", lexicalOrder: "a" })]);
     const section = buildTaskTree([task({ id: "section-task", title: "Section task", lexicalOrder: "a" })]);
@@ -190,7 +190,7 @@ describe("renderTaskMarkdownDocument", () => {
 });
 
 describe("renderAdvancedMarkdownDocument", () => {
-  /** Расширенный экспорт сохраняет подробности задачи, секции и самого проекта. */
+  /** The extended export preserves task, section, and project details. */
   it("includes task descriptions, dates, labels, comments, and scope descriptions", () => {
     const tree = buildTaskTree([
       task({

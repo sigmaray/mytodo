@@ -3,29 +3,29 @@ import { renderAdvancedMarkdownDocument, renderTaskMarkdownDocument } from "@tod
 import type { DragEvent } from "react";
 
 /**
- * Положение курсора относительно задачи при перетаскивании.
+ * Cursor position relative to a task during a drag.
  *
  * @typedef {"before" | "inside" | "after" | "outdent"} DragPlacement
  */
 export type DragPlacement = "before" | "inside" | "after" | "outdent";
 
-/** Специальный идентификатор списка Входящие для выбора места размещения. */
+/** Special Inbox identifier used when selecting a task placement. */
 export const inboxPlacement = "inbox";
 /**
- * Кодирует проект в строковый идентификатор места размещения.
+ * Encodes a project as a string placement identifier.
  *
  * @param {ProjectId} id
  */
 export const projectPlacement = (id: ProjectId) => `project:${id}`;
 /**
- * Кодирует секцию в строковый идентификатор места размещения.
+ * Encodes a section as a string placement identifier.
  *
  * @param {SectionId} id
  */
 export const sectionPlacement = (id: SectionId) => `section:${id}`;
 
 /**
- * Возвращает идентификатор списка, в котором находится задача.
+ * Returns the list identifier for the list containing a task.
  *
  * @param {TaskNode} task
  */
@@ -37,7 +37,7 @@ export const taskPlacement = (task: TaskNode) =>
       : inboxPlacement;
 
 /**
- * Разбирает идентификатор места и определяет проект/секцию для размещения.
+ * Parses a placement identifier to determine the destination project or section.
  *
  * @param {string} placement
  * @param {Array<Section>} sections
@@ -47,7 +47,7 @@ export const parsePlacement = (
   placement: string,
   sections: Array<Section>,
 ): { projectId: ProjectId | null; sectionId: SectionId | null } => {
-  /** Для секции проект определяется по её записи, поскольку его нет в строковом ID. */
+  /** Resolve the project from the section record because it is not encoded in the string ID. */
   if (placement.startsWith("project:")) {
     return { projectId: placement.slice("project:".length), sectionId: null };
   }
@@ -64,7 +64,7 @@ export const parsePlacement = (
 };
 
 /**
- * Формирует отсортированные подписи всех доступных мест создания задачи.
+ * Builds sorted labels for all available task creation placements.
  *
  * @param {Array<Project>} projects
  * @param {Array<Section>} sections
@@ -94,7 +94,7 @@ export const createPlacementOptions = (
   );
 
 /**
- * Ищет узел дерева по ID, включая любые уровни вложенных задач.
+ * Finds a tree node by ID, including tasks at any nesting depth.
  *
  * @param {Array<TaskNode>} tasks
  * @param {string} id
@@ -107,7 +107,7 @@ export const findTaskNode = (tasks: Array<TaskNode>, id: string): TaskNode | nul
   );
 
 /**
- * Оставляет задачи, удовлетворяющие условию, и сохраняет их исходных потомков.
+ * Keeps tasks that match a predicate together with their original descendants.
  *
  * @param {Array<TaskNode>} tasks
  * @param {(task: TaskNode) => boolean} predicate
@@ -123,7 +123,7 @@ export const filterTaskTree = (
   });
 
 /**
- * Проверяет, содержит ли поддерево задачи узел с указанным идентификатором.
+ * Checks whether a task subtree contains a node with the specified ID.
  *
  * @param {TaskNode} task
  * @param {string} id
@@ -133,13 +133,13 @@ export const hasDescendant = (task: TaskNode, id: string): boolean =>
   task.children.some((child) => child.id === id || hasDescendant(child, id));
 
 /**
- * Вычисляет место сброса по координатам курсора и отступу строки задачи.
+ * Computes a drop placement from the cursor coordinates and task row indentation.
  *
  * @param {DragEvent<HTMLElement>} event
  * @returns {DragPlacement}
  */
 export const dragPlacementFromEvent = (event: DragEvent<HTMLElement>): DragPlacement => {
-  /** Виртуальные события и строки без layout могут не иметь полезных координат или размеров. */
+  /** Synthetic events and rows without layout may not have usable coordinates or dimensions. */
   const { top, left, height } = event.currentTarget.getBoundingClientRect();
   const pointerX = Number.isFinite(event.clientX) ? event.clientX : left;
   const pointerY = Number.isFinite(event.clientY) ? event.clientY : 0;
@@ -160,14 +160,14 @@ export const dragPlacementFromEvent = (event: DragEvent<HTMLElement>): DragPlace
 };
 
 /**
- * Формирует простой Markdown для открытого проекта либо списка Входящие.
+ * Builds simple Markdown for the open project or the Inbox.
  *
  * @param {string} title
  * @param {Array<TaskNode>} inboxRootTasks
  * @param {Array<Section>} sections
  * @param {Array<TaskNode>} allTasks
  * @param {ProjectId | null} targetProjectId
- * @returns Результат выполнения функции.
+ * @returns The Markdown export.
  */
 export const currentMarkdown = (
   title: string,
@@ -176,7 +176,7 @@ export const currentMarkdown = (
   allTasks: Array<TaskNode>,
   targetProjectId: ProjectId | null,
 ) => {
-  /** В экспорте проекта разделяем корневые задачи и задачи его секций. */
+  /** Separate root tasks from section tasks when exporting a project. */
   if (targetProjectId !== null) {
     return renderTaskMarkdownDocument(
       title,
@@ -205,7 +205,7 @@ export const currentMarkdown = (
 };
 
 /**
- * Формирует расширенный Markdown для выбранной области с описанием и деталями задач.
+ * Builds extended Markdown for the selected scope, including its description and task details.
  *
  * @param {string} title
  * @param {Array<Section>} sections
@@ -220,7 +220,7 @@ export const currentAdvancedMarkdown = (
   targetProjectId: ProjectId | null,
   description: string,
 ) =>
-  /** Функция отображения доменного пакета формирует вложенность и подробности задачи. */
+  /** The domain package formatter builds task nesting and details. */
   renderAdvancedMarkdownDocument(
     title,
     allTasks.filter((task) => task.projectId === targetProjectId && task.sectionId === null),
@@ -234,7 +234,7 @@ export const currentAdvancedMarkdown = (
   );
 
 /**
- * Собирает Markdown-документ со всеми списками и проектами пользователя.
+ * Builds a Markdown document containing all user lists and projects.
  *
  * @param {Array<Project>} projects
  * @param {Array<Section>} sections
@@ -275,7 +275,7 @@ export const allMarkdownDocument = (
   );
 
 /**
- * Собирает расширенный Markdown по всем областям вместе с их описаниями.
+ * Builds extended Markdown for all scopes, including their descriptions.
  *
  * @param {Array<Project>} projects
  * @param {Array<Section>} sections
@@ -320,7 +320,7 @@ export const allAdvancedMarkdownDocument = (
   );
 
 /**
- * Копирует текст в буфер обмена и использует временное поле как запасной путь.
+ * Copies text to the clipboard, using a temporary field as a fallback.
  *
  * @param {string} text
  */
@@ -330,7 +330,7 @@ export const copyText = async (text: string) => {
     return;
   }
 
-  /** Запасной способ нужен браузерам без Clipboard API или без выданного разрешения. */
+  /** The fallback supports browsers without Clipboard API or clipboard permission. */
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
@@ -342,7 +342,7 @@ export const copyText = async (text: string) => {
 };
 
 /**
- * Запускает скачивание Blob через временную ссылку и освобождает её URL.
+ * Downloads a Blob through a temporary link and revokes its URL afterward.
  *
  * @param {Blob} blob
  * @param {string} filename

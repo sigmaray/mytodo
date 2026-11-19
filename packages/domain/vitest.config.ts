@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    /** Проверяет чистую доменную логику в Node.js без браузерного окружения. */
+    /** Test pure domain logic in Node.js without a browser environment. */
     environment: "node",
   },
 });

@@ -2,12 +2,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  /** Загружает преобразование JSX для тестов React-компонентов. */
+  /** Loads JSX transformation for React component tests. */
   plugins: [react()],
   test: {
-    /** Предоставляет DOM API для тестов интерфейса. */
+    /** Provides DOM APIs for interface tests. */
     environment: "jsdom",
-    /** Устанавливает общие matchers и браузерные заглушки перед тестами. */
+    /** Sets up shared matchers and browser mocks before tests. */
     setupFiles: "./src/test/setup.ts",
   },
 });

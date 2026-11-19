@@ -13,19 +13,19 @@ import { shiftCalendarMonth } from "./components/TaskFormFields";
 import { toLocalIsoDate } from "./dateUtils";
 
 /**
- * Дискриминируемая модель маршрута и props, необходимых конкретной странице workspace.
+ * Discriminated route model and props required by each workspace page.
  *
  * @typedef {Object} TaskAppPageModel
- * @property {"dates"} mode - Идентификатор выбранного типа страницы.
- * @property {DatesPageProps} props - Параметры, необходимые выбранной странице.
- * @property {"labels"} mode - Идентификатор выбранного типа страницы.
- * @property {LabelsPageProps} props - Параметры, необходимые выбранной странице.
- * @property {"attachments"} mode - Идентификатор выбранного типа страницы.
- * @property {AttachmentsPageProps} props - Параметры, необходимые выбранной странице.
- * @property {"export"} mode - Идентификатор выбранного типа страницы.
- * @property {ExportPageProps} props - Параметры, необходимые выбранной странице.
- * @property {"inbox"} mode - Идентификатор выбранного типа страницы.
- * @property {TaskAppBoardProps} props - Параметры, необходимые выбранной странице.
+ * @property {"dates"} mode - Discriminator for the dates page.
+ * @property {DatesPageProps} props - Props required by the dates page.
+ * @property {"labels"} mode - Discriminator for the labels page.
+ * @property {LabelsPageProps} props - Props required by the labels page.
+ * @property {"attachments"} mode - Discriminator for the attachments page.
+ * @property {AttachmentsPageProps} props - Props required by the attachments page.
+ * @property {"export"} mode - Discriminator for the export page.
+ * @property {ExportPageProps} props - Props required by the export page.
+ * @property {"inbox"} mode - Discriminator for the Inbox page.
+ * @property {TaskAppBoardProps} props - Props required by the Inbox page.
  */
 export type TaskAppPageModel =
   | {
@@ -55,14 +55,14 @@ export type TaskAppPageModel =
     };
 
 /**
- * Состояние и обработчики, из которых собирается модель активной страницы.
+ * State and handlers used to build the active page model.
  *
  * @typedef {Object} TaskAppPageModelInput
- * @property {boolean} attachmentsEnabled - Разрешено ли работать с вложениями.
- * @property {boolean} tasksLoading - Загружается ли список задач.
- * @property {TaskAppPageModelState} state - Данные текущего рабочего пространства.
- * @property {ReturnType<typeof useTaskAppActions>} actions - Функции действий, доступные интерфейсу.
- * @property {ReturnType<typeof useTaskAppViewModel>} viewModel - Подготовленные данные для отображения.
+ * @property {boolean} attachmentsEnabled - Whether attachments can be used.
+ * @property {boolean} tasksLoading - Whether the task list is loading.
+ * @property {TaskAppPageModelState} state - Current workspace data.
+ * @property {ReturnType<typeof useTaskAppActions>} actions - Actions available to the interface.
+ * @property {ReturnType<typeof useTaskAppViewModel>} viewModel - Prepared display data.
  */
 type TaskAppPageModelInput = {
   attachmentsEnabled: boolean;
@@ -77,7 +77,7 @@ type TaskAppPageModelInput = {
 };
 
 /**
- * Собирает узкий контракт props для страницы, соответствующей текущему маршруту.
+ * Builds a focused props contract for the page matching the current route.
  *
  * @param {TaskAppPageModelInput} parameter1
  * @returns {TaskAppPageModel}
@@ -89,7 +89,7 @@ export const createTaskAppPageModel = ({
   actions,
   viewModel,
 }: TaskAppPageModelInput): TaskAppPageModel => {
-  /** Разделяем общий state/actions/view model на нужные конкретной странице значения. */
+  /** Map the shared state, actions, and view model to values needed by this page. */
   const {
     dateView,
     setDateView,

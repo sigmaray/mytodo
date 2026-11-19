@@ -3,11 +3,11 @@ import type { DragEvent, FormEvent, RefObject } from "react";
 import type { renderTaskNodes } from "./TaskTreeView";
 
 /**
- * Секция и сторона, куда пользователь планирует её переместить.
+ * Section and side where the user intends to move it.
  *
  * @typedef {Object} ActiveSectionDrop
- * @property {SectionId} id - Идентификатор сущности, с которой работает модуль.
- * @property {"before" | "after"} position - Данные «position», используемые типом «ActiveSectionDrop».
+ * @property {SectionId} id - ID of the section being moved.
+ * @property {"before" | "after"} position - Whether to place it before or after the target.
  */
 type ActiveSectionDrop = {
   id: SectionId;
@@ -16,32 +16,32 @@ type ActiveSectionDrop = {
 };
 
 /**
- * Сбрасывает подсветку зоны назначения.
+ * Clears the highlighted drop zone.
  *
  * @callback TaskAppBoardPropsClearDropZone
  * @returns {void}
  */
 
 /**
- * Создаёт обработчик подсветки целевого списка или секции для перетаскивания.
+ * Creates a handler that highlights a target list or section during a drag.
  *
  * @callback TaskAppBoardPropsMarkDropZone
- * @param {ProjectId | null} projectId - Целевой проект либо Входящие.
- * @param {SectionId | null} sectionId - Целевая секция либо корень списка.
+ * @param {ProjectId | null} projectId - Destination project, or the Inbox.
+ * @param {SectionId | null} sectionId - Destination section, or the list root.
  * @returns {(event: DragEvent<HTMLElement>) => void}
  */
 
 /**
- * Обработчик завершения перемещения задачи в выбранный список.
+ * Handler that completes moving a task to the selected list.
  *
  * @callback TaskAppBoardPropsMoveDroppedTask
- * @param {ProjectId | null} projectId - Целевой проект либо Входящие.
- * @param {SectionId | null} sectionId - Целевая секция либо корень списка.
+ * @param {ProjectId | null} projectId - Destination project, or the Inbox.
+ * @param {SectionId | null} sectionId - Destination section, or the list root.
  * @returns {(event: DragEvent<HTMLElement>) => void}
  */
 
 /**
- * Открывает форму добавления задачи в выбранном месте.
+ * Opens the task creation form at the selected placement.
  *
  * @callback TaskAppBoardPropsOpenAddTaskDialog
  * @param {string} placement
@@ -50,7 +50,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Меняет видимость формы создания секции.
+ * Changes the visibility of the section creation form.
  *
  * @callback TaskAppBoardPropsSetAddingSection
  * @param {boolean} adding
@@ -58,7 +58,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Сохраняет секцию после отправки формы.
+ * Saves the section when the form is submitted.
  *
  * @callback TaskAppBoardPropsSubmitSection
  * @param {FormEvent<HTMLFormElement>} event
@@ -66,14 +66,14 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Закрывает форму создания секции без сохранения.
+ * Closes the section creation form without saving.
  *
  * @callback TaskAppBoardPropsCancelSectionCreate
  * @returns {void}
  */
 
 /**
- * Обновляет значение поля новой секции.
+ * Updates the new section title field.
  *
  * @callback TaskAppBoardPropsSetSectionTitle
  * @param {string} title
@@ -81,7 +81,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Обновляет ID перетаскиваемой секции.
+ * Updates the ID of the section being dragged.
  *
  * @callback TaskAppBoardPropsSetDraggingSectionId
  * @param {SectionId | null} id
@@ -89,7 +89,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Обновляет цель перестановки секции.
+ * Updates the section reorder target.
  *
  * @callback TaskAppBoardPropsSetActiveSectionDrop
  * @param {ActiveSectionDrop | null} drop
@@ -97,7 +97,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Выбирает секцию для редактирования.
+ * Selects a section to edit.
  *
  * @callback TaskAppBoardPropsSetEditSectionId
  * @param {SectionId | null} id
@@ -105,7 +105,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Обновляет значение формы переименования.
+ * Updates the rename form value.
  *
  * @callback TaskAppBoardPropsSetEditSectionTitle
  * @param {string} title
@@ -113,7 +113,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Начинает перетаскивание секции.
+ * Starts dragging a section.
  *
  * @callback TaskAppBoardPropsStartSectionDrag
  * @param {Section} section
@@ -121,7 +121,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Отмечает возможную цель drop для секции.
+ * Marks a possible drop target for a section.
  *
  * @callback TaskAppBoardPropsMarkSectionDrop
  * @param {Section} section
@@ -129,7 +129,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Завершает перестановку секции среди соседей.
+ * Completes reordering a section among its siblings.
  *
  * @callback TaskAppBoardPropsDropSection
  * @param {Section} section
@@ -138,7 +138,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Сохраняет отредактированное название секции.
+ * Saves the edited section title.
  *
  * @callback TaskAppBoardPropsSubmitSectionEdit
  * @param {Section} section
@@ -146,7 +146,7 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Запрашивает удаление секции с учётом пользовательских настроек.
+ * Requests section deletion according to the user's settings.
  *
  * @callback TaskAppBoardPropsRequestSectionDelete
  * @param {Section} section
@@ -154,51 +154,51 @@ type ActiveSectionDrop = {
  */
 
 /**
- * Открывает форму переименования выбранной секции.
+ * Opens the rename form for the selected section.
  *
  * @callback TaskAppBoardPropsStartSectionEdit
  * @param {Section} section
  * @returns {void}
  */
 /**
- * Контракт данных и обработчиков общей доски Inbox/Projects.
+ * Data and handler contract for the shared Inbox and Projects board.
  *
  * @typedef {Object} TaskAppBoardProps
- * @property {ProjectId | null} targetProjectId - Данные «target проект id», используемые типом «TaskAppBoardProps».
- * @property {React.ReactNode} scopeDescriptionBlock - Данные «область описание block», используемые типом «TaskAppBoardProps».
- * @property {string | null} activeDropZone - Данные «активные удаление zone», используемые типом «TaskAppBoardProps».
- * @property {TaskAppBoardPropsClearDropZone} clearDropZone - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsMarkDropZone} markDropZone - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsMoveDroppedTask} moveDroppedTask - Вызывает соответствующую операцию API.
- * @property {Array<TaskNode>} inboxRootTasks - Список задач, относящихся к Входящие корневые.
- * @property {Array<TaskNode>} projectRootTasks - Список задач, относящихся к проект корневые.
- * @property {TaskAppBoardPropsOpenAddTaskDialog} openAddTaskDialog - Вызывает соответствующую операцию API.
- * @property {boolean} addingSection - Признак или настройка «adding секция».
- * @property {TaskAppBoardPropsSetAddingSection} setAddingSection - Обновляет значение соответствующего состояния.
- * @property {TaskAppBoardPropsSubmitSection} submitSection - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsCancelSectionCreate} cancelSectionCreate - Признак: cancel секция создание.
- * @property {string} sectionTitle - Данные «секция заголовок», используемые типом «TaskAppBoardProps».
- * @property {TaskAppBoardPropsSetSectionTitle} setSectionTitle - Обновляет значение соответствующего состояния.
- * @property {RefObject<HTMLInputElement | null>} sectionCreateInputRef - Данные «секция создание ввод ссылка», используемые типом «TaskAppBoardProps».
- * @property {Array<Section>} inboxSections - Список секций для Входящие.
- * @property {Array<Section>} projectSections - Список секций для проект.
- * @property {Array<TaskNode>} allTasks - Все задачи пользователя, включая вложенные.
- * @property {SectionId | null} draggingSectionId - Данные «dragging секция id», используемые типом «TaskAppBoardProps».
- * @property {TaskAppBoardPropsSetDraggingSectionId} setDraggingSectionId - Обновляет значение соответствующего состояния.
- * @property {ActiveSectionDrop | null} activeSectionDrop - Данные «активные секция удаление», используемые типом «TaskAppBoardProps».
- * @property {TaskAppBoardPropsSetActiveSectionDrop} setActiveSectionDrop - Обновляет значение соответствующего состояния.
- * @property {SectionId | null} editSectionId - Данные «редактирование секция id», используемые типом «TaskAppBoardProps».
- * @property {TaskAppBoardPropsSetEditSectionId} setEditSectionId - Обновляет значение соответствующего состояния.
- * @property {string} editSectionTitle - Черновик названия редактируемой секции.
- * @property {TaskAppBoardPropsSetEditSectionTitle} setEditSectionTitle - Обновляет значение соответствующего состояния.
- * @property {TaskAppBoardPropsStartSectionDrag} startSectionDrag - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsMarkSectionDrop} markSectionDrop - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsDropSection} dropSection - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsSubmitSectionEdit} submitSectionEdit - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsRequestSectionDelete} requestSectionDelete - Вызывает соответствующую операцию API.
- * @property {TaskAppBoardPropsStartSectionEdit} startSectionEdit - Вызывает соответствующую операцию API.
- * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Данные «задача действия», используемые типом «TaskAppBoardProps».
- * @property {string} taskTargetLabel - Название выбранной области назначения задачи.
+ * @property {ProjectId | null} targetProjectId - Target project, or `null` for the Inbox.
+ * @property {React.ReactNode} scopeDescriptionBlock - Description block for the current scope.
+ * @property {string | null} activeDropZone - ID of the currently highlighted drop zone.
+ * @property {TaskAppBoardPropsClearDropZone} clearDropZone - Clears the current drop zone.
+ * @property {TaskAppBoardPropsMarkDropZone} markDropZone - Highlights a drop zone.
+ * @property {TaskAppBoardPropsMoveDroppedTask} moveDroppedTask - Moves a task to the selected drop zone.
+ * @property {Array<TaskNode>} inboxRootTasks - Top-level tasks in the Inbox.
+ * @property {Array<TaskNode>} projectRootTasks - Top-level tasks in the project.
+ * @property {TaskAppBoardPropsOpenAddTaskDialog} openAddTaskDialog - Opens the task creation dialog.
+ * @property {boolean} addingSection - Whether a section is being created.
+ * @property {TaskAppBoardPropsSetAddingSection} setAddingSection - Updates the section creation state.
+ * @property {TaskAppBoardPropsSubmitSection} submitSection - Saves the new section.
+ * @property {TaskAppBoardPropsCancelSectionCreate} cancelSectionCreate - Cancels section creation.
+ * @property {string} sectionTitle - Title entered for the new section.
+ * @property {TaskAppBoardPropsSetSectionTitle} setSectionTitle - Updates the section title.
+ * @property {RefObject<HTMLInputElement | null>} sectionCreateInputRef - Reference to the section creation input.
+ * @property {Array<Section>} inboxSections - Sections in the Inbox.
+ * @property {Array<Section>} projectSections - Sections in the project.
+ * @property {Array<TaskNode>} allTasks - All user tasks, including nested tasks.
+ * @property {SectionId | null} draggingSectionId - ID of the section being dragged.
+ * @property {TaskAppBoardPropsSetDraggingSectionId} setDraggingSectionId - Updates the dragged section ID.
+ * @property {ActiveSectionDrop | null} activeSectionDrop - Current section drop target.
+ * @property {TaskAppBoardPropsSetActiveSectionDrop} setActiveSectionDrop - Updates the active section drop target.
+ * @property {SectionId | null} editSectionId - ID of the section being edited.
+ * @property {TaskAppBoardPropsSetEditSectionId} setEditSectionId - Updates the section being edited.
+ * @property {string} editSectionTitle - Draft title of the section being edited.
+ * @property {TaskAppBoardPropsSetEditSectionTitle} setEditSectionTitle - Updates the section title draft.
+ * @property {TaskAppBoardPropsStartSectionDrag} startSectionDrag - Starts dragging a section.
+ * @property {TaskAppBoardPropsMarkSectionDrop} markSectionDrop - Marks a section drop target.
+ * @property {TaskAppBoardPropsDropSection} dropSection - Drops the section at the selected position.
+ * @property {TaskAppBoardPropsSubmitSectionEdit} submitSectionEdit - Saves the edited section title.
+ * @property {TaskAppBoardPropsRequestSectionDelete} requestSectionDelete - Requests deletion of a section.
+ * @property {TaskAppBoardPropsStartSectionEdit} startSectionEdit - Opens the section editor.
+ * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Actions available for task nodes.
+ * @property {string} taskTargetLabel - Label for the selected task destination.
  */
 export type TaskAppBoardProps = {
   targetProjectId: ProjectId | null;
@@ -210,16 +210,16 @@ export type TaskAppBoardProps = {
   clearDropZone: () => void;
 
   markDropZone: (
-    /** Целевой проект либо Входящие. */
+    /** Destination project, or the Inbox. */
     projectId: ProjectId | null,
-    /** Целевая секция либо корень списка. */
+    /** Destination section, or the list root. */
     sectionId: SectionId | null,
   ) => (event: DragEvent<HTMLElement>) => void;
 
   moveDroppedTask: (
-    /** Целевой проект либо Входящие. */
+    /** Destination project, or the Inbox. */
     projectId: ProjectId | null,
-    /** Целевая секция либо корень списка. */
+    /** Destination section, or the list root. */
     sectionId: SectionId | null,
   ) => (event: DragEvent<HTMLElement>) => void;
 

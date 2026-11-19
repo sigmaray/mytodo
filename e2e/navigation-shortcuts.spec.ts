@@ -1,13 +1,13 @@
 import { expect, test } from "./fixtures";
 
 /**
- * Добавляет временной суффикс, чтобы тестовые имена не пересекались между запусками.
+ * Adds a time-based suffix so test names do not collide across runs.
  *
  * @param {string} prefix
  */
 const unique = (prefix: string) => `${prefix} ${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
 
-/** Проверяем общий клавиатурный поток диалога, редактирования, навигации, поиска и календаря. */
+/** Verify keyboard flows for dialogs, editing, navigation, search, and the calendar. */
 test("task dialog, inline keyboard editing, navigation, search, and calendar work", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
   await page.goto("/");
@@ -220,7 +220,7 @@ test("task dialog, inline keyboard editing, navigation, search, and calendar wor
   await expect(page.getByRole("dialog", { name: "Add task" })).toBeVisible();
 });
 
-/** После перестановки проекта подсветка всех зон перетаскивания должна сбрасываться. */
+/** Reordering a project must clear all drag target highlights. */
 test("project reorder clears all drag highlight states", async ({ page }) => {
   await page.goto("/");
   const first = unique("Drag project first");

@@ -1,5 +1,5 @@
 /**
- * Преобразует дату в ISO-вид календарного дня без сдвига часового пояса.
+ * Converts a date to an ISO calendar day without shifting its time zone.
  *
  * @param {Date} date
  * @returns {string}
@@ -8,7 +8,7 @@ export const toLocalIsoDate = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /**
- * Проверяет, совпадает ли срок задачи с сегодняшней локальной датой.
+ * Checks whether a task due date matches today's local date.
  *
  * @param {string} dueDate
  * @returns {boolean}
@@ -16,7 +16,7 @@ export const toLocalIsoDate = (date: Date): string =>
 export const isTaskDueToday = (dueDate: string): boolean => dueDate === toLocalIsoDate(new Date());
 
 /**
- * Возвращает CSS-класс для просроченного или будущего срока задачи.
+ * Returns the CSS class for a task's overdue or upcoming due date.
  *
  * @param {string} dueDate
  * @returns {string}

@@ -5,7 +5,7 @@ import type { PublicUser, UserRecord, UserRepository } from "../users";
 import { sessions, users } from "./schema";
 
 /**
- * Убирает пароль и настройки из записи перед возвратом пользователя клиенту.
+ * Removes the password and settings before returning a user to the client.
  *
  * @param {Pick<UserRecord, "id" | "username" | "isAdmin">} user
  * @returns {PublicUser}
@@ -17,7 +17,7 @@ const toPublicUser = (user: Pick<UserRecord, "id" | "username" | "isAdmin">): Pu
 });
 
 /**
- * Создаёт PostgreSQL-хранилище пользователей, паролей, настроек и сессий.
+ * Creates PostgreSQL storage for users, passwords, settings, and sessions.
  *
  * @param {string} databaseUrl
  * @returns {UserRepository}
@@ -27,7 +27,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
   const db = drizzle(client);
 
   return {
-    /** Загружает внутреннюю запись аккаунта по имени входа. */
+    /** Loads the internal account record by login name. */
     getByUsername: async (username) => {
       const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
       const row = rows[0];
@@ -42,7 +42,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
             inboxDescription: row.inboxDescription,
           };
     },
-    /** Загружает внутреннюю запись аккаунта по UUID. */
+    /** Loads the internal account record by UUID. */
     getById: async (id) => {
       const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
       const row = rows[0];
@@ -57,7 +57,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
             inboxDescription: row.inboxDescription,
           };
     },
-    /** Возвращает только публичные поля всех пользователей. */
+    /** Returns only the public fields for all users. */
     list: async () =>
       (
         await db
@@ -65,7 +65,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
           .from(users)
           .orderBy(users.username)
       ).map(toPublicUser),
-    /** Создаёт учётную запись и возвращает безопасное публичное представление. */
+    /** Creates an account and returns its safe public representation. */
     create: async (username, passwordHash, isAdmin) => {
       const rows = await db
         .insert(users)
@@ -75,21 +75,21 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
       if (row === undefined) throw new Error("User insert failed");
       return toPublicUser(row);
     },
-    /** Обновляет поля пользователя и отзывает сессии при смене пароля. */
+    /** Updates user fields and revokes sessions when the password changes. */
     update: async (id, patch) => {
-      /** Хеш пароля записывается отдельно от остальных изменяемых публичных полей. */
+      /** Store the password hash separately from the other mutable public fields. */
       const { passwordHash, ...publicPatch } = patch;
       const rows = await db
         .update(users)
         .set({ ...publicPatch, passwordHash })
         .where(eq(users.id, id))
         .returning({ id: users.id, username: users.username, isAdmin: users.isAdmin });
-      /** Отзываем сессии только при смене пароля, чтобы обычные правки имени не разлогинивали. */
+      /** Revoke sessions only when the password changes; username edits should not sign users out. */
       if (passwordHash !== undefined) await db.delete(sessions).where(eq(sessions.userId, id));
       const row = rows[0];
       return row === undefined ? null : toPublicUser(row);
     },
-    /** Устанавливает пароль и отзывает все существующие сессии аккаунта. */
+    /** Sets the password and revokes all existing account sessions. */
     setPassword: async (id, passwordHash) => {
       const rows = await db
         .update(users)
@@ -99,10 +99,10 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
       await db.delete(sessions).where(eq(sessions.userId, id));
       return rows.length > 0;
     },
-    /** Удаляет принадлежащие пользователю данные и аккаунт в одной транзакции. */
+    /** Deletes the user's data and account in a single transaction. */
     delete: async (id) =>
       client.begin(async (transaction) => {
-        /** Удаление выполняется транзакционно, чтобы не оставить связанные данные при частичном сбое. */
+        /** Use a transaction so a partial failure cannot leave related data behind. */
         await transaction`DELETE FROM tasks WHERE user_id = ${id}`;
         await transaction`DELETE FROM sections WHERE user_id = ${id}`;
         await transaction`DELETE FROM projects WHERE user_id = ${id}`;
@@ -110,11 +110,11 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
         const deleted = await transaction`DELETE FROM users WHERE id = ${id} RETURNING id`;
         return deleted.length > 0;
       }),
-    /** Проверяет, задан ли пароль хотя бы одному пользователю. */
+    /** Checks whether at least one user has a password set. */
     hasPasswordUsers: async () =>
       (await db.select({ id: users.id }).from(users).where(isNotNull(users.passwordHash)).limit(1)).length >
       0,
-    /** Сохраняет сессию и предварительно удаляет уже истёкшие записи. */
+    /** Saves a session after removing records that have already expired. */
     saveSession: async (tokenHash, userId, expiresAt) => {
       await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
       await db
@@ -122,7 +122,7 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
         .values({ tokenHash, userId, expiresAt })
         .onConflictDoUpdate({ target: sessions.tokenHash, set: { userId, expiresAt } });
     },
-    /** Проверяет срок токена и возвращает UUID владельца действующей сессии. */
+    /** Checks token expiration and returns the UUID of the active session owner. */
     getSessionUserId: async (tokenHash, now) => {
       const rows = await db
         .select({ userId: sessions.userId })
@@ -131,19 +131,19 @@ export const createPostgresUserRepository = (databaseUrl: string): UserRepositor
         .limit(1);
       return rows[0]?.userId ?? null;
     },
-    /** Удаляет сессию по её хешу. */
+    /** Deletes a session by its hash. */
     deleteSession: async (tokenHash) => {
       await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
     },
-    /** Отзывает все сессии заданного пользователя. */
+    /** Revokes all sessions for the specified user. */
     deleteAllSessions: async (userId) => {
       await db.delete(sessions).where(eq(sessions.userId, userId));
     },
-    /** Сохраняет настройки личного списка и подтверждения удаления. */
+    /** Saves personal list settings and deletion confirmation preferences. */
     savePreferences: async (id, confirmDelete, inboxDescription) => {
       await db.update(users).set({ confirmDelete, inboxDescription }).where(eq(users.id, id));
     },
-    /** Закрывает пул PostgreSQL-соединений репозитория. */
+    /** Closes the repository's PostgreSQL connection pool. */
     close: async () => {
       await client.end();
     },

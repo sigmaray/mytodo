@@ -4,28 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
- * Показывает глобальный поиск задач, проектов, секций и меток через Ctrl/Cmd+K.
+ * Shows global search for tasks, projects, sections, and labels with Ctrl/Cmd+K.
  *
  * @param {{ tasks: Array<Task>; projects?: Array<Project>; sections?: Array<Section>; onTaskSelect: (task: Task) => void; }} parameter1
- * @param {Array<Task>} parameter1.tasks - Задачи, по которым выполняется текстовый поиск.
- * @param {Array<Project>} parameter1.projects - Проекты, доступные для поиска.
- * @param {Array<Section>} parameter1.sections - Секции, доступные для поиска.
- * @param {(task: Task) => void} parameter1.onTaskSelect - Открывает задачу, выбранную в результатах поиска.
- * @returns Результат выполнения функции.
+ * @param {Array<Task>} parameter1.tasks - Tasks searched by text.
+ * @param {Array<Project>} parameter1.projects - Projects available to search.
+ * @param {Array<Section>} parameter1.sections - Sections available to search.
+ * @param {(task: Task) => void} parameter1.onTaskSelect - Opens the task selected in the results.
+ * @returns The global search palette.
  */
 export const SearchPalette = ({
   tasks,
   projects = [],
   sections = [],
   onTaskSelect,
-}: /**
- * Поля этой структуры:
- * - `tasks`: Задачи, по которым выполняется текстовый поиск.
- * - `projects`: Проекты, доступные для поиска.
- * - `sections`: Секции, доступные для поиска.
- * - `onTaskSelect`: Открывает задачу, выбранную в результатах поиска.
- */
-{
+}: {
   tasks: Array<Task>;
 
   projects?: Array<Project>;
@@ -38,7 +31,7 @@ export const SearchPalette = ({
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  /** Нормализованный запрос ищется в названии, описании и метках без учёта регистра. */
+  /** Search normalized queries in titles, descriptions, and labels without case sensitivity. */
   const taskResults =
     normalizedQuery.length === 0
       ? []
@@ -59,7 +52,7 @@ export const SearchPalette = ({
 
   useEffect(() => {
     const handleShortcut = (event: globalThis.KeyboardEvent) => {
-      /** Ctrl/Cmd+K открывает палитру, а Escape закрывает её независимо от фокуса. */
+      /** Ctrl/Cmd+K opens the palette, and Escape closes it regardless of focus. */
       if ((event.ctrlKey || event.metaKey) && (event.code === "KeyK" || event.key.toLowerCase() === "k")) {
         event.preventDefault();
         setOpen(true);
@@ -88,7 +81,7 @@ export const SearchPalette = ({
               className="search-palette-backdrop"
               role="presentation"
               onMouseDown={(event) => {
-                /** Закрываем окно только при клике по фону, не по самому диалогу. */
+                /** Close the dialog only when the backdrop is clicked, not the dialog itself. */
                 if (event.target === event.currentTarget) setOpen(false);
               }}
             >
@@ -116,7 +109,7 @@ export const SearchPalette = ({
                             type="button"
                             key={task.id}
                             onClick={() => {
-                              /** Сначала передаём выбранную задачу владельцу, затем закрываем поиск. */
+                              /** Pass the selected task to the owner before closing search. */
                               onTaskSelect(task);
                               setOpen(false);
                             }}

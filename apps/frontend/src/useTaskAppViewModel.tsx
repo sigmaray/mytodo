@@ -22,16 +22,16 @@ import type { useTaskAppActions } from "./useTaskAppActions";
 import type { TaskAppViewModelState } from "./useTaskAppState";
 
 /**
- * Запросы, состояние и действия для вычисления представления workspace.
+ * Queries, state, and actions used to compute the workspace view model.
  *
  * @typedef {Object} TaskAppViewModelInput
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
- * @property {TaskAppViewModelState} state - Данные текущего рабочего пространства.
- * @property {ReturnType<typeof useTaskAppActions>} actions - Функции действий, доступные интерфейсу.
- * @property {string} currentPath - Текущий путь навигации.
- * @property {boolean} attachmentsEnabled - Разрешено ли работать с вложениями.
- * @property {string | undefined} inboxDescription - Описание списка Входящие.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {QueryClient} queryClient - Cache client for server queries.
+ * @property {TaskAppViewModelState} state - Current workspace data.
+ * @property {ReturnType<typeof useTaskAppActions>} actions - Actions available to the interface.
+ * @property {string} currentPath - Current navigation path.
+ * @property {boolean} attachmentsEnabled - Whether attachments can be used.
+ * @property {string | undefined} inboxDescription - Inbox description.
  */
 type TaskAppViewModelInput = {
   api: ApplicationApi;
@@ -50,10 +50,10 @@ type TaskAppViewModelInput = {
 };
 
 /**
- * Вычисляет данные, заголовки, доступность действий и списки для отображения.
+ * Computes the data, titles, available actions, and lists to display.
  *
  * @param {TaskAppViewModelInput} parameter1
- * @returns Результат выполнения функции.
+ * @returns The workspace view model.
  */
 export const useTaskAppViewModel = ({
   api,
@@ -158,7 +158,7 @@ export const useTaskAppViewModel = ({
     setEditingScopeDescription(true);
   };
   const saveScopeDescription = async () => {
-    /** У Входящих описание хранится в настройках пользователя, а у проекта — в записи проекта. */
+    /** The Inbox description is stored in user settings; project descriptions are stored on the project record. */
     const description = scopeDescriptionDraft.trim();
     if (targetProjectId === null) {
       await api.updateInboxDescription(description);
@@ -239,7 +239,7 @@ export const useTaskAppViewModel = ({
     selectedTaskIds,
     toggleTaskSelection,
     openContextMenu: (task: TaskNode) => (event: ReactMouseEvent<HTMLElement>) => {
-      /** Контекстное меню доступно только в списке задач и не выходит за границы окна. */
+      /** Show the context menu only on task lists and keep it within the viewport. */
       if (pageMode !== "tasks") return;
       event.preventDefault();
       const width = 196;
@@ -310,7 +310,7 @@ export const useTaskAppViewModel = ({
   }, [pageMode]);
   useEffect(() => {
     const handleSelectionKeys = (event: globalThis.KeyboardEvent) => {
-      /** Escape снимает выделение; повтор клавиши и ввод в поля игнорируются ниже. */
+      /** Escape clears the selection; repeated keys and input fields are ignored below. */
       if (event.key === "Escape") {
         if (selectionMode) {
           event.preventDefault();
@@ -336,7 +336,7 @@ export const useTaskAppViewModel = ({
   const viewTasks =
     pageMode === "dates"
       ? filterTaskTree(allTasks, (task) => {
-          /** Фильтр дат сначала исключает задачи без срока, затем применяет выбранный диапазон. */
+          /** Exclude tasks without due dates before applying the selected date range. */
           if (!task.dueDate) return false;
           switch (dateListFilter) {
             case "all":
@@ -358,7 +358,7 @@ export const useTaskAppViewModel = ({
   const calendarLabel = calendarMonthLabel(calendarMonth);
   const calendarTaskCount = calendarTasks.filter((task) => task.dueDate?.startsWith(calendarMonth)).length;
   const calendarTaskLocation = (task: Task) => {
-    /** Для подписи места предпочитаем секцию, затем проект, иначе показываем Входящие. */
+    /** Prefer the section, then the project, and otherwise show the Inbox in the placement label. */
     const taskSection =
       task.sectionId === null ? null : (allSections.find((item) => item.id === task.sectionId) ?? null);
     const taskProject =
@@ -386,7 +386,7 @@ export const useTaskAppViewModel = ({
     const title = projectTitleDraft.trim();
     if (selectedProject === null || title.length === 0) return;
     try {
-      /** Закрываем inline-редактор только после подтверждения мутации. */
+      /** Close the inline editor only after the mutation succeeds. */
       await updateProjectMutation.mutateAsync({ id: selectedProject.id, title });
       setEditingProjectTitle(false);
       setProjectTitleDraft("");
@@ -406,7 +406,7 @@ export const useTaskAppViewModel = ({
   );
   const markdown = currentMarkdown(taskTargetLabel, inboxRootTasks, allSections, allTasks, targetProjectId);
   const openAddTaskDialog = (placement: string, beforeId: string | null = null) => {
-    /** Каждый новый диалог начинается с чистого черновика, не наследуя прошлый ввод. */
+    /** Start each new dialog with a clean draft instead of reusing previous input. */
     setAddTaskPlacement(placement);
     setAddTaskBeforeId(beforeId);
     setAddTaskTitle("");
@@ -421,7 +421,7 @@ export const useTaskAppViewModel = ({
     setAddTaskOpen(true);
   };
   const deleteAllTasks = async () => {
-    /** Удаляем только корни текущего проекта/Входящих: сервер каскадно обработает потомков. */
+    /** Delete only roots from the current project or Inbox; the server cascades to descendants. */
     const roots = flatTasks.filter((task) => task.parentId === null && task.projectId === targetProjectId);
     if (roots.length === 0) return;
     const scope =

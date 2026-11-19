@@ -7,7 +7,7 @@ import { createPostgresSectionMethods } from "./postgresSectionMethods";
 import { createPostgresTaskMethods } from "./postgresTaskMethods";
 
 /**
- * Создаёт PostgreSQL-репозиторий с методами работы с проектами, секциями и задачами.
+ * Creates a PostgreSQL repository for projects, sections, and tasks.
  *
  * @param {string} databaseUrl
  * @param [userId]
@@ -30,15 +30,15 @@ export const createPostgresTaskRepository = (
 };
 
 /**
- * Создаёт фабрику репозиториев и переиспользует соединение для каждого пользователя.
+ * Creates a repository factory and reuses the connection for each user.
  *
  * @param {string} databaseUrl
- * @returns Результат выполнения функции.
+ * @returns The user-scoped repository factory.
  */
 export const createPostgresTaskRepositoryFactory = (databaseUrl: string) => {
   const sharedClient = postgres(databaseUrl, { max: 10 });
   let repositories = {} as Record<string, TaskRepository>;
-  /** Кэшируем репозиторий по UUID, чтобы его методы всегда работали с тем же владельцем. */
+  /** Cache repositories by UUID so their methods always use the same owner. */
   return (userId: string): TaskRepository => {
     const existing = repositories[userId];
     if (existing !== undefined) return existing;

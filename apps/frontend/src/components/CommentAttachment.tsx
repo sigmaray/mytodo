@@ -2,9 +2,9 @@ import type { Task } from "@todoist-clone/domain";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-/** Расширения, для которых содержимое файла можно показать как текстовый предпросмотр. */
+/** Extensions whose file contents can be shown in a text preview. */
 const textPreviewExtensions = new Set([
-  /** Только текстовые форматы показываются в pre, бинарные файлы остаются ссылками на скачивание. */
+  /** Show only text formats in a preformatted block; keep binary files as download links. */
   "md",
   "txt",
   "csv",
@@ -27,10 +27,10 @@ const textPreviewExtensions = new Set([
 ]);
 
 /**
- * Форматирует размер файла в байтах, килобайтах, мегабайтах или гигабайтах.
+ * Formats a file size in bytes, kilobytes, megabytes, or gigabytes.
  *
  * @param {number} size
- * @returns Результат выполнения функции.
+ * @returns A human-readable file size.
  */
 export const formatAttachmentSize = (size: number) => {
   if (size < 1024) return `${size} B`;
@@ -45,7 +45,7 @@ export const formatAttachmentSize = (size: number) => {
 };
 
 /**
- * Преобразует поддерживаемый поднабор Markdown комментария в React-элементы.
+ * Converts a supported subset of comment Markdown into React elements.
  *
  * @param {string} body
  */
@@ -81,10 +81,10 @@ export const renderCommentMarkdown = (body: string) =>
   });
 
 /**
- * Показывает вложение комментария и доступные операции с ним.
+ * Displays a comment attachment and its available actions.
  *
  * @param {{ attachment: NonNullable<Task["comments"][number]["attachments"]>[number]; onRemove?: () => void; }} parameter1
- * @returns Результат выполнения функции.
+ * @returns The comment attachment element.
  */
 export const CommentAttachment = ({
   attachment,
@@ -104,16 +104,16 @@ export const CommentAttachment = ({
     attachment.mimeType === "application/json";
 
   useEffect(() => {
-    /** Не загружаем содержимое, пока пользователь не открыл предпросмотр. */
+    /** Do not load file contents until the user opens the preview. */
     if (!previewOpen || previewLoaded || previewError.length > 0) return;
     if (attachment.size > 512 * 1024) {
-      /** Ограничение защищает браузер от загрузки больших файлов в DOM-предпросмотр. */
+      /** The limit prevents large files from being loaded into the browser's DOM preview. */
       setPreviewError("Preview is limited to files up to 512 KB.");
       return;
     }
     void fetch(`/attachments/${encodeURIComponent(attachment.id)}`)
       .then(async (response) => {
-        /** HTTP-ошибка переводится в единое сообщение состояния предпросмотра. */
+        /** Convert HTTP errors to a consistent preview status message. */
         if (!response.ok) throw new Error("Could not load preview.");
         return response.text();
       })

@@ -1,7 +1,7 @@
 import { type APIRequestContext, expect } from "@playwright/test";
 
 /**
- * Отправляет POST JSON и добавляет тело ответа к сообщению ошибки проверки.
+ * Sends a JSON POST and includes the response body in assertion errors.
  *
  * @param {APIRequestContext} request
  * @param {string} path
@@ -9,16 +9,16 @@ import { type APIRequestContext, expect } from "@playwright/test";
  * @returns {Promise<T>}
  */
 const postJson = async <T>(request: APIRequestContext, path: string, data?: unknown): Promise<T> => {
-  /** Если тело не задано, отправляем пустой запрос, а не JSON null. */
+  /** Send an empty request when no body is supplied instead of sending JSON null. */
   const response = await request.post(path, data === undefined ? {} : { data });
-  /** Читаем тело один раз и включаем его в сообщение для диагностики неуспешного запроса. */
+  /** Read the body once and include it in the error message to diagnose failed requests. */
   const text = await response.text();
   expect(response.ok(), `POST ${path} failed (${response.status()}): ${text}`).toBe(true);
   return JSON.parse(text) as T;
 };
 
 /**
- * Отправляет PATCH JSON и разбирает ответ после проверки HTTP-статуса.
+ * Sends a JSON PATCH and parses the response after validating its HTTP status.
  *
  * @param {APIRequestContext} request
  * @param {string} path
@@ -27,19 +27,19 @@ const postJson = async <T>(request: APIRequestContext, path: string, data?: unkn
  */
 const patchJson = async <T>(request: APIRequestContext, path: string, data: unknown): Promise<T> => {
   const response = await request.patch(path, { data });
-  /** Текст ответа сохраняется для ошибки expect, затем разбирается как JSON. */
+  /** Preserve the response text for assertion errors, then parse it as JSON. */
   const text = await response.text();
   expect(response.ok(), `PATCH ${path} failed (${response.status()}): ${text}`).toBe(true);
   return JSON.parse(text) as T;
 };
 
 /**
- * Допустимые значения полей при формировании multipart-запроса Playwright.
+ * Allowed field values when building a Playwright multipart request.
  *
  * @typedef {Object} MultipartValue
- * @property {string} name - Данные «name», используемые типом «MultipartValue».
- * @property {string} mimeType - Данные «mime type», используемые типом «MultipartValue».
- * @property {Buffer} buffer - Данные «buffer», используемые типом «MultipartValue».
+ * @property {string} name - File name.
+ * @property {string} mimeType - File MIME type.
+ * @property {Buffer} buffer - File contents.
  */
 type MultipartValue =
   | string
@@ -54,7 +54,7 @@ type MultipartValue =
     };
 
 /**
- * Отправляет multipart-форму, проверяет ответ и возвращает JSON-результат.
+ * Sends a multipart form, validates the response, and returns the JSON result.
  *
  * @param {APIRequestContext} request
  * @param {string} path
@@ -67,14 +67,14 @@ const postMultipart = async <T>(
   form: Record<string, MultipartValue>,
 ): Promise<T> => {
   const response = await request.post(path, { multipart: form });
-  /** Ответ multipart-запроса проверяется так же, как JSON, а его текст включается в сообщение ошибки. */
+  /** Validate multipart responses like JSON responses and include their text in error messages. */
   const text = await response.text();
   expect(response.ok(), `POST ${path} failed (${response.status()}): ${text}`).toBe(true);
   return JSON.parse(text) as T;
 };
 
 /**
- * Создаёт API-набор вспомогательных операций для подготовки E2E-данных.
+ * Creates API helpers for preparing E2E data.
  *
  * @param {APIRequestContext} request
  */
@@ -104,13 +104,7 @@ export const createE2eApi = (request: APIRequestContext) => ({
   },
   createTask: async (
     title: string,
-    placement: /**
-     * Поля этой структуры:
-     * - `projectId`: ID проекта назначения или `null` для Входящих.
-     * - `sectionId`: ID секции назначения или `null` для корня списка.
-     * - `parentId`: ID родительской задачи или `null` для корневой задачи.
-     */
-    {
+    placement: {
       projectId?: string | null;
 
       sectionId?: string | null;
@@ -123,7 +117,7 @@ export const createE2eApi = (request: APIRequestContext) => ({
       "/api/playwright/entities/task",
       {
         title,
-        /** Заполняем отсутствующие части размещения одинаковыми nullable значениями API. */
+        /** Fill missing placement fields with the API's consistent nullable values. */
         projectId: placement.projectId ?? null,
         sectionId: placement.sectionId ?? null,
         parentId: placement.parentId ?? null,
@@ -141,13 +135,7 @@ export const createE2eApi = (request: APIRequestContext) => ({
   },
   createAttachment: async (
     taskId: string,
-    file: /**
-     * Поля этой структуры:
-     * - `name`: Исходное имя загружаемого файла.
-     * - `mimeType`: MIME-тип, объявленный в multipart-запросе.
-     * - `buffer`: Содержимое файла в байтовом буфере.
-     */
-    {
+    file: {
       name: string;
 
       mimeType: string;

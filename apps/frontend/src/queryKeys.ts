@@ -1,14 +1,14 @@
-/** Ключ React Query для списка и дерева задач. */
+/** React Query key for the task list and tree. */
 export const taskQueryKey = ["tasks"];
-/** Ключ кэша проектов. */
+/** Cache key for projects. */
 export const projectQueryKey = ["projects"];
-/** Ключ кэша секций. */
+/** Cache key for sections. */
 export const sectionQueryKey = ["sections"];
-/** Ключ кэша описания Входящих. */
+/** Cache key for the Inbox description. */
 export const inboxDescriptionQueryKey = ["inbox-description"];
-/** Ключ кэша таблиц страницы инструментов. */
+/** Cache key for the tools page table list. */
 export const tablesQueryKey = ["tools", "tables"];
-/** Ключ кэша настроек аккаунта. */
+/** Cache key for account settings. */
 export const settingsQueryKey = ["app-settings"];
-/** Ключ кэша статуса сессии и возможностей приложения. */
+/** Cache key for session status and application capabilities. */
 export const authStatusQueryKey = ["auth-status"];

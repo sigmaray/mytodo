@@ -26,31 +26,31 @@ import { renderTaskNodes } from "../components/TaskTreeView";
  * @returns {void}
  */
 /**
- * Данные календарного экрана и обработчики выбора, перемещения и открытия задач.
+ * Calendar screen data and handlers for selecting, moving, and opening tasks.
  *
  * @typedef {Object} DatesPageProps
- * @property {"list" | "calendar"} dateView - Режим отображения календаря или списка дат.
- * @property {Dispatch<SetStateAction<"list" | "calendar">>} setDateView - Меняет режим отображения страницы дат.
- * @property {"all" | "overdue" | "today" | "upcoming"} dateListFilter - Фильтр задач на странице дат.
- * @property {Dispatch<SetStateAction<"all" | "overdue" | "today" | "upcoming">>} setDateListFilter - Меняет фильтр задач на странице дат.
- * @property {string} calendarMonth - Месяц, отображаемый в календаре.
- * @property {string} calendarLabel - Подпись месяца и года в заголовке календаря.
- * @property {CalendarPanelProps["days"]} calendarDays - Ячейки календарной сетки выбранного месяца.
- * @property {Array<Task>} calendarTasks - Задачи, показанные в календарном представлении.
- * @property {number} calendarTaskCount - Количество задач в календарном представлении.
- * @property {string | null} activeCalendarDate - Выбранная дата календаря.
- * @property {DatesPagePropsCalendarTaskLocation} calendarTaskLocation - Определяет место задачи в календарном списке.
- * @property {Dispatch<SetStateAction<string>>} setCalendarMonth - Выбирает месяц для календаря.
- * @property {DatesPagePropsShiftCalendarMonth} shiftCalendarMonth - Переключает календарь на соседний месяц.
- * @property {DatesPagePropsOnToday} onToday - Выбирает текущую дату.
- * @property {CalendarPanelProps["onMarkDate"]} onMarkDate - Помечает дату в календаре.
- * @property {CalendarPanelProps["onDropDate"]} onDropDate - Обрабатывает перенос задачи на дату.
- * @property {DatesPagePropsOnLeaveDate} onLeaveDate - Обрабатывает завершение перетаскивания над датой.
- * @property {CalendarPanelProps["onTaskDragStart"]} onTaskDragStart - Начинает перетаскивание задачи из календаря.
- * @property {CalendarPanelProps["onTaskDragEnd"]} onTaskDragEnd - Завершает перетаскивание задачи в календаре.
- * @property {CalendarPanelProps["onTaskOpen"]} onTaskOpen - Открывает подробности задачи.
- * @property {Array<TaskNode>} viewTasks - Список задач, относящихся к отображаемые.
- * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Данные «задача действия», используемые типом «DatesPageProps».
+ * @property {"list" | "calendar"} dateView - Whether dates are shown as a calendar or a list.
+ * @property {Dispatch<SetStateAction<"list" | "calendar">>} setDateView - Changes the dates page view.
+ * @property {"all" | "overdue" | "today" | "upcoming"} dateListFilter - Task filter for the dates page.
+ * @property {Dispatch<SetStateAction<"all" | "overdue" | "today" | "upcoming">>} setDateListFilter - Changes the dates page task filter.
+ * @property {string} calendarMonth - Month displayed in the calendar.
+ * @property {string} calendarLabel - Month and year label in the calendar heading.
+ * @property {CalendarPanelProps["days"]} calendarDays - Grid cells for the selected month.
+ * @property {Array<Task>} calendarTasks - Tasks displayed in the calendar view.
+ * @property {number} calendarTaskCount - Number of tasks displayed in the calendar.
+ * @property {string | null} activeCalendarDate - Selected calendar date.
+ * @property {DatesPagePropsCalendarTaskLocation} calendarTaskLocation - Determines a task's position in the calendar list.
+ * @property {Dispatch<SetStateAction<string>>} setCalendarMonth - Selects the calendar month.
+ * @property {DatesPagePropsShiftCalendarMonth} shiftCalendarMonth - Moves the calendar to an adjacent month.
+ * @property {DatesPagePropsOnToday} onToday - Selects today's date.
+ * @property {CalendarPanelProps["onMarkDate"]} onMarkDate - Marks a date in the calendar.
+ * @property {CalendarPanelProps["onDropDate"]} onDropDate - Handles dropping a task on a date.
+ * @property {DatesPagePropsOnLeaveDate} onLeaveDate - Handles ending a drag over a date.
+ * @property {CalendarPanelProps["onTaskDragStart"]} onTaskDragStart - Starts dragging a task from the calendar.
+ * @property {CalendarPanelProps["onTaskDragEnd"]} onTaskDragEnd - Ends dragging a task in the calendar.
+ * @property {CalendarPanelProps["onTaskOpen"]} onTaskOpen - Opens task details.
+ * @property {Array<TaskNode>} viewTasks - Tasks currently displayed.
+ * @property {Parameters<typeof renderTaskNodes>[1]} taskActions - Actions available for task nodes.
  */
 export type DatesPageProps = {
   dateView: "list" | "calendar";
@@ -99,7 +99,7 @@ export type DatesPageProps = {
 };
 
 /**
- * Показывает календарь либо отфильтрованный список задач со сроками.
+ * Shows a calendar or a filtered list of tasks with due dates.
  *
  * @param {DatesPageProps} parameter1
  */

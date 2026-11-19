@@ -9,7 +9,7 @@ import { TaskDetailsSidebar } from "./TaskDetailsSidebar";
 import { AutoGrowTextarea, DatePickerPanel } from "./TaskFormFields";
 
 /**
- * Изменяемые поля задачи, совпадающие с контрактом API обновления.
+ * Editable task fields matching the update API contract.
  *
  * @typedef {Parameters<ApplicationApi["updateTask"]>[1]} TaskDetailsPatch
  */
@@ -67,66 +67,66 @@ type TaskDetailsPatch = Parameters<ApplicationApi["updateTask"]>[1];
  * @returns {Array<File>}
  */
 /**
- * Данные, состояние и действия модального окна подробностей задачи.
+ * Data, state, and actions for the task details modal.
  *
  * @typedef {Object} TaskDetailsDialogProps
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
- * @property {boolean} attachmentsEnabled - Разрешено ли приложению загружать и выдавать вложения.
- * @property {TaskNode | null} selectedDetailsTask - Задача, показанная в окне подробностей.
- * @property {Project | null} selectedDetailsProject - Проект выбранной задачи.
- * @property {Section | null} selectedDetailsSection - Секция выбранной задачи.
- * @property {TaskNode | null} selectedDetailsParent - Родитель выбранной задачи.
- * @property {Array<Project>} activeProjects - Активные проекты пользователя.
- * @property {Array<Section>} allSections - Все секции пользователя.
- * @property {Array<string>} availableLabels - Метки, доступные для назначения задаче.
- * @property {string} detailTitle - Черновик заголовка задачи.
- * @property {string} detailDescription - Черновик описания задачи.
- * @property {string} detailDueDate - Черновик срока выполнения.
- * @property {string} detailLabelInput - Текст вводимой метки.
- * @property {string} detailSaveStatus - Состояние сохранения изменений.
- * @property {ProjectId | null} detailProjectId - Данные «подробности проект id», используемые типом «TaskDetailsDialogProps».
- * @property {SectionId | null} detailSectionId - Данные «подробности секция id», используемые типом «TaskDetailsDialogProps».
- * @property {"title" | "description" | null} editingDetailField - Поле задачи, которое сейчас редактируется.
- * @property {boolean} datePickerOpen - Признак, что календарь выбора срока открыт.
- * @property {boolean} showMobileLabels - Признак, что мобильный блок меток открыт.
- * @property {boolean} showMobileComments - Признак, что мобильный блок комментариев открыт.
- * @property {boolean} showMobileDate - Признак, что мобильный блок срока открыт.
- * @property {boolean} showMobileSubtasks - Признак, что мобильный блок подзадач открыт.
- * @property {string} detailComment - Черновик текста нового комментария.
- * @property {Array<File>} detailCommentFiles - Файлы для нового комментария.
- * @property {string} detailSubtask - Черновик названия новой подзадачи.
- * @property {string | null} editingCommentId - Данные «редактируемое комментарий id», используемые типом «TaskDetailsDialogProps».
- * @property {string} editingCommentBody - Черновик текста редактируемого комментария.
- * @property {RefObject<HTMLElement | null>} subtasksSectionRef - Ссылка на раздел подзадач для прокрутки.
- * @property {Dispatch<SetStateAction<TaskId | null>>} setDetailsTaskId - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailTitle - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailDescription - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailDueDate - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailLabelInput - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailSaveStatus - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<ProjectId | null>>} setDetailProjectId - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<SectionId | null>>} setDetailSectionId - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<"title" | "description" | null>>} setEditingDetailField - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<boolean>>} setDatePickerOpen - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<boolean>>} setShowMobileLabels - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<boolean>>} setShowMobileComments - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<boolean>>} setShowMobileDate - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<boolean>>} setShowMobileSubtasks - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailComment - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<Array<File>>>} setDetailCommentFiles - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setDetailSubtask - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string | null>>} setEditingCommentId - Обновляет значение соответствующего состояния.
- * @property {Dispatch<SetStateAction<string>>} setEditingCommentBody - Обновляет значение соответствующего состояния.
- * @property {TaskDetailsDialogPropsConfirmDeletion} confirmDeletion - Запрашивает подтверждение перед удалением.
- * @property {TaskDetailsDialogPropsSaveTaskDetails} saveTaskDetails - Сохраняет изменённые поля задачи.
- * @property {TaskDetailsDialogPropsRemoveCommentAttachment} removeCommentAttachment - Удаляет файл, прикреплённый к комментарию.
- * @property {TaskDetailsDialogPropsCloseMobileLabels} closeMobileLabels - Сохраняет метки и закрывает мобильную панель.
- * @property {TaskDetailsDialogPropsCloseMobileComments} closeMobileComments - Закрывает мобильную панель комментариев.
- * @property {TaskDetailsDialogPropsCloseMobileSubtasks} closeMobileSubtasks - Закрывает мобильную панель подзадач.
- * @property {TaskDetailsDialogPropsOpenDetails} openDetails - Открывает окно подробностей задачи.
- * @property {TaskDetailsDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Сообщает о выбранных файлах.
- * @property {TaskDetailsDialogPropsPastedFiles} pastedFiles - Файлы, вставленные из буфера обмена.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {QueryClient} queryClient - Cache client for server queries.
+ * @property {boolean} attachmentsEnabled - Whether the application can upload and serve attachments.
+ * @property {TaskNode | null} selectedDetailsTask - Task shown in the details dialog.
+ * @property {Project | null} selectedDetailsProject - Project containing the selected task.
+ * @property {Section | null} selectedDetailsSection - Section containing the selected task.
+ * @property {TaskNode | null} selectedDetailsParent - Parent of the selected task.
+ * @property {Array<Project>} activeProjects - User's active projects.
+ * @property {Array<Section>} allSections - All sections belonging to the user.
+ * @property {Array<string>} availableLabels - Labels available to assign to the task.
+ * @property {string} detailTitle - Draft task title.
+ * @property {string} detailDescription - Draft task description.
+ * @property {string} detailDueDate - Draft due date.
+ * @property {string} detailLabelInput - Label currently being entered.
+ * @property {string} detailSaveStatus - Status of the pending changes.
+ * @property {ProjectId | null} detailProjectId - Selected project ID, or `null`.
+ * @property {SectionId | null} detailSectionId - Selected section ID, or `null`.
+ * @property {"title" | "description" | null} editingDetailField - Task field currently being edited.
+ * @property {boolean} datePickerOpen - Whether the due date picker is open.
+ * @property {boolean} showMobileLabels - Whether the mobile labels panel is open.
+ * @property {boolean} showMobileComments - Whether the mobile comments panel is open.
+ * @property {boolean} showMobileDate - Whether the mobile due date panel is open.
+ * @property {boolean} showMobileSubtasks - Whether the mobile subtasks panel is open.
+ * @property {string} detailComment - Draft text for a new comment.
+ * @property {Array<File>} detailCommentFiles - Files attached to the new comment.
+ * @property {string} detailSubtask - Draft title for a new subtask.
+ * @property {string | null} editingCommentId - ID of the comment currently being edited.
+ * @property {string} editingCommentBody - Draft text for the comment being edited.
+ * @property {RefObject<HTMLElement | null>} subtasksSectionRef - Reference used to scroll to the subtasks section.
+ * @property {Dispatch<SetStateAction<TaskId | null>>} setDetailsTaskId - Updates the selected task ID.
+ * @property {Dispatch<SetStateAction<string>>} setDetailTitle - Updates the task title draft.
+ * @property {Dispatch<SetStateAction<string>>} setDetailDescription - Updates the task description draft.
+ * @property {Dispatch<SetStateAction<string>>} setDetailDueDate - Updates the due date draft.
+ * @property {Dispatch<SetStateAction<string>>} setDetailLabelInput - Updates the label input.
+ * @property {Dispatch<SetStateAction<string>>} setDetailSaveStatus - Updates the save status.
+ * @property {Dispatch<SetStateAction<ProjectId | null>>} setDetailProjectId - Updates the selected project ID.
+ * @property {Dispatch<SetStateAction<SectionId | null>>} setDetailSectionId - Updates the selected section ID.
+ * @property {Dispatch<SetStateAction<"title" | "description" | null>>} setEditingDetailField - Updates the field being edited.
+ * @property {Dispatch<SetStateAction<boolean>>} setDatePickerOpen - Opens or closes the date picker.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowMobileLabels - Opens or closes the mobile labels panel.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowMobileComments - Opens or closes the mobile comments panel.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowMobileDate - Opens or closes the mobile date panel.
+ * @property {Dispatch<SetStateAction<boolean>>} setShowMobileSubtasks - Opens or closes the mobile subtasks panel.
+ * @property {Dispatch<SetStateAction<string>>} setDetailComment - Updates the new comment draft.
+ * @property {Dispatch<SetStateAction<Array<File>>>} setDetailCommentFiles - Updates files attached to the new comment.
+ * @property {Dispatch<SetStateAction<string>>} setDetailSubtask - Updates the new subtask title.
+ * @property {Dispatch<SetStateAction<string | null>>} setEditingCommentId - Updates the comment being edited.
+ * @property {Dispatch<SetStateAction<string>>} setEditingCommentBody - Updates the comment text draft.
+ * @property {TaskDetailsDialogPropsConfirmDeletion} confirmDeletion - Requests confirmation before deletion.
+ * @property {TaskDetailsDialogPropsSaveTaskDetails} saveTaskDetails - Saves changed task fields.
+ * @property {TaskDetailsDialogPropsRemoveCommentAttachment} removeCommentAttachment - Removes a file attached to a comment.
+ * @property {TaskDetailsDialogPropsCloseMobileLabels} closeMobileLabels - Saves labels and closes the mobile panel.
+ * @property {TaskDetailsDialogPropsCloseMobileComments} closeMobileComments - Closes the mobile comments panel.
+ * @property {TaskDetailsDialogPropsCloseMobileSubtasks} closeMobileSubtasks - Closes the mobile subtasks panel.
+ * @property {TaskDetailsDialogPropsOpenDetails} openDetails - Opens the task details dialog.
+ * @property {TaskDetailsDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Reports the selected files.
+ * @property {TaskDetailsDialogPropsPastedFiles} pastedFiles - Files pasted from the clipboard.
  */
 export type TaskDetailsDialogProps = {
   api: ApplicationApi;
@@ -245,10 +245,10 @@ export type TaskDetailsDialogProps = {
 };
 
 /**
- * Показывает подробности задачи и управляет её текстом, сроком и обсуждением.
+ * Shows task details and manages its text, due date, and discussion.
  *
  * @param {TaskDetailsDialogProps} props
- * @returns Результат выполнения функции.
+ * @returns The rendered task details dialog.
  */
 export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
   const {
@@ -300,7 +300,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
           className="task-details-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            /** Закрываем окно только при нажатии на свободную область вокруг карточки. */
+            /** Close the dialog only when the user clicks outside the card. */
             if (event.target === event.currentTarget) setDetailsTaskId(null);
           }}
         >
@@ -310,19 +310,19 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
             aria-modal="true"
             aria-label={`Task details: ${selectedDetailsTask.title}`}
             onPasteCapture={(event) => {
-              /** Вложения из буфера включаются только в режиме поддержки файлов. */
+              /** Accept clipboard attachments only when file support is enabled. */
               if (!attachmentsEnabled) return;
               const files = pastedFiles(event.clipboardData);
               if (files.length > 0) {
                 event.preventDefault();
-                /** Применяем тот же лимит, что и при выборе файлов через input. */
+                /** Apply the same limit used when selecting files through the input. */
                 const acceptedFiles = files.slice(0, Math.max(0, 10 - detailCommentFiles.length));
                 setDetailCommentFiles([...detailCommentFiles, ...acceptedFiles]);
                 notifyAttachedFiles(acceptedFiles);
               }
             }}
             onKeyDown={(event) => {
-              /** Escape не закрывает окно, пока пользователь редактирует поле или выбирает дату. */
+              /** Escape does not close the dialog while a field or date is being edited. */
               if (event.key === "Escape" && editingDetailField === null && !datePickerOpen)
                 setDetailsTaskId(null);
             }}
@@ -380,7 +380,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                           }
                           if (event.key === "Enter" && !event.shiftKey) {
                             event.preventDefault();
-                            /** Закрываем редактор только после успешного сохранения непустого заголовка. */
+                            /** Close the editor only after a non-empty title is saved successfully. */
                             const value = detailTitle.trim();
                             if (value && (await saveTaskDetails({ title: value })))
                               setEditingDetailField(null);
@@ -401,7 +401,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                           type="button"
                           className="btn-primary"
                           onClick={async () => {
-                            /** Кнопка Save использует ту же проверку, что и клавиша Enter. */
+                            /** The Save button uses the same validation as Enter. */
                             const value = detailTitle.trim();
                             if (value && (await saveTaskDetails({ title: value })))
                               setEditingDetailField(null);
@@ -441,7 +441,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                           }
                           if (event.key === "Enter" && event.ctrlKey) {
                             event.preventDefault();
-                            /** Ctrl+Enter сохраняет многострочное описание, обычный Enter создаёт строку. */
+                            /** Ctrl+Enter saves the multiline description; Enter inserts a new line. */
                             if (await saveTaskDetails({ description: detailDescription }))
                               setEditingDetailField(null);
                           }
@@ -462,7 +462,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                           type="button"
                           className="btn-primary"
                           onClick={async () => {
-                            /** Ошибка сохранения оставляет редактор открытым для повторной попытки. */
+                            /** Keep the editor open after a save error so the user can retry. */
                             if (await saveTaskDetails({ description: detailDescription }))
                               setEditingDetailField(null);
                           }}
@@ -516,7 +516,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                           type="button"
                           aria-label={`Delete subtask ${child.title}`}
                           onClick={async () => {
-                            /** Подтверждение защищает подзадачу и её потомков от случайного удаления. */
+                            /** Confirmation prevents accidental deletion of a subtask and its descendants. */
                             if (!confirmDeletion(`Delete subtask “${child.title}” and its descendants?`))
                               return;
                             await api.deleteTask(child.id);
@@ -536,7 +536,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                         onKeyDown={async (event) => {
                           if (event.key === "Enter" && !event.shiftKey) {
                             event.preventDefault();
-                            /** Пустое название не создаёт подзадачу. */
+                            /** Do not create a subtask with an empty title. */
                             const title = detailSubtask.trim();
                             if (!title) return;
                             await api.createTask(
@@ -555,7 +555,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                         type="button"
                         className="btn-primary"
                         onClick={async () => {
-                          /** Кнопка добавления повторяет клавиатурный путь создания подзадачи. */
+                          /** The Add button follows the same subtask creation path as the keyboard. */
                           const title = detailSubtask.trim();
                           if (!title) return;
                           await api.createTask(
@@ -603,7 +603,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                   aria-label={selectedDetailsTask.dueDate ? "Change date" : "Add date"}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {
-                      /** Отмена восстанавливает срок с сохранённой задачи и закрывает вложенный диалог. */
+                      /** Cancel restores the saved due date and closes the nested dialog. */
                       event.preventDefault();
                       event.stopPropagation();
                       setDetailDueDate(selectedDetailsTask.dueDate ?? "");
@@ -612,7 +612,7 @@ export const TaskDetailsDialog = (props: TaskDetailsDialogProps) => {
                     }
                     if (event.key === "Enter" && (event.target as HTMLElement).tagName !== "BUTTON") {
                       event.preventDefault();
-                      /** Enter в поле даты сохраняет значение, но на кнопке оставляет штатное действие. */
+                      /** Enter saves the date field but keeps the button's default action. */
                       void saveTaskDetails({ dueDate: detailDueDate || null }).then((saved) => {
                         if (saved) setDatePickerOpen(false);
                       });

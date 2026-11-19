@@ -1,16 +1,16 @@
-/** Постоянный UUID встроенной учётной записи администратора по умолчанию. */
+/** Stable UUID for the built-in default administrator account. */
 export const defaultAdminUserId = "00000000-0000-4000-8000-000000000001";
 
 /**
- * Полная внутренняя запись пользователя с секретами и личными настройками.
+ * Full internal user record, including secrets and personal settings.
  *
  * @typedef {Object} UserRecord
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} username - Данные «имя пользователя», используемые типом «UserRecord».
- * @property {string | null} passwordHash - Хеш пароля; сам пароль не хранится.
- * @property {boolean} isAdmin - Признак: is административный.
- * @property {boolean} confirmDelete - Настройка подтверждения перед удалением.
- * @property {string} inboxDescription - Описание списка Входящие.
+ * @property {string} id - Unique user identifier.
+ * @property {string} username - Account username.
+ * @property {string | null} passwordHash - Password hash; the plaintext password is never stored.
+ * @property {boolean} isAdmin - Whether the user is an administrator.
+ * @property {boolean} confirmDelete - Whether to ask for confirmation before deleting.
+ * @property {string} inboxDescription - Description of the Inbox.
  */
 export type UserRecord = {
   id: string;
@@ -27,17 +27,17 @@ export type UserRecord = {
 };
 
 /**
- * Публичные поля пользователя, которые можно возвращать клиенту.
+ * Public user fields that can be returned to the client.
  *
  * @typedef {Object} PublicUser
- * @property {string} id - Идентификатор сущности, с которой работает модуль.
- * @property {string} username - Данные «имя пользователя», используемые типом «PublicUser».
- * @property {boolean} isAdmin - Признак: is административный.
+ * @property {string} id - Unique user identifier.
+ * @property {string} username - Account username.
+ * @property {boolean} isAdmin - Whether the user is an administrator.
  */
 export type PublicUser = { id: string; username: string; isAdmin: boolean };
 
 /**
- * Ищет пользователя по имени входа без учёта регистра.
+ * Finds a user by login name, ignoring letter case.
  *
  * @callback UserRepositoryGetByUsername
  * @param {string} username
@@ -45,7 +45,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Ищет пользователя по UUID.
+ * Finds a user by UUID.
  *
  * @callback UserRepositoryGetById
  * @param {string} id
@@ -53,14 +53,14 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Возвращает публичный список пользователей без паролей и настроек.
+ * Returns the public user list without passwords or settings.
  *
  * @callback UserRepositoryList
  * @returns {Promise<Array<PublicUser>>}
  */
 
 /**
- * Создаёт аккаунт пользователя с заранее захешированным паролем.
+ * Creates a user account with a previously hashed password.
  *
  * @callback UserRepositoryCreate
  * @param {string} username
@@ -70,19 +70,19 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Обновляет переданные поля аккаунта.
+ * Updates the supplied account fields.
  *
  * @callback UserRepositoryUpdate
  * @param {string} id
  * @param {{ username?: string; passwordHash?: string; isAdmin?: boolean; }} patch
- * @param {string} patch.username - Значение поля «username».
- * @param {string} patch.passwordHash - Значение поля «password hash».
- * @param {boolean} patch.isAdmin - Признак «is admin».
+ * @param {string} patch.username - New username.
+ * @param {string} patch.passwordHash - New password hash.
+ * @param {boolean} patch.isAdmin - Whether the user is an administrator.
  * @returns {Promise<PublicUser | null>}
  */
 
 /**
- * Меняет пароль и отзывает активные сессии пользователя.
+ * Changes the password and revokes the user's active sessions.
  *
  * @callback UserRepositorySetPassword
  * @param {string} id
@@ -91,7 +91,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Удаляет пользователя и его сессии.
+ * Deletes a user and their sessions.
  *
  * @callback UserRepositoryDelete
  * @param {string} id
@@ -99,14 +99,14 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Проверяет, существует ли аккаунт с настроенным паролем.
+ * Checks whether any account has a configured password.
  *
  * @callback UserRepositoryHasPasswordUsers
  * @returns {Promise<boolean>}
  */
 
 /**
- * Сохраняет хеш токена и срок действия сессии.
+ * Stores a session token hash and its expiration time.
  *
  * @callback UserRepositorySaveSession
  * @param {string} tokenHash
@@ -116,7 +116,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Возвращает пользователя действующей сессии или `null`.
+ * Returns the user for an active session, or `null`.
  *
  * @callback UserRepositoryGetSessionUserId
  * @param {string} tokenHash
@@ -125,7 +125,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Удаляет одну сессию по хешу токена.
+ * Deletes one session by its token hash.
  *
  * @callback UserRepositoryDeleteSession
  * @param {string} tokenHash
@@ -133,7 +133,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Отзывает все сессии пользователя.
+ * Revokes all sessions belonging to a user.
  *
  * @callback UserRepositoryDeleteAllSessions
  * @param {string} userId
@@ -141,7 +141,7 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Сохраняет настройки подтверждения удаления и/или описание Входящих.
+ * Saves deletion confirmation settings and/or the Inbox description.
  *
  * @callback UserRepositorySavePreferences
  * @param {string} id
@@ -151,29 +151,29 @@ export type PublicUser = { id: string; username: string; isAdmin: boolean };
  */
 
 /**
- * Освобождает соединения и ресурсы репозитория.
+ * Releases repository connections and resources.
  *
  * @callback UserRepositoryClose
  * @returns {Promise<void>}
  */
 /**
- * Операции для хранения пользователей, их настроек, паролей и сессий.
+ * Operations for storing users, their settings, passwords, and sessions.
  *
  * @typedef {Object} UserRepository
- * @property {UserRepositoryGetByUsername} getByUsername - Ищет аккаунт по имени для входа.
- * @property {UserRepositoryGetById} getById - Ищет аккаунт по идентификатору.
- * @property {UserRepositoryList} list - Возвращает все аккаунты.
- * @property {UserRepositoryCreate} create - Создаёт новый аккаунт.
- * @property {UserRepositoryUpdate} update - Обновляет имя входа и административные права.
- * @property {UserRepositorySetPassword} setPassword - Сохраняет хеш нового пароля.
- * @property {UserRepositoryDelete} delete - Удаляет аккаунт вместе со связанными данными.
- * @property {UserRepositoryHasPasswordUsers} hasPasswordUsers - Проверяет, есть ли аккаунты с настроенным паролем.
- * @property {UserRepositorySaveSession} saveSession - Сохраняет сессию пользователя.
- * @property {UserRepositoryGetSessionUserId} getSessionUserId - Возвращает владельца действующей сессии.
- * @property {UserRepositoryDeleteSession} deleteSession - Завершает одну сессию пользователя.
- * @property {UserRepositoryDeleteAllSessions} deleteAllSessions - Завершает все сессии пользователя.
- * @property {UserRepositorySavePreferences} savePreferences - Сохраняет настройки пользователя.
- * @property {UserRepositoryClose} close - Освобождает ресурсы хранилища пользователей.
+ * @property {UserRepositoryGetByUsername} getByUsername - Finds an account by login name.
+ * @property {UserRepositoryGetById} getById - Finds an account by ID.
+ * @property {UserRepositoryList} list - Returns all accounts.
+ * @property {UserRepositoryCreate} create - Creates an account.
+ * @property {UserRepositoryUpdate} update - Updates the login name and administrator privileges.
+ * @property {UserRepositorySetPassword} setPassword - Stores a new password hash.
+ * @property {UserRepositoryDelete} delete - Deletes an account and its related data.
+ * @property {UserRepositoryHasPasswordUsers} hasPasswordUsers - Checks whether any account has a configured password.
+ * @property {UserRepositorySaveSession} saveSession - Stores a user session.
+ * @property {UserRepositoryGetSessionUserId} getSessionUserId - Returns the owner of an active session.
+ * @property {UserRepositoryDeleteSession} deleteSession - Ends one user session.
+ * @property {UserRepositoryDeleteAllSessions} deleteAllSessions - Ends all user sessions.
+ * @property {UserRepositorySavePreferences} savePreferences - Saves user settings.
+ * @property {UserRepositoryClose} close - Releases user repository resources.
  */
 export type UserRepository = {
   getByUsername: (username: string) => Promise<UserRecord | null>;
@@ -216,7 +216,7 @@ export type UserRepository = {
 };
 
 /**
- * Создаёт изолированное in-memory хранилище пользователей для разработки и тестов.
+ * Creates an isolated in-memory user store for development and tests.
  *
  * @param {Array<UserRecord>} [initial]
  * @returns {UserRepository}
@@ -233,9 +233,9 @@ export const createMemoryUserRepository = (
     },
   ],
 ): UserRepository => {
-  /** Копируем исходные записи, чтобы последующие изменения не меняли аргумент вызова. */
+  /** Copy the initial records so later updates do not mutate the argument. */
   let users = initial.map((user) => ({ ...user }));
-  /** В памяти хранятся только хеши токенов сессий, не исходные секреты. */
+  /** Store only session token hashes in memory, never the original secrets. */
   let sessions = [] as Array<{ tokenHash: string; userId: string; expiresAt: Date }>;
 
   return {
@@ -244,7 +244,7 @@ export const createMemoryUserRepository = (
     getById: async (id) => users.find((user) => user.id === id) ?? null,
     list: async () => users.map(({ id, username, isAdmin }) => ({ id, username, isAdmin })),
     create: async (username, passwordHash, isAdmin) => {
-      /** Сравнение без учёта регистра повторяет уникальность имён в базе данных. */
+      /** Case-insensitive comparison matches the database username constraint. */
       if (users.some((user) => user.username.toLowerCase() === username.toLowerCase()))
         throw new Error("Username already exists");
       const user = {
@@ -259,7 +259,7 @@ export const createMemoryUserRepository = (
       return { id: user.id, username: user.username, isAdmin: user.isAdmin };
     },
     update: async (id, patch) => {
-      /** Не меняем учётную запись, если пользователь отсутствует или имя уже занято. */
+      /** Do not update the account if the user is missing or the name is already taken. */
       const existing = users.find((user) => user.id === id);
       const nextUsername = patch.username;
       if (
@@ -270,19 +270,19 @@ export const createMemoryUserRepository = (
         return null;
       const updated = { ...existing, ...patch };
       users = users.map((user) => (user.id === id ? updated : user));
-      /** Смена пароля отзывает все активные сессии пользователя. */
+      /** Changing a password revokes all active sessions for that user. */
       if (patch.passwordHash !== undefined) sessions = sessions.filter((session) => session.userId !== id);
       return { id: updated.id, username: updated.username, isAdmin: updated.isAdmin };
     },
     setPassword: async (id, passwordHash) => {
-      /** Смена пароля должна немедленно завершить прежние сессии пользователя. */
+      /** Password changes must immediately end the user's existing sessions. */
       if (!users.some((user) => user.id === id)) return false;
       users = users.map((user) => (user.id === id ? { ...user, passwordHash } : user));
       sessions = sessions.filter((session) => session.userId !== id);
       return true;
     },
     delete: async (id) => {
-      /** Вместе с пользователем удаляем связанные с ним сессии. */
+      /** Delete the user's sessions along with the account. */
       const exists = users.some((user) => user.id === id);
       users = users.filter((user) => user.id !== id);
       sessions = sessions.filter((session) => session.userId !== id);
@@ -290,13 +290,13 @@ export const createMemoryUserRepository = (
     },
     hasPasswordUsers: async () => users.some((user) => user.passwordHash !== null),
     saveSession: async (tokenHash, userId, expiresAt) => {
-      /** Повторная запись того же токена заменяет его прежнюю привязку и срок действия. */
+      /** Saving the same token again replaces its previous user mapping and expiration. */
       sessions = [
         ...sessions.filter((session) => session.tokenHash !== tokenHash),
         { tokenHash, userId, expiresAt },
       ];
     },
-    /** Просроченные сессии не удостоверяют личность пользователя. */
+    /** Expired sessions cannot authenticate a user. */
     getSessionUserId: async (tokenHash, now) =>
       sessions.find((session) => session.tokenHash === tokenHash && session.expiresAt > now)?.userId ?? null,
     deleteSession: async (tokenHash) => {
@@ -306,7 +306,7 @@ export const createMemoryUserRepository = (
       sessions = sessions.filter((session) => session.userId !== userId);
     },
     savePreferences: async (id, confirmDelete, inboxDescription) => {
-      /** Не переданное описание оставляет прежнее значение без изменений. */
+      /** An omitted description leaves the existing value unchanged. */
       users = users.map((user) =>
         user.id === id
           ? {

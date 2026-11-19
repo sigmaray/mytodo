@@ -12,19 +12,19 @@ import { createTaskAppDragActions } from "./useTaskAppDragActions";
 import type { TaskAppActionsState } from "./useTaskAppState";
 
 /**
- * Зависимости и состояние, из которых хук собирает обработчики workspace.
+ * Dependencies and state used by the hook to build workspace handlers.
  *
  * @typedef {Object} TaskAppActionInput
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {QueryClient} queryClient - Клиент кэша серверных запросов.
- * @property {TaskAppActionsState} state - Данные текущего рабочего пространства.
- * @property {boolean} attachmentsEnabled - Разрешено ли работать с вложениями.
- * @property {boolean} projectArchivingEnabled - Разрешено ли архивировать проекты.
- * @property {Array<TaskNode> | undefined} taskData - Задачи, полученные из серверного запроса.
- * @property {Array<Project> | undefined} projectData - Проекты, полученные из серверного запроса.
- * @property {Array<Section> | undefined} sectionData - Секции, полученные из серверного запроса.
- * @property {{ confirmDelete: boolean } | undefined} settings - Обновляет значение соответствующего состояния.
- * @property {boolean} settings.confirmDelete - Настройка, определяющая необходимость подтверждать удаление.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {QueryClient} queryClient - Cache client for server queries.
+ * @property {TaskAppActionsState} state - Current workspace data.
+ * @property {boolean} attachmentsEnabled - Whether attachments can be used.
+ * @property {boolean} projectArchivingEnabled - Whether projects can be archived.
+ * @property {Array<TaskNode> | undefined} taskData - Tasks returned by the server query.
+ * @property {Array<Project> | undefined} projectData - Projects returned by the server query.
+ * @property {Array<Section> | undefined} sectionData - Sections returned by the server query.
+ * @property {{ confirmDelete: boolean } | undefined} settings - User settings.
+ * @property {boolean} settings.confirmDelete - Whether deletion requires confirmation.
  */
 type TaskAppActionInput = {
   api: ApplicationApi;
@@ -47,10 +47,10 @@ type TaskAppActionInput = {
 };
 
 /**
- * Создаёт пользовательские обработчики и связывает их с доменными мутациями.
+ * Creates user-facing handlers and connects them to domain mutations.
  *
  * @param {TaskAppActionInput} parameter1
- * @returns Результат выполнения функции.
+ * @returns Workspace action handlers.
  */
 export const useTaskAppActions = ({
   api,
@@ -203,7 +203,7 @@ export const useTaskAppActions = ({
   );
   const selectedRootTasks = scopeRootTasks.filter((task) => selectedRootTaskIds.includes(task.id));
   /**
-   * Групповое перемещение корня включает и все его дочерние задачи.
+   * Bulk-moving a root task also moves all of its descendants.
    *
    * @param {TaskNode} task
    * @returns {Array<TaskId>}
@@ -219,13 +219,13 @@ export const useTaskAppActions = ({
     setSelectedMoveOpen(false);
   };
   const rootTaskForSelection = (task: TaskNode): TaskNode => {
-    /** Выбор всегда хранит только корневые задачи, даже если клик пришёлся на потомка. */
+    /** Store only root tasks in the selection, even when a descendant was clicked. */
     if (task.parentId === null) return task;
     const parent = findTaskNode(allTasks, task.parentId);
     return parent === null ? task : rootTaskForSelection(parent);
   };
   const toggleTaskSelection = (task: TaskNode) => {
-    /** В режиме выбора разрешены только задачи текущего Inbox/project scope. */
+    /** In selection mode, allow only tasks from the current Inbox or project scope. */
     if (!selectionMode) return;
     const rootTask = rootTaskForSelection(task);
     if (!scopeRootTasks.some((candidate) => candidate.id === rootTask.id)) return;
@@ -235,13 +235,13 @@ export const useTaskAppActions = ({
   };
   const availableLabels = normalizeLabels(flatTasks.flatMap((task) => task.labels));
   useEffect(() => {
-    /** Quick-add URL открывает форму в текущем списке и очищает одноразовый параметр. */
+    /** A quick-add URL opens the form in the current list and clears its one-time parameter. */
     if (new URLSearchParams(window.location.search).get("addTask") === "1") {
       setAddTaskPlacement(targetProjectId === null ? inboxPlacement : projectPlacement(targetProjectId));
       setAddTaskOpen(true);
       window.history.replaceState({}, "", window.location.pathname);
     }
-    /** Ссылка на задачу открывает её детали после того, как дерево задач загружено. */
+    /** Open task details from a link after the task tree has loaded. */
     const taskId = new URLSearchParams(window.location.search).get("task");
     const task = taskId === null ? null : findTaskNode(allTasks, taskId);
     if (task !== null) {
@@ -277,7 +277,7 @@ export const useTaskAppActions = ({
     setDetailSaveStatus("Saving…");
     try {
       const updatedTask = await api.updateTask(selectedDetailsTask.id, patch);
-      /** Обновляем узел на месте в дереве, сохраняя уже загруженные дочерние узлы. */
+      /** Update the node in place while preserving its already-loaded child nodes. */
       queryClient.setQueryData<Array<TaskNode>>(taskQueryKey, (current) => {
         if (current === undefined) return current;
         const updateNode = (node: TaskNode): TaskNode =>
@@ -289,14 +289,14 @@ export const useTaskAppActions = ({
       setDetailSaveStatus("Saved");
       return true;
     } catch {
-      /** Старое значение остаётся в кэше; статус сообщает пользователю о неудачной записи. */
+      /** Keep the old value in the cache and show a status when saving fails. */
       setDetailSaveStatus("Could not save changes");
       return false;
     }
   };
   const removeCommentAttachment = async (commentId: string, attachmentId: string) => {
     if (selectedDetailsTask === null || !attachmentsEnabled) return;
-    /** Удаляем пустой комментарий целиком, если в нём не осталось текста и вложений. */
+    /** Remove an empty comment if it has no text or attachments left. */
     const comments = selectedDetailsTask.comments.flatMap((comment) => {
       if (comment.id !== commentId) return [comment];
       const attachments = (comment.attachments ?? []).filter((attachment) => attachment.id !== attachmentId);
@@ -311,7 +311,7 @@ export const useTaskAppActions = ({
     if (selectedDetailsTask === null) return;
     if (selectedDetailsTask.labels.length > 0 && !window.confirm("Remove all saved labels from this task?"))
       return;
-    /** Сначала закрываем секцию и очищаем черновик, затем сохраняем удаление меток. */
+    /** Close the section and clear the draft before saving the label removal. */
     setShowMobileLabels(false);
     setDetailLabelInput("");
     if (selectedDetailsTask.labels.length > 0) await saveTaskDetails({ labels: [] });
@@ -323,7 +323,7 @@ export const useTaskAppActions = ({
       !window.confirm("Remove all saved comments from this task?")
     )
       return;
-    /** Подтверждение выше защищает уже сохранённые комментарии от случайного удаления. */
+    /** The confirmation above protects saved comments from accidental deletion. */
     setShowMobileComments(false);
     setDetailComment("");
     if (selectedDetailsTask.comments.length > 0) await saveTaskDetails({ comments: [] });
@@ -337,7 +337,7 @@ export const useTaskAppActions = ({
       return;
     setShowMobileSubtasks(false);
     setDetailSubtask("");
-    /** Каждое удаление корневой подзадачи каскадно удаляет и её потомков на сервере. */
+    /** Deleting a root subtask also cascades to its descendants on the server. */
     await Promise.all(selectedDetailsTask.children.map((child) => api.deleteTask(child.id)));
     if (selectedDetailsTask.children.length > 0)
       await queryClient.invalidateQueries({ queryKey: taskQueryKey });

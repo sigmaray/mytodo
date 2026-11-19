@@ -4,14 +4,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DragEvent } from "react";
 
 /**
- * День календарной сетки и признаки его визуального состояния.
+ * Calendar grid day and its visual state flags.
  *
  * @typedef {Object} CalendarDay
- * @property {string} date - Дата календарного дня.
- * @property {number} day - Номер дня месяца.
- * @property {boolean} isCurrentMonth - Признак: is текущие месяц.
- * @property {boolean} isToday - Признак: is today.
- * @property {boolean} isWeekend - Признак: is weekend.
+ * @property {string} date - Calendar date.
+ * @property {number} day - Day of the month.
+ * @property {boolean} isCurrentMonth - Whether the day belongs to the current month.
+ * @property {boolean} isToday - Whether the day is today.
+ * @property {boolean} isWeekend - Whether the day falls on a weekend.
  */
 type CalendarDay = {
   date: string;
@@ -83,26 +83,26 @@ type CalendarDay = {
  * @returns {void}
  */
 /**
- * Данные календарной сетки и обработчики навигации, выбора и drag-and-drop.
+ * Calendar grid data and handlers for navigation, selection, and drag and drop.
  *
  * @typedef {Object} CalendarPanelProps
- * @property {string} month - Месяц календаря.
- * @property {string} label - Данные «метка», используемые типом «CalendarPanelProps».
- * @property {Array<CalendarDay>} days - Ячейки календарной сетки.
- * @property {Array<string>} weekdays - Краткие названия дней недели.
- * @property {Array<Task>} tasks - Список задачи.
- * @property {number} taskCount - Количество задач.
- * @property {string | null} activeDate - Дата, выбранная в календаре.
- * @property {CalendarPanelPropsLocationForTask} locationForTask - Определяет положение задачи в списке.
- * @property {CalendarPanelPropsOnMonthChange} onMonthChange - Обрабатывает выбор другого месяца.
- * @property {CalendarPanelPropsOnShiftMonth} onShiftMonth - Переключает календарь на соседний месяц.
- * @property {CalendarPanelPropsOnToday} onToday - Выбирает текущую дату.
- * @property {CalendarPanelPropsOnMarkDate} onMarkDate - Помечает дату в календаре.
- * @property {CalendarPanelPropsOnDropDate} onDropDate - Обрабатывает перенос задачи на дату.
- * @property {CalendarPanelPropsOnLeaveDate} onLeaveDate - Обрабатывает завершение перетаскивания над датой.
- * @property {CalendarPanelPropsOnTaskDragStart} onTaskDragStart - Начинает перетаскивание задачи.
- * @property {CalendarPanelPropsOnTaskDragEnd} onTaskDragEnd - Завершает перетаскивание задачи.
- * @property {CalendarPanelPropsOnTaskOpen} onTaskOpen - Открывает подробности задачи.
+ * @property {string} month - Calendar month.
+ * @property {string} label - Accessible label for the calendar.
+ * @property {Array<CalendarDay>} days - Calendar grid cells.
+ * @property {Array<string>} weekdays - Short weekday names.
+ * @property {Array<Task>} tasks - Tasks displayed in the calendar.
+ * @property {number} taskCount - Number of tasks.
+ * @property {string | null} activeDate - Date currently selected in the calendar.
+ * @property {CalendarPanelPropsLocationForTask} locationForTask - Determines a task's position in the list.
+ * @property {CalendarPanelPropsOnMonthChange} onMonthChange - Handles selecting another month.
+ * @property {CalendarPanelPropsOnShiftMonth} onShiftMonth - Moves the calendar to an adjacent month.
+ * @property {CalendarPanelPropsOnToday} onToday - Selects today's date.
+ * @property {CalendarPanelPropsOnMarkDate} onMarkDate - Marks a date in the calendar.
+ * @property {CalendarPanelPropsOnDropDate} onDropDate - Handles dropping a task on a date.
+ * @property {CalendarPanelPropsOnLeaveDate} onLeaveDate - Handles ending a drag over a date.
+ * @property {CalendarPanelPropsOnTaskDragStart} onTaskDragStart - Starts dragging a task.
+ * @property {CalendarPanelPropsOnTaskDragEnd} onTaskDragEnd - Ends dragging a task.
+ * @property {CalendarPanelPropsOnTaskOpen} onTaskOpen - Opens task details.
  */
 export type CalendarPanelProps = {
   month: string;
@@ -141,7 +141,7 @@ export type CalendarPanelProps = {
 };
 
 /**
- * Отрисовывает календарную сетку, сроки задач и список выбранного дня.
+ * Renders the calendar grid, task due dates, and the selected day's task list.
  *
  * @param {CalendarPanelProps} parameter1
  */
@@ -189,7 +189,7 @@ export const CalendarPanel = ({
             type="month"
             value={month}
             onChange={(event) => {
-              /** Пустой ввод month не заменяет последнее валидное отображение календаря. */
+              /** An empty month input must not replace the last valid calendar view. */
               if (event.target.value) onMonthChange(event.target.value);
             }}
           />
@@ -222,7 +222,7 @@ export const CalendarPanel = ({
                 aria-label={`Tasks for ${day.date}`}
                 onDragOver={onMarkDate(day.date)}
                 onDragLeave={(event) => {
-                  /** Не сбрасываем подсветку, пока указатель перемещается между дочерними элементами ячейки. */
+                  /** Keep the highlight while the pointer moves between child elements in the cell. */
                   if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onLeaveDate();
                 }}
                 onDrop={onDropDate(day.date)}

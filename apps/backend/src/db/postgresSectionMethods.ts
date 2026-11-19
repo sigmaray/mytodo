@@ -7,7 +7,7 @@ import { firstSection, nullableEq, sectionOrder, toSection } from "./postgresHel
 import { projects as projectsTable, sections as sectionsTable } from "./schema";
 
 /**
- * Создаёт операции с секциями, ограниченные владельцем репозитория.
+ * Creates section operations scoped to the repository owner.
  *
  * @param {ReturnType<typeof drizzle>} db
  * @param {postgres.Sql} client
@@ -22,7 +22,7 @@ export const createPostgresSectionMethods = (
   TaskRepository,
   "listSections" | "reorderSection" | "createSection" | "updateSection" | "deleteSection"
 > => ({
-  /** Возвращает секции пользователя в порядке их ключей. */
+  /** Returns the user's sections ordered by their sort keys. */
   listSections: async () => {
     const rows = await db
       .select()
@@ -32,7 +32,7 @@ export const createPostgresSectionMethods = (
 
     return rows.map(toSection);
   },
-  /** Перемещает секцию среди секций того же проекта. */
+  /** Reorders a section among the sections in the same project. */
   reorderSection: async (id, beforeId, afterId) => {
     const current = await db
       .select()
@@ -62,7 +62,7 @@ export const createPostgresSectionMethods = (
       .returning();
     return firstSection(rows);
   },
-  /** Создаёт секцию после последней секции выбранного проекта. */
+  /** Creates a section after the last section in the selected project. */
   createSection: async (title, projectId) => {
     if (
       projectId !== null &&
@@ -98,7 +98,7 @@ export const createPostgresSectionMethods = (
 
     return section;
   },
-  /** Переименовывает секцию пользователя. */
+  /** Renames a section owned by the user. */
   updateSection: async (id, title) => {
     const rows = await db
       .update(sectionsTable)
@@ -111,7 +111,7 @@ export const createPostgresSectionMethods = (
 
     return firstSection(rows);
   },
-  /** Удаляет секцию, оставляя её задачи в проекте на корневом уровне. */
+  /** Deletes a section and leaves its tasks at the project root. */
   deleteSection: async (id) => {
     return client.begin(async (transaction) => {
       const existing = await transaction<

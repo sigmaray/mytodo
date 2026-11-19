@@ -2,14 +2,14 @@ import { defineConfig } from "drizzle-kit";
 import { getDatabaseUrl } from "./src/database-url";
 
 export default defineConfig({
-  /** Генерирует SQL для используемой PostgreSQL-базы. */
+  /** Generates SQL for the configured PostgreSQL database. */
   dialect: "postgresql",
-  /** Описывает таблицы и связи приложения. */
+  /** Defines the application's tables and relationships. */
   schema: "./src/db/schema.ts",
-  /** Каталог миграций Drizzle. */
+  /** Drizzle migration directory. */
   out: "./drizzle",
   dbCredentials: {
-    /** Использует единый разбор URL для CLI и сервера. */
+    /** Uses the same URL parsing logic as the CLI and server. */
     url: getDatabaseUrl(),
   },
 });

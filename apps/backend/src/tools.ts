@@ -4,24 +4,24 @@ import postgres from "postgres";
 import { z } from "zod";
 import { defaultAdminUserId } from "./users";
 
-/** Проверяет имя таблицы, которую администратор выбрал в инструментах базы данных. */
+/** Validates a table name selected by the administrator in database tools. */
 const tableSchema = z.object({
   table: z.string().trim().min(1),
 });
 
-/** Проверяет SQL-запрос, переданный через административную панель инструментов. */
+/** Validates an SQL query submitted through the administration tools panel. */
 const querySchema = z.object({
   sql: z.string().trim().min(1),
 });
 
-/** Разрешённый синтаксис SQL-идентификатора до его экранирования. */
+/** Allowed SQL identifier syntax before escaping. */
 const tableNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /**
- * Экранирует идентификатор таблицы для безопасной вставки в SQL-команду.
+ * Escapes a table identifier so it can be safely included in an SQL statement.
  *
  * @param {string} name
- * @returns Результат выполнения функции.
+ * @returns The escaped identifier.
  */
 const quoteIdentifier = (name: string) => {
   if (!tableNamePattern.test(name)) {
@@ -31,9 +31,9 @@ const quoteIdentifier = (name: string) => {
   return `"${name}"`;
 };
 
-/** Полный список миграций, применяемых инструментом ручной настройки схемы. */
+/** Complete list of migrations used by the manual schema setup tool. */
 const migrationFiles = [
-  /** Порядок важен: миграции применяются последовательно от исходной схемы к текущей. */
+  /** Order matters: migrations run sequentially from the initial schema to the current one. */
   new URL("../drizzle/0000_create_tasks.sql", import.meta.url),
   new URL("../drizzle/0001_settings_auth.sql", import.meta.url),
   new URL("../drizzle/0002_task_details_archives.sql", import.meta.url),
@@ -46,10 +46,10 @@ const migrationFiles = [
   new URL("../drizzle/0009_database_constraints_and_indexes.sql", import.meta.url),
   new URL("../drizzle/0010_uuid_user_ids.sql", import.meta.url),
 ];
-/** Таблицы аккаунтов и сессий, которые нельзя очищать инструментами данных. */
+/** Account and session tables that data tools must not clear. */
 const protectedTables = ["sessions", "users"];
 
-/** Набор предсказуемых задач для проверки вложенности после заполнения базы. */
+/** Predictable sample tasks used to verify nesting after seeding the database. */
 const seedTasks = [
   {
     id: "seed-inbox",
@@ -66,10 +66,10 @@ const seedTasks = [
 ];
 
 /**
- * Разбирает тело JSON-запроса инструментов или возвращает пустой объект.
+ * Parses a tools request JSON body or returns an empty object.
  *
  * @param {Request} request
- * @returns Результат выполнения функции.
+ * @returns The parsed request body.
  */
 const parseJson = async (request: Request) => {
   const contentType = request.headers.get("content-type") ?? "";
@@ -82,7 +82,7 @@ const parseJson = async (request: Request) => {
 };
 
 /**
- * Получает имена прикладных таблиц текущей схемы PostgreSQL.
+ * Returns the application table names in the current PostgreSQL schema.
  *
  * @param {postgres.Sql} sql
  */
@@ -96,11 +96,11 @@ const listTables = async (sql: postgres.Sql) =>
   `;
 
 /**
- * Очищает таблицу по имени из допустимого набора.
+ * Clears a table whose name is in the allowed set.
  *
  * @param {postgres.Sql} sql
  * @param {string} table
- * @returns Результат выполнения функции.
+ * @returns Whether the table was cleared.
  */
 const clearTable = async (sql: postgres.Sql, table: string) => {
   if (protectedTables.includes(table)) {
@@ -113,28 +113,28 @@ const clearTable = async (sql: postgres.Sql, table: string) => {
 };
 
 /**
- * Очищает данные прикладных таблиц, не затрагивая защищённые учётные записи.
+ * Clears application table data while preserving protected accounts.
  *
  * @param {postgres.Sql} sql
- * @returns Результат выполнения функции.
+ * @returns The result of clearing the tables.
  */
 const clearAllTables = async (sql: postgres.Sql) => {
-  /** Служебные аккаунты и сессии сохраняются, чтобы администратор не потерял доступ. */
+  /** Preserve service accounts and sessions so the administrator retains access. */
   const tables = (await listTables(sql)).filter((table) => !protectedTables.includes(table.table_name));
 
-  /** Независимые таблицы очищаются параллельно после получения единого списка. */
+  /** Clear independent tables in parallel after collecting the complete table list. */
   await Promise.all(tables.map((table) => clearTable(sql, table.table_name)));
 
   return { tables: tables.map((table) => table.table_name) };
 };
 
 /**
- * Удаляет прикладные таблицы и связанные объекты схемы для явного сброса БД.
+ * Drops application tables and related schema objects for an explicit database reset.
  *
  * @param {postgres.Sql} sql
  */
 const dropAllTables = async (sql: postgres.Sql) => {
-  /** Имена берутся из системного каталога, а PostgreSQL форматирует их как идентификаторы. */
+  /** Read names from the system catalog and let PostgreSQL format them as identifiers. */
   await sql`
     DO $$
     DECLARE item RECORD;
@@ -151,25 +151,25 @@ const dropAllTables = async (sql: postgres.Sql) => {
 };
 
 /**
- * Последовательно применяет встроенные SQL-миграции и отмечает их выполнение.
+ * Applies the built-in SQL migrations in order and records their completion.
  *
  * @param {postgres.Sql} sql
  */
 const migrate = async (sql: postgres.Sql) => {
   for (const migrationFile of migrationFiles) {
-    /** Эти миграции запускаются административным endpoint и содержат собственную идемпотентность. */
+    /** These migrations run through the admin endpoint and are idempotent. */
     await sql.unsafe(await readFile(migrationFile, "utf8"));
   }
 };
 
 /**
- * Наполняет базу демонстрационными задачами для начальной настройки и проверки.
+ * Seeds the database with sample tasks for initial setup and verification.
  *
  * @param {postgres.Sql} sql
- * @returns Результат выполнения функции.
+ * @returns The result of seeding the database.
  */
 const seed = async (sql: postgres.Sql) => {
-  /** Сначала подготавливаем схему, чтобы заполнение работало и на пустой базе. */
+  /** Prepare the schema first so seeding also works on an empty database. */
   await migrate(sql);
   await Promise.all(
     seedTasks.map(
@@ -192,11 +192,11 @@ const seed = async (sql: postgres.Sql) => {
 };
 
 /**
- * Создаёт административный Hono-маршрутизатор для обслуживания базы данных.
+ * Creates an administrative Hono router for database maintenance.
  *
  * @param {string} databaseUrl
  * @param {string} mode
- * @returns Результат выполнения функции.
+ * @returns The database tools router.
  */
 export const createToolsRouter = (databaseUrl: string, mode: string) => {
   const router = new Hono();
@@ -204,7 +204,7 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
   const sql = postgres(databaseUrl, { max: 1 });
 
   router.use("*", async (context, next) => {
-    /** Роутер скрывает инструменты в production даже при прямом обращении к API. */
+    /** Hide these tools in production, including for direct API requests. */
     if (!enabled) {
       return context.json({ error: "Tools are disabled" }, 404);
     }
@@ -213,14 +213,14 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
   });
 
   router.get("/tables", async (context) => {
-    /** Возвращаем только имена таблиц, доступных в текущей схеме. */
+    /** Return only table names available in the current schema. */
     const tables = await listTables(sql);
 
     return context.json({ tables: tables.map((table) => table.table_name) });
   });
 
   router.get("/records/:table", async (context) => {
-    /** Проверяем имя таблицы и ограничиваем допустимый размер выборки перед SQL-запросом. */
+    /** Validate the table name and limit the allowed result size before querying SQL. */
     const table = context.req.param("table");
     const limitParam = context.req.query("limit") ?? "10";
     const limit = limitParam === "all" ? null : Number(limitParam);
@@ -229,7 +229,7 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
       return context.json({ error: "Unknown table" }, 404);
     if (limit !== null && limit !== 10 && limit !== 100)
       return context.json({ error: "Limit must be 10, 100, or all" }, 400);
-    /** Для предсказуемого просмотра выбираем сортировку по created_at или id, если колонка есть. */
+    /** For predictable results, sort by created_at or id when that column exists. */
     const columns = await sql<
       { column_name: string }[]
     >`SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ${table}`;
@@ -245,7 +245,7 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
   });
 
   router.post("/clear-table", async (context) => {
-    /** Отдельный endpoint очищает только одну непубличную таблицу. */
+    /** This endpoint clears only one non-protected table. */
     const result = tableSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -262,35 +262,35 @@ export const createToolsRouter = (databaseUrl: string, mode: string) => {
   });
 
   router.post("/clear-all", async (context) => {
-    /** Сбрасывает пользовательские данные, оставляя таблицы пользователей и сессий. */
+    /** Clear user data while preserving the user and session tables. */
     const cleared = await clearAllTables(sql);
 
     return context.json({ cleared });
   });
 
   router.post("/drop-all", async (context) => {
-    /** Удаление таблиц является отдельной административной операцией. */
+    /** Dropping tables is a separate administrative operation. */
     await dropAllTables(sql);
 
     return context.json({ dropped: true });
   });
 
   router.post("/migrate", async (context) => {
-    /** Применяет миграции до возврата результата клиенту. */
+    /** Apply migrations before returning the result to the client. */
     await migrate(sql);
 
     return context.json({ migrated: true });
   });
 
   router.post("/seed", async (context) => {
-    /** Заполняет БД демонстрационными задачами для проверки локальной установки. */
+    /** Seed the database with sample tasks to verify a local installation. */
     const seeded = await seed(sql);
 
     return context.json({ seeded });
   });
 
   router.post("/query", async (context) => {
-    /** SQL endpoint предназначен для диагностики и выполняется только в development/test. */
+    /** The SQL endpoint is for diagnostics and runs only in development or test. */
     const result = querySchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {

@@ -1,5 +1,5 @@
--- Уточняет типы дат и JSON, проверяет принадлежность секции проекту и добавляет рабочие индексы.
--- Преобразуем корректные текстовые даты в DATE, а некорректные legacy-значения заменяем на NULL.
+-- Refines date and JSON types, validates section ownership, and adds operational indexes.
+-- Convert valid text dates to DATE and replace invalid legacy values with NULL.
 DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -17,7 +17,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Согласуем старые задачи с проектом их секции до включения ограничения целостности.
+-- Align legacy tasks with their section project before enforcing the integrity constraint.
 UPDATE "tasks" AS task
 SET "project_id" = section."project_id"
 FROM "sections" AS section
@@ -25,7 +25,7 @@ WHERE task."section_id" = section."id"
   AND task."user_id" = section."user_id"
   AND task."project_id" IS DISTINCT FROM section."project_id";
 
--- Гарантируем, что вложения каждого комментария представлены JSON-массивом.
+-- Ensure each comment's attachments are represented as a JSON array.
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint WHERE conname = 'task_comments_attachments_array_check'
@@ -36,7 +36,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Запрещаем сохранять задачу в секции, принадлежащей другому проекту или пользователю.
+-- Prevent tasks from being stored in a section owned by another project or user.
 CREATE OR REPLACE FUNCTION enforce_task_section_project_match()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -58,7 +58,7 @@ CREATE TRIGGER "tasks_section_project_match"
 BEFORE INSERT OR UPDATE OF "section_id", "project_id", "user_id" ON "tasks"
 FOR EACH ROW EXECUTE FUNCTION enforce_task_section_project_match();
 
--- Индексы ускоряют поиск сессий, связей владельца и сортировку соседних задач.
+-- Indexes speed up session lookups, ownership joins, and sorting neighboring tasks.
 CREATE INDEX IF NOT EXISTS "sessions_user_id_idx" ON "sessions" ("user_id");
 CREATE INDEX IF NOT EXISTS "sessions_expires_at_idx" ON "sessions" ("expires_at");
 CREATE INDEX IF NOT EXISTS "projects_parent_user_idx" ON "projects" ("parent_id", "user_id");

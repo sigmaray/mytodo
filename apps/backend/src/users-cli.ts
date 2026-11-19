@@ -2,15 +2,15 @@ import { hashPassword } from "./auth";
 import { getDatabaseUrl } from "./database-url";
 import { createPostgresUserRepository } from "./db/users-repository";
 
-/** CLI использует ту же конфигурацию подключения, что и backend-приложение. */
+/** The CLI uses the same connection configuration as the backend application. */
 const databaseUrl = getDatabaseUrl();
-/** Имя действия и аргументы читаются после названия подкоманды `users`. */
+/** Read the action and its arguments after the `users` subcommand. */
 const [action, ...args] = process.argv.slice(2);
-/** Репозиторий закрывается в finally независимо от результата команды. */
+/** Always close the repository in `finally`, regardless of the command result. */
 const users = createPostgresUserRepository(databaseUrl);
 
 /**
- * Печатает синтаксис поддерживаемых команд управления учётными записями.
+ * Prints the syntax for supported account management commands.
  */
 const usage = () => {
   console.error("Usage:");
@@ -23,16 +23,16 @@ const usage = () => {
 };
 
 /**
- * Возвращает значение параметра CLI в формате `--name=value`, если он передан.
+ * Returns a CLI option value in `--name=value` format, if provided.
  *
  * @param {string} name
  */
 const option = (name: string) => args.find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1);
 
 /**
- * Выполняет выбранную команду и закрывает соединение с PostgreSQL после её завершения.
+ * Runs the selected command and closes the PostgreSQL connection when it finishes.
  *
- * @returns Результат выполнения функции.
+ * @returns The command result.
  */
 const run = async () => {
   if (action === "list") {
@@ -43,7 +43,7 @@ const run = async () => {
   if (action === "create") {
     const [username, password] = args;
     if (!username || !password) return usage();
-    /** Не создаём аккаунты, пока существующий администратор не сможет войти. */
+    /** Do not create accounts until an existing administrator can sign in. */
     const existingAdmins = await Promise.all(
       (await users.list()).filter((user) => user.isAdmin).map((user) => users.getById(user.id)),
     );
@@ -63,7 +63,7 @@ const run = async () => {
     if (!username) return usage();
     const existing = await users.getByUsername(username.trim().toLowerCase());
     if (existing === null) throw new Error("User not found");
-    /** Проверяем значение роли до построения patch, чтобы опечатка не меняла аккаунт. */
+    /** Validate the role before building the patch so a typo cannot change the account. */
     const nextAdmin = option("--admin");
     if (nextAdmin !== undefined && nextAdmin !== "true" && nextAdmin !== "false")
       throw new Error("--admin must be true or false");
@@ -74,7 +74,7 @@ const run = async () => {
       (await users.list()).filter((user) => user.isAdmin).length < 2
     )
       throw new Error("Cannot remove the last administrator");
-    /** В patch включаются только переданные параметры, чтобы остальные настройки не затереть. */
+    /** Include only supplied options in the patch so other settings are preserved. */
     const patch = {
       ...(option("--name") === undefined ? {} : { username: option("--name")!.trim().toLowerCase() }),
       ...(option("--password") === undefined
@@ -94,7 +94,7 @@ const run = async () => {
     if (!username) return usage();
     const existing = await users.getByUsername(username.trim().toLowerCase());
     if (existing === null) throw new Error("User not found");
-    /** Последняя административная учётная запись нужна для восстановления доступа к системе. */
+    /** Keep the last administrator account so access to the system can be recovered. */
     if (existing.isAdmin && (await users.list()).filter((user) => user.isAdmin).length < 2)
       throw new Error("Cannot delete the last administrator");
     await users.delete(existing.id);

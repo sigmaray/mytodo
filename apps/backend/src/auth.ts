@@ -1,19 +1,19 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-/** Параметры scrypt задают вычислительную стоимость хеширования пароля. */
+/** Scrypt parameters control the computational cost of password hashing. */
 const scryptCost = 16_384;
 const scryptBlockSize = 8;
 const scryptParallelization = 1;
 const keyLength = 64;
 const sessionLifetimeMs = 30 * 24 * 60 * 60 * 1000;
 
-/** Имя cookie, которой браузер передаёт токен пользовательской сессии. */
+/** Name of the cookie used by the browser to send the user session token. */
 export const sessionCookieName = "todoist_session";
-/** Срок жизни сессии в секундах для cookie и записи в хранилище. */
+/** Session lifetime in seconds for both the cookie and the stored record. */
 export const sessionLifetimeSeconds = sessionLifetimeMs / 1000;
 
 /**
- * Асинхронно выводит ключ пароля заданной длины и параметров scrypt.
+ * Asynchronously derives a password key using the specified length and scrypt parameters.
  *
  * @param {string} password
  * @param {Buffer} salt
@@ -30,10 +30,10 @@ const deriveKey = (password: string, salt: Buffer) =>
   });
 
 /**
- * Генерирует соль и возвращает запись хеша для последующей проверки пароля.
+ * Generates a salt and returns a hash record for later password verification.
  *
  * @param {string} password
- * @returns Результат выполнения функции.
+ * @returns The encoded password hash.
  */
 export const hashPassword = async (password: string) => {
   const salt = randomBytes(16);
@@ -43,17 +43,17 @@ export const hashPassword = async (password: string) => {
 };
 
 /**
- * Сверяет пароль с сохранённым хешем постоянным по времени сравнением ключей.
+ * Compares a password with its stored hash using a timing-safe key comparison.
  *
  * @param {string} password
  * @param {string} storedHash
- * @returns Результат выполнения функции.
+ * @returns Whether the password matches the stored hash.
  */
 export const verifyPassword = async (password: string, storedHash: string) => {
-  /** Сначала отклоняем неизвестные алгоритмы и параметры формата хеша. */
+  /** Reject unknown algorithms and hash parameters first. */
   const [algorithm, costText, blockSizeText, parallelizationText, saltText, keyText] = storedHash.split("$");
 
-  /** Проверяем длину hex-полей перед преобразованием строки в байты. */
+  /** Validate hex field lengths before converting the string to bytes. */
   if (
     algorithm !== "scrypt" ||
     costText !== String(scryptCost) ||
@@ -79,12 +79,12 @@ export const verifyPassword = async (password: string, storedHash: string) => {
 };
 
 /**
- * Создаёт непредсказуемый токен, который сервер выдаёт клиенту как cookie.
+ * Creates an unpredictable token that the server issues to the client as a cookie.
  */
 export const createSessionToken = () => randomBytes(32).toString("base64url");
 
 /**
- * Хеширует токен перед сохранением, чтобы не хранить bearer-секрет открытым текстом.
+ * Hashes a token before storing it so the bearer secret is never stored in plaintext.
  *
  * @param {string} token
  */

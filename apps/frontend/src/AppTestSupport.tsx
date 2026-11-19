@@ -6,7 +6,7 @@ import { createQueryClient, TaskApp } from "./App";
 import type { ApplicationApi, TaskCommentInput } from "./api";
 
 /**
- * Создаёт задачу для тестов с полным набором безопасных значений по умолчанию.
+ * Creates a test task with safe defaults for all fields.
  *
  * @param {Partial<TaskNode> & Pick<TaskNode, "id" | "title">} values
  * @returns {TaskNode}
@@ -28,7 +28,7 @@ export const task = (values: Partial<TaskNode> & Pick<TaskNode, "id" | "title">)
 });
 
 /**
- * Имитирует комментарии, сохранённые сервером, включая выданные им идентификаторы.
+ * Simulates comments saved by the server, including server-generated IDs.
  *
  * @param {Array<TaskCommentInput>} [comments]
  * @returns {Array<Comment>}
@@ -42,7 +42,7 @@ export const savedComments = (comments: Array<TaskCommentInput> = []): Array<Com
   }));
 
 /**
- * Создаёт проектную фикстуру с полями, общими для frontend-тестов.
+ * Creates a project fixture with fields shared by frontend tests.
  *
  * @param {Partial<Project> & Pick<Project, "id" | "title">} values
  * @returns {Project}
@@ -58,7 +58,7 @@ export const project = (values: Partial<Project> & Pick<Project, "id" | "title">
 });
 
 /**
- * Создаёт секцию для тестов и позволяет переопределить её исходные поля.
+ * Creates a section fixture and allows its initial fields to be overridden.
  *
  * @param {Partial<Section> & Pick<Section, "id" | "title">} values
  * @returns {Section}
@@ -72,7 +72,7 @@ export const section = (values: Partial<Section> & Pick<Section, "id" | "title">
 });
 
 /**
- * Рендерит приложение с роутером и отдельным клиентом запросов для теста.
+ * Renders the application with a router and a dedicated query client for the test.
  *
  * @param {ApplicationApi} api
  * @param [attachmentsEnabled]
@@ -87,7 +87,7 @@ export const renderApp = (api: ApplicationApi, attachmentsEnabled = false) =>
   );
 
 /**
- * Создаёт API-заглушку с переданными задачами и рабочими ответами по умолчанию.
+ * Creates an API mock with the supplied tasks and working default responses.
  *
  * @param {Array<TaskNode>} tasks
  * @returns {ApplicationApi}
@@ -169,10 +169,10 @@ export const baseApi = (tasks: Array<TaskNode>): ApplicationApi => ({
 });
 
 /**
- * Перетаскивает строку задачи через синтетические HTML Drag and Drop события.
+ * Drags a task row using synthetic HTML Drag and Drop events.
  *
  * @param {string} title
- * @returns Результат выполнения функции.
+ * @returns The drag event helpers.
  */
 export const dragTask = (title: string) => {
   const data = new Map<string, string>();
@@ -192,10 +192,10 @@ export const dragTask = (title: string) => {
 };
 
 /**
- * Находит строку задачи по точному заголовку для последующих проверок и действий.
+ * Finds a task row by its exact title for later assertions and actions.
  *
  * @param {string} title
- * @returns Результат выполнения функции.
+ * @returns The matching task row.
  */
 export const taskRow = (title: string) => {
   const row = screen.getByText(title).closest(".task-row");
@@ -208,7 +208,7 @@ export const taskRow = (title: string) => {
 };
 
 /**
- * Размещает указатель над выбранной строкой для проверки drag-and-drop зон.
+ * Positions the pointer over a row to test its drag and drop zones.
  *
  * @param {Element} row
  * @param [top]

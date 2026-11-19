@@ -7,11 +7,11 @@ import { useQuickAddShortcut } from "../hooks/useQuickAddShortcut";
 import { authStatusQueryKey, settingsQueryKey } from "../queryKeys";
 
 /**
- * API и общая навигация страницы пользовательских настроек.
+ * API and shared navigation for the user settings page.
  *
  * @typedef {Object} SettingsPageProps
- * @property {ApplicationApi} api - Набор API-операций для серверных данных.
- * @property {ReactNode} [sidebar] - Боковая панель навигации.
+ * @property {ApplicationApi} api - API operations for server data.
+ * @property {ReactNode} [sidebar] - Navigation sidebar.
  */
 type SettingsPageProps = {
   api: ApplicationApi;
@@ -20,10 +20,10 @@ type SettingsPageProps = {
 };
 
 /**
- * Позволяет изменить пользовательские предпочтения, учётные данные и завершить сессию.
+ * Allows users to change preferences and credentials or end their session.
  *
  * @param {SettingsPageProps} parameter1
- * @returns Результат выполнения функции.
+ * @returns The user settings page.
  */
 export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   useQuickAddShortcut();
@@ -34,7 +34,7 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   useEffect(() => {
-    /** Серверные данные задают исходные значения формы после загрузки или смены пользователя. */
+    /** Use server data to initialize the form after loading or when the user changes. */
     if (settings.data !== undefined) {
       setConfirmDelete(settings.data.confirmDelete);
       setAccountUsername(settings.data.username);
@@ -61,7 +61,7 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
   });
 
   /**
-   * Завершает текущую сессию и обновляет состояние аутентификации в кэше.
+   * Ends the current session and updates the cached authentication state.
    */
   const logOut = async () => {
     await api.logout();
@@ -133,7 +133,7 @@ export const SettingsPage = ({ api, sidebar }: SettingsPageProps) => {
                 className="settings-credentials"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  /** Пустой пароль исключается из patch, чтобы сохранить текущий пароль. */
+                  /** Omit an empty password from the patch to keep the current password. */
                   updateAccount.mutate({
                     username: accountUsername.trim().toLowerCase(),
                     ...(accountPassword.length > 0 ? { password: accountPassword } : {}),

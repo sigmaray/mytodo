@@ -7,22 +7,22 @@ import { getDatabaseUrl } from "./database-url";
 import { createPostgresTaskRepositoryFactory } from "./db/repository";
 import { createPostgresUserRepository } from "./db/users-repository";
 
-/** Порт, на котором backend принимает HTTP-запросы. */
-/** TCP-порт backend-сервера, по умолчанию 3000. */
+/** Port on which the backend accepts HTTP requests. */
+/** Backend TCP port, defaulting to 3000. */
 const port = Number(process.env.PORT ?? 3000);
-/** Строка подключения, собранная из переменных окружения. */
+/** Connection string assembled from environment variables. */
 const databaseUrl = getDatabaseUrl();
-/** Режим запуска, влияющий на защищённые функции. */
+/** Runtime mode that controls protected features. */
 const mode = process.env.NODE_ENV ?? "development";
-/** В production cookie Secure включён, если явно не установлен false. */
+/** In production, cookies use the Secure flag unless explicitly set to false. */
 const secureCookies = process.env.MYTODO_COOKIE_SECURE?.trim().toLowerCase() !== "false";
-/** Разрешена ли загрузка файлов комментариев. */
+/** Whether comment file uploads are enabled. */
 const attachmentsEnabled = process.env.MYTODO_ATTACHMENTS_ENABLED?.trim().toLowerCase() === "true";
-/** Разрешено ли архивирование проектов. */
+/** Whether project archiving is enabled. */
 const projectArchivingEnabled = process.env.MYTODO_PROJECT_ARCHIVING_ENABLED?.trim().toLowerCase() === "true";
-/** Разрешён ли вспомогательный Playwright API. */
+/** Whether the Playwright helper API is enabled. */
 const playwrightApiEnabled = process.env.MYTODO_ENABLE_PLAYWRIGHT_API?.trim().toLowerCase() === "true";
-/** Путь к приватному каталогу вложений, если он настроен. */
+/** Path to the private attachment directory, if configured. */
 const attachmentsDir = process.env.MYTODO_ATTACHMENTS_DIR?.trim() || undefined;
 if (attachmentsEnabled && attachmentsDir === undefined) {
   throw new Error("MYTODO_ATTACHMENTS_DIR must be set when MYTODO_ATTACHMENTS_ENABLED=true");
@@ -37,7 +37,7 @@ if (attachmentsEnabled && attachmentsDir !== undefined) {
     throw new Error(`MYTODO_ATTACHMENTS_DIR is not writable: ${attachmentsDir}`);
   }
 }
-/** Фабрика выдаёт каждому вошедшему пользователю репозиторий с его собственным UUID. */
+/** The factory gives each authenticated user a repository scoped to their UUID. */
 const taskRepositoryFor = createPostgresTaskRepositoryFactory(databaseUrl);
 
 serve({

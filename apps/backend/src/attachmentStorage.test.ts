@@ -11,9 +11,9 @@ import {
 let temporaryDirectory: string | null = null;
 
 /**
- * Создаёт отдельное временное хранилище файлов для изоляции тестового сценария.
+ * Creates a separate temporary file store to isolate a test scenario.
  *
- * @returns Результат выполнения функции.
+ * @returns The temporary directory and attachment storage instance.
  */
 const createStorage = async () => {
   const directory = await mkdtemp(join(tmpdir(), "todoist-attachments-"));
@@ -27,8 +27,8 @@ afterEach(async () => {
 });
 
 describe("attachment storage", () => {
-  /** Проверяем полный цикл файла и подтверждаем, что ID не позволяет читать чужие пути. */
-  /** Хранилище записывает, читает и удаляет файл по созданному им идентификатору. */
+  /** Check the full file lifecycle and ensure IDs cannot access unrelated paths. */
+  /** The store writes, reads, and deletes a file by its generated identifier. */
   it("saves, reads, and removes files using generated storage identifiers", async () => {
     const storage = await createStorage();
     const [attachment] = await storage.saveMany([
@@ -43,8 +43,8 @@ describe("attachment storage", () => {
     expect(await storage.read("../../outside")).toBeNull();
   });
 
-  /** Недопустимые метаданные и превышение лимитов должны блокировать загрузку. */
-  /** Проверяются допустимые имена, MIME-типы и суммарные ограничения загрузки. */
+  /** Invalid metadata and exceeded limits must block an upload. */
+  /** Validate allowed names, MIME types, and total upload limits. */
   it("validates upload names, MIME types, and aggregate size limits", () => {
     expect(validateAttachmentFiles([new File(["ok"], "note.txt", { type: "text/plain" })])).toBeNull();
     expect(validateAttachmentFiles([new File(["bad"], "bad.txt\n", { type: "text/plain" })])).toBe(
@@ -55,8 +55,8 @@ describe("attachment storage", () => {
     ).toBe("limits-exceeded");
   });
 
-  /** Тип определяется по сигнатуре содержимого, а не по расширению или клиентскому MIME. */
-  /** Тип изображения определяется по байтовой сигнатуре, а не декларации клиента. */
+  /** Detect the type from the content signature, not the extension or client MIME value. */
+  /** Identify image types by their byte signature, not by the client's declaration. */
   it("detects image types from file contents rather than the declared MIME type", () => {
     expect(detectSafeImageMimeType(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))).toBe("image/png");
     expect(detectSafeImageMimeType(Buffer.from("<script>alert(1)</script>"))).toBeNull();
