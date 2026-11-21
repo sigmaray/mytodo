@@ -37,143 +37,23 @@ export type UserRecord = {
 export type PublicUser = { id: string; username: string; isAdmin: boolean };
 
 /**
- * Finds a user by login name, ignoring letter case.
- *
- * @callback UserRepositoryGetByUsername
- * @param {string} username
- * @returns {Promise<UserRecord | null>}
- */
-
-/**
- * Finds a user by UUID.
- *
- * @callback UserRepositoryGetById
- * @param {string} id
- * @returns {Promise<UserRecord | null>}
- */
-
-/**
- * Returns the public user list without passwords or settings.
- *
- * @callback UserRepositoryList
- * @returns {Promise<Array<PublicUser>>}
- */
-
-/**
- * Creates a user account with a previously hashed password.
- *
- * @callback UserRepositoryCreate
- * @param {string} username
- * @param {string} passwordHash
- * @param {boolean} isAdmin
- * @returns {Promise<PublicUser>}
- */
-
-/**
- * Updates the supplied account fields.
- *
- * @callback UserRepositoryUpdate
- * @param {string} id
- * @param {{ username?: string; passwordHash?: string; isAdmin?: boolean; }} patch
- * @param {string} patch.username - New username.
- * @param {string} patch.passwordHash - New password hash.
- * @param {boolean} patch.isAdmin - Whether the user is an administrator.
- * @returns {Promise<PublicUser | null>}
- */
-
-/**
- * Changes the password and revokes the user's active sessions.
- *
- * @callback UserRepositorySetPassword
- * @param {string} id
- * @param {string} passwordHash
- * @returns {Promise<boolean>}
- */
-
-/**
- * Deletes a user and their sessions.
- *
- * @callback UserRepositoryDelete
- * @param {string} id
- * @returns {Promise<boolean>}
- */
-
-/**
- * Checks whether any account has a configured password.
- *
- * @callback UserRepositoryHasPasswordUsers
- * @returns {Promise<boolean>}
- */
-
-/**
- * Stores a session token hash and its expiration time.
- *
- * @callback UserRepositorySaveSession
- * @param {string} tokenHash
- * @param {string} userId
- * @param {Date} expiresAt
- * @returns {Promise<void>}
- */
-
-/**
- * Returns the user for an active session, or `null`.
- *
- * @callback UserRepositoryGetSessionUserId
- * @param {string} tokenHash
- * @param {Date} now
- * @returns {Promise<string | null>}
- */
-
-/**
- * Deletes one session by its token hash.
- *
- * @callback UserRepositoryDeleteSession
- * @param {string} tokenHash
- * @returns {Promise<void>}
- */
-
-/**
- * Revokes all sessions belonging to a user.
- *
- * @callback UserRepositoryDeleteAllSessions
- * @param {string} userId
- * @returns {Promise<void>}
- */
-
-/**
- * Saves deletion confirmation settings and/or the Inbox description.
- *
- * @callback UserRepositorySavePreferences
- * @param {string} id
- * @param {boolean} confirmDelete
- * @param {string} [inboxDescription]
- * @returns {Promise<void>}
- */
-
-/**
- * Releases repository connections and resources.
- *
- * @callback UserRepositoryClose
- * @returns {Promise<void>}
- */
-/**
  * Operations for storing users, their settings, passwords, and sessions.
  *
  * @typedef {Object} UserRepository
- * @property {UserRepositoryGetByUsername} getByUsername - Finds an account by login name.
- * @property {UserRepositoryGetById} getById - Finds an account by ID.
- * @property {UserRepositoryList} list - Returns all accounts.
- * @property {UserRepositoryCreate} create - Creates an account.
- * @property {UserRepositoryUpdate} update - Updates the login name and administrator privileges.
- * @property {UserRepositorySetPassword} setPassword - Stores a new password hash.
- * @property {UserRepositoryDelete} delete - Deletes an account and its related data.
- * @property {UserRepositoryHasPasswordUsers} hasPasswordUsers - Checks whether any account has a configured password.
- * @property {UserRepositorySaveSession} saveSession - Stores a user session.
- * @property {UserRepositoryGetSessionUserId} getSessionUserId - Returns the owner of an active session.
- * @property {UserRepositoryDeleteSession} deleteSession - Ends one user session.
- * @property {UserRepositoryDeleteAllSessions} deleteAllSessions - Ends all user sessions.
- * @property {UserRepositorySavePreferences} savePreferences - Saves user settings.
- * @property {UserRepositoryClose} close - Releases user repository resources.
+ * @property getByUsername - Finds an account by login name.
+ * @property getById - Finds an account by ID.
+ * @property list - Returns all accounts.
+ * @property create - Creates an account.
+ * @property update - Updates the login name and administrator privileges.
+ * @property setPassword - Stores a new password hash.
+ * @property delete - Deletes an account and its related data.
+ * @property hasPasswordUsers - Checks whether any account has a configured password.
+ * @property saveSession - Stores a user session.
+ * @property getSessionUserId - Returns the owner of an active session.
+ * @property deleteSession - Ends one user session.
+ * @property deleteAllSessions - Ends all user sessions.
+ * @property savePreferences - Saves user settings.
+ * @property close - Releases user repository resources.
  */
 export type UserRepository = {
   getByUsername: (username: string) => Promise<UserRecord | null>;

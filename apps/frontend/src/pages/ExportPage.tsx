@@ -8,20 +8,6 @@ import { ClipboardCopy, Download, Eye } from "lucide-react";
 export type ExportKind = "markdown" | "advancedMarkdown" | "json";
 
 /**
- * @callback ExportFormatCardPropsOnDownload
- * @returns {void}
- */
-
-/**
- * @callback ExportFormatCardPropsOnCopy
- * @returns {void}
- */
-
-/**
- * @callback ExportFormatCardPropsOnPreview
- * @returns {void}
- */
-/**
  * Labels and handlers for one export format card.
  *
  * @typedef {Object} ExportFormatCardProps
@@ -30,9 +16,9 @@ export type ExportKind = "markdown" | "advancedMarkdown" | "json";
  * @property {string} downloadLabel - Label for the download button.
  * @property {string} copyLabel - Label for the copy button.
  * @property {string} previewLabel - Label for the preview button.
- * @property {ExportFormatCardPropsOnDownload} onDownload - Downloads data in the selected format.
- * @property {ExportFormatCardPropsOnCopy} onCopy - Copies data to the clipboard.
- * @property {ExportFormatCardPropsOnPreview} onPreview - Opens a data preview.
+ * @property onDownload - Downloads data in the selected format.
+ * @property onCopy - Copies data to the clipboard.
+ * @property onPreview - Opens a data preview.
  */
 type ExportFormatCardProps = {
   title: string;
@@ -90,30 +76,13 @@ const ExportFormatCard = ({
 );
 
 /**
- * @callback ExportPagePropsOnExport
- * @param {ExportKind} kind
- * @returns {void}
- */
-
-/**
- * @callback ExportPagePropsOnCopy
- * @param {ExportKind} kind
- * @returns {void}
- */
-
-/**
- * @callback ExportPagePropsOnPreview
- * @param {ExportKind} kind
- * @returns {void}
- */
-/**
  * Copy status and actions for exporting all data.
  *
  * @typedef {Object} ExportPageProps
  * @property {string} copyStatus - Result of the most recent copy operation.
- * @property {ExportPagePropsOnExport} onExport - Starts the data export.
- * @property {ExportPagePropsOnCopy} onCopy - Copies the export to the clipboard.
- * @property {ExportPagePropsOnPreview} onPreview - Shows an export preview.
+ * @property onExport - Starts the data export.
+ * @property onCopy - Copies the export to the clipboard.
+ * @property onPreview - Shows an export preview.
  */
 export type ExportPageProps = {
   copyStatus: string;

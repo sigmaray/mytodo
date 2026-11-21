@@ -23,51 +23,23 @@ export type TaskAppMarkdownModal = {
 };
 
 /**
- * @callback TaskAppOverlaysPropsSetSelectedMoveOpen
- * @param {boolean} open
- * @returns {void}
- */
-
-/**
- * @callback TaskAppOverlaysPropsSetSelectedMovePlacement
- * @param {string} placement
- * @returns {void}
- */
-
-/**
- * @callback TaskAppOverlaysPropsMoveSelectedTasks
- * @returns {void}
- */
-
-/**
- * @callback TaskAppOverlaysPropsSetScopeExportOpen
- * @param {boolean} open
- * @returns {void}
- */
-
-/**
- * @callback TaskAppOverlaysPropsSetCopyStatus
- * @param {string} status
- * @returns {void}
- */
-/**
  * State and actions for the bulk move and export dialogs.
  *
  * @typedef {Object} TaskAppOverlaysProps
  * @property {boolean} selectedMoveOpen - Whether the move dialog is open.
- * @property {TaskAppOverlaysPropsSetSelectedMoveOpen} setSelectedMoveOpen - Opens or closes the move dialog.
+ * @property setSelectedMoveOpen - Opens or closes the move dialog.
  * @property {Array<TaskNode>} selectedRootTasks - Selected root tasks.
  * @property {string} selectedMovePlacement - Destination selected for the tasks.
- * @property {TaskAppOverlaysPropsSetSelectedMovePlacement} setSelectedMovePlacement - Updates the task destination.
+ * @property setSelectedMovePlacement - Updates the task destination.
  * @property {Array<Project>} activeProjects - User's active projects.
  * @property {Array<Section>} allSections - All user sections.
  * @property {boolean} selectedMovePending - Whether the task move is in progress.
- * @property {TaskAppOverlaysPropsMoveSelectedTasks} moveSelectedTasks - Moves the selected tasks.
+ * @property moveSelectedTasks - Moves the selected tasks.
  * @property {TaskAppMarkdownModal | null} markdownModal - Data for the open Markdown dialog.
  * @property {Dispatch<SetStateAction<TaskAppMarkdownModal | null>>} setMarkdownModal - Updates the Markdown dialog state.
  * @property {ReturnType<typeof useFloating>} markdownFloating - Positioning data for the floating Markdown dialog.
  * @property {boolean} scopeExportOpen - Whether the scope export dialog is open.
- * @property {TaskAppOverlaysPropsSetScopeExportOpen} setScopeExportOpen - Opens or closes scope export.
+ * @property setScopeExportOpen - Opens or closes scope export.
  * @property {ProjectId | null} targetProjectId - Target project ID, or `null` for the Inbox.
  * @property {Project | null} scopeProject - Project selected for export.
  * @property {string} taskTargetLabel - Label for the selected task destination.
@@ -75,7 +47,7 @@ export type TaskAppMarkdownModal = {
  * @property {string} advancedMarkdown - Extended Markdown export content.
  * @property {string} scopeJson - JSON export for the selected scope.
  * @property {string} copyStatus - Status of the copy operation.
- * @property {TaskAppOverlaysPropsSetCopyStatus} setCopyStatus - Updates the copy status.
+ * @property setCopyStatus - Updates the copy status.
  */
 type TaskAppOverlaysProps = {
   selectedMoveOpen: boolean;

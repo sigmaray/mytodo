@@ -37,17 +37,6 @@ import {
 } from "../taskAppUtils";
 
 /**
- * @callback TaskAppScreenPropsPastedFiles
- * @param {DataTransfer} data
- * @returns {Array<File>}
- */
-
-/**
- * @callback TaskAppScreenPropsNotifyAttachedFiles
- * @param {Array<File>} files
- * @returns {void}
- */
-/**
  * Props for the composed workspace screen and its connected actions.
  *
  * @typedef {Object} TaskAppScreenProps
@@ -60,8 +49,8 @@ import {
  * @property {ReturnType<typeof useTaskAppActions>} actions - Actions available to the interface.
  * @property {ReturnType<typeof useTaskAppViewModel>} viewModel - Prepared display data.
  * @property {TaskAppPageModel} pageModel - Data for the selected page.
- * @property {TaskAppScreenPropsPastedFiles} pastedFiles - Files pasted from the clipboard.
- * @property {TaskAppScreenPropsNotifyAttachedFiles} notifyAttachedFiles - Reports selected files.
+ * @property pastedFiles - Files pasted from the clipboard.
+ * @property notifyAttachedFiles - Reports selected files.
  */
 type TaskAppScreenProps = {
   api: ApplicationApi;

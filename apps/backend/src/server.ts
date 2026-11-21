@@ -7,7 +7,6 @@ import { getDatabaseUrl } from "./database-url";
 import { createPostgresTaskRepositoryFactory } from "./db/repository";
 import { createPostgresUserRepository } from "./db/users-repository";
 
-/** Port on which the backend accepts HTTP requests. */
 /** Backend TCP port, defaulting to 3000. */
 const port = Number(process.env.PORT ?? 3000);
 /** Connection string assembled from environment variables. */

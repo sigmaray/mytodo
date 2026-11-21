@@ -5,29 +5,18 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toLocalIsoDate } from "../dateUtils";
 
 /**
- * @callback AutoGrowTextareaPropsOnChange
- * @param {string} value
- * @returns {void}
- */
-
-/**
- * @callback AutoGrowTextareaPropsOnKeyDown
- * @param {KeyboardEvent<HTMLTextAreaElement>} event
- * @returns {void}
- */
-/**
  * Props for a textarea that automatically adjusts its height to its content.
  *
  * @typedef {Object} AutoGrowTextareaProps
  * @property {string} value - Current textarea value.
- * @property {AutoGrowTextareaPropsOnChange} onChange - Handles value changes.
+ * @property onChange - Handles value changes.
  * @property {string} ariaLabel - Accessible name for the control.
  * @property {string} [id] - Unique element ID.
  * @property {string} [placeholder] - Placeholder text shown in the field.
  * @property {boolean} [autoFocus] - Whether to focus the field after rendering.
  * @property {boolean} [required] - Whether the field is required.
  * @property {string} [className] - Additional CSS classes for the element.
- * @property {AutoGrowTextareaPropsOnKeyDown} [onKeyDown] - Handles key presses.
+ * @property [onKeyDown] - Handles key presses.
  * @property {React.ClipboardEventHandler<HTMLTextAreaElement>} [onPaste] - Handles paste events.
  */
 export type AutoGrowTextareaProps = {
@@ -107,17 +96,6 @@ export const AutoGrowTextarea = ({
 };
 
 /**
- * @callback LabelPickerPropsOnInputChange
- * @param {string} value
- * @returns {void}
- */
-
-/**
- * @callback LabelPickerPropsOnChange
- * @param {Array<string>} labels
- * @returns {void | Promise<unknown>}
- */
-/**
  * Values and handlers for the label picker.
  *
  * @typedef {Object} LabelPickerProps
@@ -125,8 +103,8 @@ export const AutoGrowTextarea = ({
  * @property {Array<string>} options - Available labels for this component.
  * @property {string} inputLabel - Accessible label for the input.
  * @property {string} inputValue - Current input value.
- * @property {LabelPickerPropsOnInputChange} onInputChange - Handles input text changes.
- * @property {LabelPickerPropsOnChange} onChange - Handles selection changes.
+ * @property onInputChange - Handles input text changes.
+ * @property onChange - Handles selection changes.
  * @property {boolean} [autoFocus] - Whether to focus the field after rendering.
  */
 type LabelPickerProps = {

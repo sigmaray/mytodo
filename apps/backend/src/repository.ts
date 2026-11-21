@@ -70,203 +70,29 @@ export type TaskMove = {
 };
 
 /**
- * Returns all tasks belonging to the repository's user.
- *
- * @callback TaskRepositoryList
- * @returns {Promise<Array<Task>>}
- */
-
-/**
- * Returns all projects belonging to the user.
- *
- * @callback TaskRepositoryListProjects
- * @returns {Promise<Array<Project>>}
- */
-
-/**
- * Creates a top-level project.
- *
- * @callback TaskRepositoryCreateProject
- * @param {string} title
- * @returns {Promise<Project>}
- */
-
-/**
- * Creates a nested project under the specified parent.
- *
- * @callback TaskRepositoryCreateSubproject
- * @param {string} title
- * @param {ProjectId} parentId
- * @returns {Promise<Project>}
- */
-
-/**
- * Changes a project's parent or moves it to the root.
- *
- * @callback TaskRepositoryMoveProject
- * @param {ProjectId} id
- * @param {ProjectId | null} parentId
- * @returns {Promise<Project | null>}
- */
-
-/**
- * Reorders a project among its siblings at the same tree level.
- *
- * @callback TaskRepositoryReorderProject
- * @param {ProjectId} id
- * @param {ProjectId | null} beforeId
- * @param {ProjectId | null} afterId
- * @returns {Promise<Project | null>}
- */
-
-/**
- * Updates a project's name and/or description.
- *
- * @callback TaskRepositoryUpdateProject
- * @param {ProjectId} id
- * @param {{ title?: string; description?: string; }} patch
- * @param {string} patch.title - New project title.
- * @param {string} patch.description - New project description.
- * @returns {Promise<Project | null>}
- */
-
-/**
- * Deletes a project and reports whether it existed.
- *
- * @callback TaskRepositoryDeleteProject
- * @param {ProjectId} id
- * @returns {Promise<boolean>}
- */
-
-/**
- * Duplicates an existing project and its contents.
- *
- * @callback TaskRepositoryDuplicateProject
- * @param {ProjectId} id
- * @returns {Promise<Project | null>}
- */
-
-/**
- * Archives a project or restores it to the active list.
- *
- * @callback TaskRepositorySetProjectArchived
- * @param {ProjectId} id
- * @param {boolean} archived
- * @returns {Promise<Project | null>}
- */
-
-/**
- * Returns all sections belonging to the user.
- *
- * @callback TaskRepositoryListSections
- * @returns {Promise<Array<Section>>}
- */
-
-/**
- * Reorders a section relative to other sections in the same list.
- *
- * @callback TaskRepositoryReorderSection
- * @param {SectionId} id
- * @param {SectionId | null} beforeId
- * @param {SectionId | null} afterId
- * @returns {Promise<Section | null>}
- */
-
-/**
- * Creates a section in a project or in the Inbox.
- *
- * @callback TaskRepositoryCreateSection
- * @param {string} title
- * @param {ProjectId | null} projectId
- * @returns {Promise<Section>}
- */
-
-/**
- * Renames a section.
- *
- * @callback TaskRepositoryUpdateSection
- * @param {SectionId} id
- * @param {string} title
- * @returns {Promise<Section | null>}
- */
-
-/**
- * Deletes a section and reports whether it existed.
- *
- * @callback TaskRepositoryDeleteSection
- * @param {SectionId} id
- * @returns {Promise<boolean>}
- */
-
-/**
- * Creates a task in the specified parent and project context.
- *
- * @callback TaskRepositoryCreate
- * @param {string} title
- * @param {TaskId | null} parentId
- * @param {ProjectId | null} projectId
- * @param {SectionId | null} sectionId
- * @returns {Promise<Task>}
- */
-
-/**
- * Applies a partial update to a task.
- *
- * @callback TaskRepositoryPatch
- * @param {TaskId} id
- * @param {TaskPatch} patch
- * @returns {Promise<Task | null>}
- */
-
-/**
- * Adds a comment and reports whether the task was found.
- *
- * @callback TaskRepositoryAddComment
- * @param {TaskId} id
- * @param {Task["comments"][number]} comment
- * @returns {Promise<boolean>}
- */
-
-/**
- * Moves a task and returns the updated record.
- *
- * @callback TaskRepositoryMove
- * @param {TaskId} id
- * @param {TaskMove} move
- * @returns {Promise<Task | null>}
- */
-
-/**
- * Deletes a task and reports whether it existed.
- *
- * @callback TaskRepositoryDelete
- * @param {TaskId} id
- * @returns {Promise<boolean>}
- */
-/**
  * Task, project, and section repository contract used by server routes.
  *
  * @typedef {Object} TaskRepository
- * @property {TaskRepositoryList} list - Returns the user's tasks in an order suitable for building the tree.
- * @property {TaskRepositoryListProjects} listProjects - Returns the user's projects.
- * @property {TaskRepositoryCreateProject} createProject - Creates a top-level project.
- * @property {TaskRepositoryCreateSubproject} createSubproject - Creates a nested project.
- * @property {TaskRepositoryMoveProject} moveProject - Changes a project's parent or moves it to the root.
- * @property {TaskRepositoryReorderProject} reorderProject - Reorders a project among its siblings.
- * @property {TaskRepositoryUpdateProject} updateProject - Updates a project's name and description.
- * @property {TaskRepositoryDeleteProject} deleteProject - Deletes a project.
- * @property {TaskRepositoryDuplicateProject} duplicateProject - Duplicates a project and its contents.
- * @property {TaskRepositorySetProjectArchived} setProjectArchived - Archives a project or restores it to the active list.
- * @property {TaskRepositoryListSections} listSections - Returns the user's sections.
- * @property {TaskRepositoryReorderSection} reorderSection - Reorders a section among its siblings.
- * @property {TaskRepositoryCreateSection} createSection - Creates a section in a project or in the Inbox.
- * @property {TaskRepositoryUpdateSection} updateSection - Renames a section.
- * @property {TaskRepositoryDeleteSection} deleteSection - Deletes a section.
- * @property {TaskRepositoryCreate} create - Creates a task in the specified context.
- * @property {TaskRepositoryPatch} patch - Applies partial updates to a task.
- * @property {TaskRepositoryAddComment} addComment - Adds a comment to a task.
- * @property {TaskRepositoryMove} move - Moves a task to a new position in the tree.
- * @property {TaskRepositoryDelete} delete - Deletes a task and reports whether it existed.
+ * @property list - Returns the user's tasks in an order suitable for building the tree.
+ * @property listProjects - Returns the user's projects.
+ * @property createProject - Creates a top-level project.
+ * @property createSubproject - Creates a nested project.
+ * @property moveProject - Changes a project's parent or moves it to the root.
+ * @property reorderProject - Reorders a project among its siblings.
+ * @property updateProject - Updates a project's name and description.
+ * @property deleteProject - Deletes a project.
+ * @property duplicateProject - Duplicates a project and its contents.
+ * @property setProjectArchived - Archives a project or restores it to the active list.
+ * @property listSections - Returns the user's sections.
+ * @property reorderSection - Reorders a section among its siblings.
+ * @property createSection - Creates a section in a project or in the Inbox.
+ * @property updateSection - Renames a section.
+ * @property deleteSection - Deletes a section.
+ * @property create - Creates a task in the specified context.
+ * @property patch - Applies partial updates to a task.
+ * @property addComment - Adds a comment to a task.
+ * @property move - Moves a task to a new position in the tree.
+ * @property delete - Deletes a task and reports whether it existed.
  */
 export type TaskRepository = {
   list: () => Promise<Array<Task>>;

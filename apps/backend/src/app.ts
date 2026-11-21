@@ -167,9 +167,12 @@ export const createApp = (
   );
 
   app.delete("/tasks/:id", async (context) => {
-    /** Collect the task tree so descendant files can be cleaned up after cascading deletion. */
     const taskRepository = repositoryFor(context.get("userId"));
     const allTasks = await taskRepository.list();
+    /** Collects a task and all of its descendants from the current task list.
+     * @param id ID of the task whose subtree should be collected.
+     * @returns IDs for the task and every nested descendant.
+     */
     const collect = (id: string): Array<string> => [
       id,
       ...allTasks.filter((task) => task.parentId === id).flatMap((task) => collect(task.id)),

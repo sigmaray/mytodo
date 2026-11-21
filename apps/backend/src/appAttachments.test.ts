@@ -18,8 +18,6 @@ import { createMemoryUserRepository } from "./users";
 afterEach(cleanupTestResources);
 
 describe("comment attachments", () => {
-  /** Attachments are unavailable when no storage directory is configured. */
-  /** Without a storage directory, the API does not advertise or accept attachments. */
   it("keeps attachments disabled unless a storage directory is configured", async () => {
     const agent = await createTestAgent();
     await agent
@@ -30,8 +28,6 @@ describe("comment attachments", () => {
     await agent.post(`/tasks/${task.id}/comments`).field("body", "A note").expect(503);
   });
 
-  /** The feature flag can disable uploads even when filesystem storage is configured. */
-  /** The feature flag disables the API even when a directory is configured. */
   it("keeps attachment APIs disabled when the environment feature flag is off even if storage is configured", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-disabled-"));
     temporaryDirectories.add(directory);
@@ -65,8 +61,6 @@ describe("comment attachments", () => {
     await agent.get("/attachments/00000000-0000-0000-0000-000000000000").expect(503);
   });
 
-  /** Store files privately and serve them only through the authenticated API. */
-  /** Comment attachments remain private and are served only to authenticated requests. */
   it("stores confirmed comment files privately and serves them only through the authenticated API", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-"));
     temporaryDirectories.add(directory);
@@ -112,8 +106,6 @@ describe("comment attachments", () => {
     expect(JSON.stringify(listed.body)).toContain(attachment.id);
   });
 
-  /** Concurrent requests must not lose each other's comments or attachments. */
-  /** Parallel file uploads must not overwrite each other's comments. */
   it("keeps comments from concurrent attachment uploads", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mytodo-attachments-concurrent-"));
     temporaryDirectories.add(directory);
@@ -158,8 +150,6 @@ describe("comment attachments", () => {
     );
   });
 
-  /** Editing and deleting comments must keep attachment metadata in sync and in order. */
-  /** Comments can be edited and deleted while preserving attachment metadata order. */
   it("allows editing and deleting comments with PostgreSQL-ordered attachment metadata", async () => {
     const createdAt = "2026-11-08T15:00:31.010Z";
     const attachment = {

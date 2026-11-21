@@ -14,35 +14,6 @@ import type { useSidebarProjectManagement } from "./useSidebarProjectManagement"
 type ProjectManagement = ReturnType<typeof useSidebarProjectManagement>;
 
 /**
- * @callback SidebarProjectsPropsIsProjectDropActive
- * @param {ProjectId | null} projectId
- * @returns {boolean}
- */
-
-/**
- * @callback SidebarProjectsPropsOnProjectDragEnter
- * @param {ProjectId} projectId
- * @returns {DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback SidebarProjectsPropsOnProjectDragOver
- * @param {ProjectId} projectId
- * @returns {DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback SidebarProjectsPropsOnProjectDragLeave
- * @param {ProjectId} projectId
- * @returns {DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback SidebarProjectsPropsOnProjectDrop
- * @param {ProjectId} projectId
- * @returns {DragEventHandler<HTMLElement>}
- */
-/**
  * Data, navigation handlers, and menus for the project list.
  *
  * @typedef {Object} SidebarProjectsProps
@@ -52,11 +23,11 @@ type ProjectManagement = ReturnType<typeof useSidebarProjectManagement>;
  * @property {ProjectId | null} selectedProjectId - ID of the selected project.
  * @property {string} activePage - Current application page.
  * @property {boolean} projectArchivingEnabled - Whether project archiving is enabled.
- * @property {SidebarProjectsPropsIsProjectDropActive} [isProjectDropActive] - Whether a project is an active drag target.
- * @property {SidebarProjectsPropsOnProjectDragEnter} [onProjectDragEnter] - Handles entering a project during a drag.
- * @property {SidebarProjectsPropsOnProjectDragOver} [onProjectDragOver] - Updates the project drop target during a drag.
- * @property {SidebarProjectsPropsOnProjectDragLeave} [onProjectDragLeave] - Clears the project hover state.
- * @property {SidebarProjectsPropsOnProjectDrop} [onProjectDrop] - Handles dropping onto a project.
+ * @property [isProjectDropActive] - Whether a project is an active drag target.
+ * @property [onProjectDragEnter] - Handles entering a project during a drag.
+ * @property [onProjectDragOver] - Updates the project drop target during a drag.
+ * @property [onProjectDragLeave] - Clears the project hover state.
+ * @property [onProjectDrop] - Handles dropping onto a project.
  * @property {ProjectManagement} management - Project management handlers.
  */
 type SidebarProjectsProps = {

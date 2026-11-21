@@ -8,29 +8,6 @@ import { CommentAttachment, renderCommentMarkdown } from "./CommentAttachment";
 import { AutoGrowTextarea } from "./TaskFormFields";
 
 /**
- * @callback TaskCommentsPanelPropsOnHide
- * @returns {void | Promise<void>}
- */
-
-/**
- * @callback TaskCommentsPanelPropsRemoveCommentAttachment
- * @param {string} commentId
- * @param {string} attachmentId
- * @returns {Promise<void>}
- */
-
-/**
- * @callback TaskCommentsPanelPropsConfirmDeletion
- * @param {string} message
- * @returns {boolean}
- */
-
-/**
- * @callback TaskCommentsPanelPropsNotifyAttachedFiles
- * @param {Array<File>} files
- * @returns {void}
- */
-/**
  * Task data, comment editor state, and attachment operations.
  *
  * @typedef {Object} TaskCommentsPanelProps
@@ -38,7 +15,7 @@ import { AutoGrowTextarea } from "./TaskFormFields";
  * @property {ApplicationApi} api - API operations for server data.
  * @property {boolean} attachmentsEnabled - Whether the application can upload and serve attachments.
  * @property {boolean} showMobileComments - Whether the mobile comments panel is open.
- * @property {TaskCommentsPanelPropsOnHide} onHide - Closes the mobile panel.
+ * @property onHide - Closes the mobile panel.
  * @property {string | null} editingCommentId - ID of the comment currently being edited.
  * @property {Dispatch<SetStateAction<string | null>>} setEditingCommentId - Updates the edited comment ID.
  * @property {string} editingCommentBody - Draft text for the comment being edited.
@@ -47,9 +24,9 @@ import { AutoGrowTextarea } from "./TaskFormFields";
  * @property {Dispatch<SetStateAction<string>>} setDetailComment - Updates the new comment draft.
  * @property {Array<File>} detailCommentFiles - Files attached to the new comment.
  * @property {Dispatch<SetStateAction<Array<File>>>} setDetailCommentFiles - Updates files for the new comment.
- * @property {TaskCommentsPanelPropsRemoveCommentAttachment} removeCommentAttachment - Removes a file attached to a comment.
- * @property {TaskCommentsPanelPropsConfirmDeletion} confirmDeletion - Requests confirmation before deletion.
- * @property {TaskCommentsPanelPropsNotifyAttachedFiles} notifyAttachedFiles - Reports the selected files.
+ * @property removeCommentAttachment - Removes a file attached to a comment.
+ * @property confirmDeletion - Requests confirmation before deletion.
+ * @property notifyAttachedFiles - Reports the selected files.
  */
 type TaskCommentsPanelProps = {
   task: TaskNode;

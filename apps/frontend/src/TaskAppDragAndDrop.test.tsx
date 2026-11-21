@@ -15,7 +15,6 @@ beforeEach(() => {
 });
 
 describe("TaskApp drag and drop", () => {
-  /** Dropping onto a task row makes the dragged task its child. */
   it("moves a task inside another task with drag and drop", async () => {
     const moveTask = vi.fn(
       async (
@@ -41,7 +40,6 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("child", null, null, "parent", null, null));
   });
 
-  /** Dropping between rows changes the order of neighboring tasks. */
   it("reorders sibling tasks with drag and drop insertion lines", async () => {
     const moveTask = vi.fn(
       async (
@@ -75,7 +73,6 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("c", null, null, null, "a", null));
   });
 
-  /** Keyboard shortcuts change a task's nesting depth. */
   it("indents and outdents tasks with keyboard shortcuts", async () => {
     const moveTask = vi.fn(
       async (
@@ -110,7 +107,6 @@ describe("TaskApp drag and drop", () => {
     await waitFor(() => expect(moveTask).toHaveBeenCalledWith("child", null, null, null, null, "parent"));
   });
 
-  /** Dragging a row to the left removes one nesting level. */
   it("outdents a nested task by dragging it left", async () => {
     const moveTask = vi.fn(
       async (

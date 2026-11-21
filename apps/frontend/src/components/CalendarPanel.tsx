@@ -26,63 +26,6 @@ type CalendarDay = {
 };
 
 /**
- * @callback CalendarPanelPropsLocationForTask
- * @param {Task} task
- * @returns {string}
- */
-
-/**
- * @callback CalendarPanelPropsOnMonthChange
- * @param {string} month
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnShiftMonth
- * @param {number} amount
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnToday
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnMarkDate
- * @param {string} date
- * @returns {(event: DragEvent<HTMLElement>) => void}
- */
-
-/**
- * @callback CalendarPanelPropsOnDropDate
- * @param {string} date
- * @returns {(event: DragEvent<HTMLElement>) => void}
- */
-
-/**
- * @callback CalendarPanelPropsOnLeaveDate
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnTaskDragStart
- * @param {Task} task
- * @param {DragEvent<HTMLButtonElement>} event
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnTaskDragEnd
- * @returns {void}
- */
-
-/**
- * @callback CalendarPanelPropsOnTaskOpen
- * @param {Task} task
- * @returns {void}
- */
-/**
  * Calendar grid data and handlers for navigation, selection, and drag and drop.
  *
  * @typedef {Object} CalendarPanelProps
@@ -93,16 +36,16 @@ type CalendarDay = {
  * @property {Array<Task>} tasks - Tasks displayed in the calendar.
  * @property {number} taskCount - Number of tasks.
  * @property {string | null} activeDate - Date currently selected in the calendar.
- * @property {CalendarPanelPropsLocationForTask} locationForTask - Determines a task's position in the list.
- * @property {CalendarPanelPropsOnMonthChange} onMonthChange - Handles selecting another month.
- * @property {CalendarPanelPropsOnShiftMonth} onShiftMonth - Moves the calendar to an adjacent month.
- * @property {CalendarPanelPropsOnToday} onToday - Selects today's date.
- * @property {CalendarPanelPropsOnMarkDate} onMarkDate - Marks a date in the calendar.
- * @property {CalendarPanelPropsOnDropDate} onDropDate - Handles dropping a task on a date.
- * @property {CalendarPanelPropsOnLeaveDate} onLeaveDate - Handles ending a drag over a date.
- * @property {CalendarPanelPropsOnTaskDragStart} onTaskDragStart - Starts dragging a task.
- * @property {CalendarPanelPropsOnTaskDragEnd} onTaskDragEnd - Ends dragging a task.
- * @property {CalendarPanelPropsOnTaskOpen} onTaskOpen - Opens task details.
+ * @property locationForTask - Determines a task's position in the list.
+ * @property onMonthChange - Handles selecting another month.
+ * @property onShiftMonth - Moves the calendar to an adjacent month.
+ * @property onToday - Selects today's date.
+ * @property onMarkDate - Marks a date in the calendar.
+ * @property onDropDate - Handles dropping a task on a date.
+ * @property onLeaveDate - Handles ending a drag over a date.
+ * @property onTaskDragStart - Starts dragging a task.
+ * @property onTaskDragEnd - Ends dragging a task.
+ * @property onTaskOpen - Opens task details.
  */
 export type CalendarPanelProps = {
   month: string;

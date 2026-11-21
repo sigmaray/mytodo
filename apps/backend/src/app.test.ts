@@ -4,9 +4,6 @@ import { cleanupTestResources, createTestAgent } from "./appTestUtils";
 afterEach(cleanupTestResources);
 
 describe("POST /tasks", () => {
-  /** Cover task creation, updates, moves, and cascading API operations. */
-  /** Successful creation returns a new task with the accepted fields. */
-  /** Task creation returns server-generated values and persists the task in the repository. */
   it("creates a task", async () => {
     const response = await (await createTestAgent()).post("/tasks").send({ title: "Ship MVP" }).expect(201);
 
@@ -19,8 +16,6 @@ describe("POST /tasks", () => {
     expect(response.body.task.lexicalOrder).toEqual(expect.any(String));
   });
 
-  /** PATCH updates a task, and DELETE removes it from the repository. */
-  /** Task updates persist, and deletion removes the task from the list. */
   it("updates and deletes a task", async () => {
     const agent = await createTestAgent();
     const createResponse = await agent.post("/tasks").send({ title: "Draft title" }).expect(201);
@@ -37,8 +32,6 @@ describe("POST /tasks", () => {
     expect(emptyResponse.body.tasks).toEqual([]);
   });
 
-  /** Cover project and section creation and moving tasks between lists. */
-  /** Projects and sections can be created, and tasks can move between the Inbox and a project. */
   it("creates projects, inbox sections, and moves tasks between them", async () => {
     const agent = await createTestAgent();
     const projectResponse = await agent.post("/projects").send({ title: "Roadmap" }).expect(201);
@@ -83,8 +76,6 @@ describe("POST /tasks", () => {
     });
   });
 
-  /** A task must not reference a section from another project. */
-  /** The API rejects a section that belongs to a different project. */
   it("rejects assigning a task to a section from a different project", async () => {
     const agent = await createTestAgent();
     const projectA = (await agent.post("/projects").send({ title: "A" }).expect(201)).body.project;
@@ -109,8 +100,6 @@ describe("POST /tasks", () => {
       .expect(400);
   });
 
-  /** Moving a task under itself or a descendant must not create a cycle. */
-  /** Move validation rejects cyclic task hierarchies. */
   it("rejects moving a task into itself or one of its descendants", async () => {
     const agent = await createTestAgent();
     const parent = (await agent.post("/tasks").send({ title: "Parent" }).expect(201)).body.task;
@@ -128,8 +117,6 @@ describe("POST /tasks", () => {
     expect(listed.body.tree[0].children[0]).toMatchObject({ id: child.id, parentId: parent.id });
   });
 
-  /** Deleting a section returns its tasks to the root list without deleting them. */
-  /** Section deletion preserves the tasks and unlinks them from the section. */
   it("updates and deletes sections without deleting tasks", async () => {
     const agent = await createTestAgent();
     const sectionResponse = await agent.post("/sections").send({ title: "Later" }).expect(201);
@@ -156,8 +143,6 @@ describe("POST /tasks", () => {
     });
   });
 
-  /** Deleting a project clears its sections and tasks according to the cascade policy. */
-  /** Project deletion cascades to its sections and tasks. */
   it("updates and deletes projects, cascading to their sections and tasks", async () => {
     const agent = await createTestAgent();
     const projectResponse = await agent.post("/projects").send({ title: "Roadmap" }).expect(201);
@@ -202,8 +187,6 @@ describe("POST /tasks", () => {
     expect(tasks.body.tree).toEqual([]);
   });
 
-  /** A project copy gets an independent description and remapped internal IDs. */
-  /** The duplicate has its own description and new section and task tree relationships. */
   it("duplicates project descriptions independently and remaps sections and task hierarchy", async () => {
     const agent = await createTestAgent();
     const source = (await agent.post("/projects").send({ title: "Source" }).expect(201)).body.project;
@@ -266,8 +249,6 @@ describe("POST /tasks", () => {
     expect(copiedParent.id).not.toBe(parent.id);
   });
 
-  /** A missing project should return status 404. */
-  /** An unknown project returns HTTP 404. */
   it("returns 404 for unknown projects", async () => {
     const agent = await createTestAgent();
 
@@ -275,8 +256,6 @@ describe("POST /tasks", () => {
     await agent.delete("/projects/missing").expect(404);
   });
 
-  /** Archiving remains disabled until its feature flag is enabled. */
-  /** Archiving is disabled by default in both capabilities and API routes. */
   it("disables project archiving by default in features and the API", async () => {
     const agent = await createTestAgent();
     const project = (await agent.post("/projects").send({ title: "Plan" }).expect(201)).body.project as {
@@ -289,8 +268,6 @@ describe("POST /tasks", () => {
     await agent.patch(`/projects/${project.id}/archive`).send({ archived: true }).expect(503);
   });
 
-  /** Cover saving task details, archiving, and duplicating projects. */
-  /** The API saves task details and supports project archiving and duplication. */
   it("persists task details and supports archiving and duplicating projects", async () => {
     const agent = await createTestAgent({ projectArchivingEnabled: true });
     const project = (await agent.post("/projects").send({ title: "Plan" }).expect(201)).body.project as {
@@ -329,8 +306,6 @@ describe("POST /tasks", () => {
     );
   });
 
-  /** The server assigns IDs and timestamps to new comments while preserving existing IDs. */
-  /** New comments receive server-generated IDs and timestamps; existing IDs remain unchanged. */
   it("assigns comment IDs and creation times on the server while preserving existing IDs", async () => {
     const agent = await createTestAgent();
     const task = (await agent.post("/tasks").send({ title: "Comment IDs" }).expect(201)).body.task;
@@ -354,8 +329,6 @@ describe("POST /tasks", () => {
     });
   });
 
-  /** Neighbor order in the request determines the new task order. */
-  /** Neighbor IDs define and persist the new task order. */
   it("reorders tasks with beforeId and afterId", async () => {
     const agent = await createTestAgent();
     const create = async (title: string) =>
@@ -394,8 +367,6 @@ describe("POST /tasks", () => {
 });
 
 describe("PATCH /projects/:id/order", () => {
-  /** The requested project position must persist when read back through the API. */
-  /** Project order after reordering persists across reloads. */
   it("persists the requested project order", async () => {
     const agent = await createTestAgent();
     const created = await Promise.all(
@@ -415,8 +386,6 @@ describe("PATCH /projects/:id/order", () => {
 });
 
 describe("project hierarchy", () => {
-  /** Cover subproject creation, moving between levels, and cycle prevention. */
-  /** Project nesting and moves work, while cycles in the project tree are rejected. */
   it("creates subprojects, moves projects across levels, and rejects cycles", async () => {
     const agent = await createTestAgent();
     const root = (await agent.post("/projects").send({ title: "Root" }).expect(201)).body.project;
@@ -453,8 +422,6 @@ describe("project hierarchy", () => {
 });
 
 describe("PATCH /sections/:id/order", () => {
-  /** Section reordering is scoped to its project and persists when read back. */
-  /** Section order persists within the selected project or the Inbox. */
   it("persists the requested section order within its scope", async () => {
     const agent = await createTestAgent();
     const created = await Promise.all(

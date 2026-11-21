@@ -9,7 +9,6 @@ import { expect, test } from "./fixtures";
 const localIsoDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-/** Keep the calendar readable on mobile and allow moving tasks between dates. */
 test("month calendar stays readable on mobile and moves tasks between days", async ({ page }, testInfo) => {
   const request = page.request;
   const title = `Calendar task ${Date.now()}-${testInfo.workerIndex}`;
@@ -90,7 +89,6 @@ test("month calendar stays readable on mobile and moves tasks between days", asy
   }
 });
 
-/** Date list tabs show only tasks in the corresponding time range. */
 test("Dates list tabs show only tasks in their date range", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const request = page.request;

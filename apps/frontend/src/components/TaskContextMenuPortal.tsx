@@ -2,35 +2,16 @@ import type { TaskNode } from "@todoist-clone/domain";
 import { createPortal } from "react-dom";
 
 /**
- * @callback TaskContextMenuPortalPropsOnOpen
- * @returns {void}
- */
-
-/**
- * @callback TaskContextMenuPortalPropsOnQuickEdit
- * @returns {void}
- */
-
-/**
- * @callback TaskContextMenuPortalPropsOnAddSubtask
- * @returns {void}
- */
-
-/**
- * @callback TaskContextMenuPortalPropsOnDelete
- * @returns {void}
- */
-/**
  * Task, position, and actions for the floating context menu.
  *
  * @typedef {Object} TaskContextMenuPortalProps
  * @property {TaskNode | null} task - Task shown in the context menu.
  * @property {number} left - Horizontal position of the menu.
  * @property {number} top - Vertical position of the menu.
- * @property {TaskContextMenuPortalPropsOnOpen} onOpen - Opens the dialog or item.
- * @property {TaskContextMenuPortalPropsOnQuickEdit} onQuickEdit - Opens the task quick editor.
- * @property {TaskContextMenuPortalPropsOnAddSubtask} onAddSubtask - Creates a subtask.
- * @property {TaskContextMenuPortalPropsOnDelete} onDelete - Deletes the selected item.
+ * @property onOpen - Opens the dialog or item.
+ * @property onQuickEdit - Opens the task quick editor.
+ * @property onAddSubtask - Creates a subtask.
+ * @property onDelete - Deletes the selected item.
  */
 type TaskContextMenuPortalProps = {
   task: TaskNode | null;

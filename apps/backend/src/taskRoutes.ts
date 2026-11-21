@@ -3,47 +3,52 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { TaskRepository } from "./repository";
 
-/** Validates new task fields and supplies default context values. */
+/** Validates new task fields and supplies default context values.
+ * @property {string} title - Task title, trimmed and required to be non-empty.
+ * @property {string | null} parentId - Parent task, or the tree root by default.
+ * @property {string | null} projectId - Destination project; `null` means the Inbox.
+ * @property {string | null} sectionId - Destination section, or the project root by default.
+ */
 const createTaskSchema = z.object({
-  /** Title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Parent task, or the tree root by default. */
   parentId: z.string().nullable().default(null),
-  /** Destination project; `null` means the Inbox. */
   projectId: z.string().nullable().default(null),
-  /** Destination section, or the default value with no section. */
   sectionId: z.string().nullable().default(null),
 });
 
-/** Validates allowed task fields and the integrity of its comment list. */
+/** Validates allowed task fields and the integrity of its comment list.
+ * @property {string} [title] - New task title, trimmed and non-empty when supplied.
+ * @property {string} [description] - Detailed description, limited to the API size constraint.
+ * @property {string | null} [dueDate] - Due date in YYYY-MM-DD format, or `null` to clear it.
+ * @property {Array<string>} [labels] - Complete label list, limited by count and length.
+ * @property {Array<Object>} [comments] - Complete ordered comment list.
+ * @property {string} [comments.id] - Existing comment ID; omit it for a new comment.
+ * @property {string} comments.body - Comment text; it may be empty when a file is attached.
+ * @property {Array<Object>} [comments.attachments] - References to files already uploaded for the comment.
+ * @property {string} comments.attachments.id - File UUID in internal storage.
+ * @property {string} comments.attachments.name - File name shown to users and used for downloads.
+ * @property {string} comments.attachments.mimeType - File MIME type.
+ * @property {number} comments.attachments.size - File size in bytes.
+ * @property {boolean} [completed] - New completion status.
+ * @property {string | null} [projectId] - Destination project, or `null` for the Inbox.
+ * @property {string | null} [sectionId] - Destination section, or `null` for the project root.
+ */
 const patchTaskSchema = z.object({
-  /** New task title. */
   title: z.string().trim().min(1).optional(),
-  /** Detailed description, limited to the API size constraint. */
   description: z.string().max(20000).optional(),
-  /** Due date in YYYY-MM-DD format, or `null` to clear it. */
   dueDate: z.string().date().nullable().optional(),
-  /** Complete label list, limited by count and length. */
   labels: z.array(z.string().trim().min(1).max(64)).max(50).optional(),
-  /** Complete ordered list of comments after editing. */
   comments: z
     .array(
       z.object({
-        /** ID of an existing comment; omit it for a new comment. */
         id: z.string().optional(),
-        /** Comment text; it may be empty when a file is attached. */
         body: z.string().max(5000),
-        /** References to files already uploaded for this comment. */
         attachments: z
           .array(
             z.object({
-              /** File UUID in the internal storage. */
               id: z.string(),
-              /** File name shown to users and used for downloads. */
               name: z.string(),
-              /** File MIME type. */
               mimeType: z.string(),
-              /** File size in bytes. */
               size: z.number(),
             }),
           )
@@ -69,65 +74,78 @@ const patchTaskSchema = z.object({
   sectionId: z.string().nullable().optional(),
 });
 
-/** Validates the task's new placement and neighboring tasks. */
+/** Validates a task's new placement and its neighboring tasks.
+ * @property {string | null} parentId - New parent task, or the tree root.
+ * @property {string | null} projectId - Destination project, or the Inbox.
+ * @property {string | null} sectionId - Destination section, or the project root.
+ * @property {string | null} beforeId - ID of the neighboring task to place this task before.
+ * @property {string | null} afterId - ID of the neighboring task to place this task after.
+ */
 const moveTaskSchema = z.object({
-  /** New parent task, or the tree root. */
   parentId: z.string().nullable().default(null),
-  /** Destination project, or the Inbox. */
   projectId: z.string().nullable().default(null),
-  /** Destination section, or the list root. */
   sectionId: z.string().nullable().default(null),
-  /** ID of the neighboring task to place this task before. */
   beforeId: z.string().nullable().default(null),
-  /** ID of the neighboring task to place this task after. */
   afterId: z.string().nullable().default(null),
 });
 
-/** Validates a project name and optional parent project reference. */
+/** Validates a project name and optional parent project reference.
+ * @property {string} title - Project title with surrounding whitespace removed.
+ * @property {string | null} parentId - Parent project for a new subproject.
+ */
 const createProjectSchema = z.object({
-  /** Project title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Parent project for a new subproject. */
   parentId: z.string().nullable().default(null),
 });
-/** Validates the parent ID when moving a project. */
+/** Validates the parent ID when moving a project.
+ * @property {string | null} parentId - New parent project, or `null` to move the project to the root.
+ */
 const moveProjectSchema = z.object({
-  /** New parent project, or `null` to move the project to the root. */
   parentId: z.string().nullable(),
 });
 
-/** Accepts only a non-empty update to a project's title and/or description. */
+/** Accepts only a non-empty update to a project's title and/or description.
+ * @property {string} [title] - New project title.
+ * @property {string} [description] - New project description.
+ */
 const patchProjectSchema = z
   .object({
-    /** New project title. */
     title: z.string().trim().min(1).optional(),
-    /** New project description. */
     description: z.string().max(20000).optional(),
   })
   .refine((patch) => patch.title !== undefined || patch.description !== undefined);
 
-/** Identifies the two neighbors between which to place a project or section. */
+/** Identifies the two neighbors between which to place a project or section.
+ * @property {string | null} beforeId - Neighbor to place the entity before, or `null`.
+ * @property {string | null} afterId - Neighbor to place the entity after, or `null`.
+ */
 const reorderProjectSchema = z.object({
-  /** Neighbor to place the entity before, or `null`. */
   beforeId: z.string().nullable(),
-  /** Neighbor to place the entity after, or `null`. */
   afterId: z.string().nullable(),
 });
+/** Reuses project neighbor validation for section ordering. */
 const reorderSectionSchema = reorderProjectSchema;
 
-/** Validates new section data and its project. */
+/** Validates new section data and its project.
+ * @property {string} title - New section title with surrounding whitespace removed.
+ * @property {string | null} projectId - Owning project, or `null` for an Inbox section.
+ */
 const createSectionSchema = z.object({
-  /** New section title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Owning project, or `null` for an Inbox section. */
   projectId: z.string().nullable().default(null),
 });
 
-/** Validates a new, non-empty section title. */
+/** Validates a new, non-empty section title.
+ * @property {string} title - New section title.
+ */
 const patchSectionSchema = z.object({
-  /** New section title. */
   title: z.string().trim().min(1),
 });
+
+/** Validates whether a project should be archived.
+ * @property {boolean} archived - Whether the project should be archived.
+ */
+const archiveProjectSchema = z.object({ archived: z.boolean() });
 
 /**
  * Hono application type containing the authenticated user's data.
@@ -179,7 +197,6 @@ export const registerTaskRoutes = (
   });
 
   app.post("/projects", async (context) => {
-    /** Validate the schema before passing HTTP input to the repository. */
     const result = createProjectSchema.safeParse(await parseJson(context.req.raw));
 
     if (!result.success) {
@@ -258,7 +275,7 @@ export const registerTaskRoutes = (
 
   app.patch("/projects/:id/archive", async (context) => {
     if (!projectArchivingEnabled) return context.json({ error: "Project archiving is disabled" }, 503);
-    const result = z.object({ archived: z.boolean() }).safeParse(await parseJson(context.req.raw));
+    const result = archiveProjectSchema.safeParse(await parseJson(context.req.raw));
     if (!result.success) return context.json({ error: "Invalid archive state" }, 400);
     const project = await repositoryFor(context.get("userId")).setProjectArchived(
       context.req.param("id"),

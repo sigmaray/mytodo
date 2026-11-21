@@ -55,75 +55,24 @@ const useSidebarScrollPosition = () => {
 };
 
 /**
- * @callback AppSidebarPropsOnInboxSelect
- * @returns {void}
- */
-
-/**
- * @callback AppSidebarPropsOnProjectSelect
- * @param {ProjectId} projectId
- * @returns {void}
- */
-
-/**
- * @callback AppSidebarPropsOnTaskSelect
- * @param {Task} task
- * @returns {void}
- */
-
-/**
- * @callback AppSidebarPropsOnAddTask
- * @returns {void}
- */
-
-/**
- * @callback AppSidebarPropsIsProjectDropActive
- * @param {ProjectId | null} projectId
- * @returns {boolean}
- */
-
-/**
- * @callback AppSidebarPropsOnProjectDragEnter
- * @param {ProjectId} projectId
- * @returns {React.DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback AppSidebarPropsOnProjectDragOver
- * @param {ProjectId} projectId
- * @returns {React.DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback AppSidebarPropsOnProjectDragLeave
- * @param {ProjectId} projectId
- * @returns {React.DragEventHandler<HTMLElement>}
- */
-
-/**
- * @callback AppSidebarPropsOnProjectDrop
- * @param {ProjectId} projectId
- * @returns {React.DragEventHandler<HTMLElement>}
- */
-/**
  * Navigation data and handlers for the shared workspace sidebar.
  *
  * @typedef {Object} AppSidebarProps
  * @property {ApplicationApi | null} api - API operations for server data.
  * @property {ProjectId | null} [selectedProjectId] - ID of the selected project.
- * @property {AppSidebarPropsOnInboxSelect} [onInboxSelect] - Navigates to the Inbox.
- * @property {AppSidebarPropsOnProjectSelect} [onProjectSelect] - Opens a project.
- * @property {AppSidebarPropsOnTaskSelect} [onTaskSelect] - Selects a task.
- * @property {AppSidebarPropsOnAddTask} [onAddTask] - Adds a task.
- * @property {AppSidebarPropsIsProjectDropActive} [isProjectDropActive] - Whether a project is an active drag target.
+ * @property [onInboxSelect] - Navigates to the Inbox.
+ * @property [onProjectSelect] - Opens a project.
+ * @property [onTaskSelect] - Selects a task.
+ * @property [onAddTask] - Adds a task.
+ * @property [isProjectDropActive] - Whether a project is an active drag target.
  * @property {React.DragEventHandler<HTMLElement>} [onInboxDragEnter] - Handles entering the Inbox during a drag.
  * @property {React.DragEventHandler<HTMLElement>} [onInboxDragOver] - Handles dragging over the Inbox.
  * @property {React.DragEventHandler<HTMLElement>} [onInboxDragLeave] - Handles leaving the Inbox during a drag.
  * @property {React.DragEventHandler<HTMLElement>} [onInboxDrop] - Handles dropping onto the Inbox.
- * @property {AppSidebarPropsOnProjectDragEnter} [onProjectDragEnter] - Handles entering a project during a drag.
- * @property {AppSidebarPropsOnProjectDragOver} [onProjectDragOver] - Updates the project drop target during a drag.
- * @property {AppSidebarPropsOnProjectDragLeave} [onProjectDragLeave] - Clears the project hover state.
- * @property {AppSidebarPropsOnProjectDrop} [onProjectDrop] - Handles dropping onto a project.
+ * @property [onProjectDragEnter] - Handles entering a project during a drag.
+ * @property [onProjectDragOver] - Updates the project drop target during a drag.
+ * @property [onProjectDragLeave] - Clears the project hover state.
+ * @property [onProjectDrop] - Handles dropping onto a project.
  */
 type AppSidebarProps = {
   api: ApplicationApi | null;

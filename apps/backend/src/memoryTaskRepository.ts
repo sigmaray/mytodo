@@ -126,9 +126,10 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
   return {
     /** Read methods return only data owned by this repository instance. */
     list: async () => tasks,
+    /** Lists all projects owned by this repository instance. */
     listProjects: async () => projects,
+    /** Creates a top-level project and appends it after its current siblings. */
     createProject: async (title) => {
-      /** Append a new project after the existing top-level projects. */
       const createdAt = now();
       const siblings = projects
         .filter((project) => project.parentId === null)
@@ -148,6 +149,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return project;
     },
+    /** Creates a nested project under an existing parent. */
     createSubproject: async (title, parentId) => {
       /** A subproject cannot be created when its parent does not exist. */
       if (!projects.some((project) => project.id === parentId)) throw new Error("Parent project not found");
@@ -168,6 +170,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       projects = [...projects, project];
       return project;
     },
+    /** Moves a project to a new parent or to the root level. */
     moveProject: async (id, parentId) => {
       /** Check the parent and its ancestors to prevent the move from creating a cycle. */
       const existing = projects.find((item) => item.id === id);
@@ -194,6 +197,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       projects = projects.map((item) => (item.id === id ? moved : item));
       return moved;
     },
+    /** Reorders a project among its siblings using the supplied neighbors. */
     reorderProject: async (id, beforeId, afterId) => {
       /** Consider only projects at the same level when computing the sort key. */
       const existing = projects.find((project) => project.id === id);
@@ -224,6 +228,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
         );
       return reordered;
     },
+    /** Updates a project's supported fields and modification time. */
     updateProject: async (id, patch) => {
       /** A missing project cannot be updated. */
       const existing = projects.find((project) => project.id === id);
@@ -242,6 +247,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return updated;
     },
+    /** Deletes a project and the project data contained within it. */
     deleteProject: async (id) => {
       /** Before deletion, collect project tasks and section tasks with all their descendants. */
       const existing = projects.find((project) => project.id === id);
@@ -271,6 +277,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return true;
     },
+    /** Duplicates a project and remaps IDs for its copied contents. */
     duplicateProject: async (id) => {
       /** Give the copy new IDs and use lookup maps to preserve its internal references. */
       const source = projects.find((project) => project.id === id);
@@ -316,6 +323,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       replace([...tasks, ...newTasks]);
       return duplicated;
     },
+    /** Updates whether a project is archived. */
     setProjectArchived: async (id, archived) => {
       /** Update the archive flag without changing the project contents. */
       const existing = projects.find((project) => project.id === id);
@@ -324,7 +332,9 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       projects = projects.map((project) => (project.id === id ? updated : project));
       return updated;
     },
+    /** Lists all sections owned by this repository instance. */
     listSections: async () => sections,
+    /** Reorders a section among sections in the same project. */
     reorderSection: async (id, beforeId, afterId) => {
       /** Reordering is limited to sections in the same project. */
       const section = sections.find((item) => item.id === id);
@@ -355,6 +365,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
         );
       return reordered;
     },
+    /** Creates a section in the Inbox or the specified project. */
     createSection: async (title, projectId) => {
       /** Give the new section a key after the project's last section. */
       const createdAt = now();
@@ -372,6 +383,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return section;
     },
+    /** Renames an existing section. */
     updateSection: async (id, title) => {
       /** Preserve the other section fields and update only its title and modification time. */
       const existing = sections.find((section) => section.id === id);
@@ -390,8 +402,8 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return updated;
     },
+    /** Deletes a section and moves its tasks to the project root. */
     deleteSection: async (id) => {
-      /** Keep tasks from a deleted section in the project, but move them to the root level. */
       const existing = sections.find((section) => section.id === id);
 
       if (existing === undefined) {
@@ -407,6 +419,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return true;
     },
+    /** Creates a task at the requested project, section, and parent placement. */
     create: async (title, parentId, projectId, sectionId) => {
       /** Before creation, check that the selected section matches the task's project. */
       if (!hasValidTaskPlacement(projectId, sectionId)) throw new Error("Section does not belong to project");
@@ -431,6 +444,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return task;
     },
+    /** Applies a partial update to an existing task. */
     patch: async (id, patch) => {
       /** For a partial update, preserve the original task and carry over unchanged fields. */
       const existing = tasks.find((task) => task.id === id);
@@ -473,6 +487,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return updated;
     },
+    /** Adds a comment to an existing task. */
     addComment: async (id, comment) => {
       /** Add the comment to the task and update the task timestamp. */
       const existing = tasks.find((task) => task.id === id);
@@ -485,6 +500,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
       replace(tasks.map((task) => (task.id === id ? updated : task)));
       return true;
     },
+    /** Moves a task to the requested placement and sibling order. */
     move: async (id, move) => {
       /** Reject missing parents, cycles, and mismatched project and section assignments. */
       const existing = tasks.find((task) => task.id === id);
@@ -517,6 +533,7 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
 
       return updated;
     },
+    /** Deletes a task and all of its descendants. */
     delete: async (id) => {
       /** Deleting a root task also deletes its entire subtree. */
       const existing = tasks.find((task) => task.id === id);

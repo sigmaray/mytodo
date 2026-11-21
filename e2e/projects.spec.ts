@@ -6,7 +6,6 @@ test.beforeEach(async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 });
 
-/** Rename the open project title directly on the page. */
 test("renames the current project inline from its heading", async ({ page }, testInfo) => {
   const projectTitle = `Inline rename ${testInfo.workerIndex}-${Date.now()}`;
   const renamedTitle = `${projectTitle} updated`;
@@ -21,7 +20,6 @@ test("renames the current project inline from its heading", async ({ page }, tes
   await expect(page.getByRole("button", { name: renamedTitle, exact: true })).toBeVisible();
 });
 
-/** Create subprojects and change project parents using drag and drop. */
 test("creates subprojects and drags projects into and out of a parent", async ({ page }, testInfo) => {
   const suffix = `${Date.now()}-${testInfo.workerIndex}`;
   const root = `Root ${suffix}`;
@@ -59,7 +57,6 @@ test("creates subprojects and drags projects into and out of a parent", async ({
   ).toHaveCSS("padding-inline-start", "0px");
 });
 
-/** Project reordering before or after neighbors persists after reload. */
 test("reorders projects reliably before and after siblings and persists the order", async ({
   page,
 }, testInfo) => {
@@ -105,7 +102,6 @@ test("reorders projects reliably before and after siblings and persists the orde
     .toBe(true);
 });
 
-/** Keep the drop highlight stable and prevent moving a project into its own descendant. */
 test("keeps project drop feedback stable and blocks dragging a project into its descendant", async ({
   page,
 }, testInfo) => {
@@ -138,7 +134,6 @@ test("keeps project drop feedback stable and blocks dragging a project into its 
   ).toHaveCSS("padding-inline-start", "18px");
 });
 
-/** Verify dragging a project row with the mouse. */
 test("supports real mouse dragging of project rows", async ({ page }, testInfo) => {
   const suffix = `${Date.now()}-${testInfo.workerIndex}`;
   const first = `Mouse drag first ${suffix}`;
@@ -167,7 +162,6 @@ test("supports real mouse dragging of project rows", async ({ page }, testInfo) 
     .toBe(true);
 });
 
-/** A touch gesture can nest a project through the mobile sidebar. */
 test("nests a project with touch dragging in the mobile sidebar", async ({ page }, testInfo) => {
   const suffix = `${Date.now()}-${testInfo.workerIndex}`;
   const targetTitle = `Touch target ${suffix}`;
@@ -242,7 +236,6 @@ test("nests a project with touch dragging in the mobile sidebar", async ({ page 
   }
 });
 
-/** The shared mobile sidebar is consistent across routes and closes after navigation. */
 test("keeps the shared mobile sidebar consistent and closes it after navigation", async ({
   page,
 }, testInfo) => {
@@ -292,7 +285,6 @@ test("keeps the shared mobile sidebar consistent and closes it after navigation"
   await selectNavigationItem("Inbox", "/");
 });
 
-/** Show project archive actions when the feature is enabled. */
 test("shows project archiving controls when project archiving is enabled", async ({ page }, testInfo) => {
   const projectTitle = `Archivable project ${Date.now()}-${testInfo.workerIndex}`;
   await page.goto("/");

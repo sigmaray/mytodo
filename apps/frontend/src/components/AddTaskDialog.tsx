@@ -88,23 +88,6 @@ type AddTaskDraft = {
 };
 
 /**
- * @callback AddTaskDialogPropsOnSubmit
- * @param {FormEvent<HTMLFormElement>} event
- * @returns {void | Promise<void>}
- */
-
-/**
- * @callback AddTaskDialogPropsPastedFiles
- * @param {DataTransfer} data
- * @returns {Array<File>}
- */
-
-/**
- * @callback AddTaskDialogPropsNotifyAttachedFiles
- * @param {Array<File>} files
- * @returns {void}
- */
-/**
  * Dialog inputs, including application capabilities and form actions.
  *
  * @typedef {Object} AddTaskDialogProps
@@ -114,9 +97,9 @@ type AddTaskDraft = {
  * @property {Array<{ value: string; label: string }>} placementOptions - Available task placements.
  * @property {string} placementOptions.value - Placement identifier.
  * @property {string} placementOptions.label - Human-readable placement name.
- * @property {AddTaskDialogPropsOnSubmit} onSubmit - Submits the form.
- * @property {AddTaskDialogPropsPastedFiles} pastedFiles - Files pasted from the clipboard.
- * @property {AddTaskDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Reports the selected files.
+ * @property onSubmit - Submits the form.
+ * @property pastedFiles - Files pasted from the clipboard.
+ * @property notifyAttachedFiles - Reports the selected files.
  */
 type AddTaskDialogProps = {
   draft: AddTaskDraft;

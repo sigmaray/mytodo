@@ -31,17 +31,12 @@ export type AttachmentLibraryItem = {
 };
 
 /**
- * @callback AttachmentsPagePropsOnTaskOpen
- * @param {string} taskId
- * @returns {void}
- */
-/**
  * Data and handlers for the attachment library page.
  *
  * @typedef {Object} AttachmentsPageProps
  * @property {Array<AttachmentLibraryItem>} attachments - User's attachments.
  * @property {boolean} loading - Whether attachments are loading.
- * @property {AttachmentsPagePropsOnTaskOpen} onTaskOpen - Opens task details.
+ * @property onTaskOpen - Opens task details.
  */
 export type AttachmentsPageProps = {
   attachments: Array<AttachmentLibraryItem>;

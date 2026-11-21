@@ -16,57 +16,6 @@ import { AutoGrowTextarea, DatePickerPanel } from "./TaskFormFields";
 type TaskDetailsPatch = Parameters<ApplicationApi["updateTask"]>[1];
 
 /**
- * @callback TaskDetailsDialogPropsConfirmDeletion
- * @param {string} message
- * @returns {boolean}
- */
-
-/**
- * @callback TaskDetailsDialogPropsSaveTaskDetails
- * @param {TaskDetailsPatch} patch
- * @returns {Promise<boolean>}
- */
-
-/**
- * @callback TaskDetailsDialogPropsRemoveCommentAttachment
- * @param {string} commentId
- * @param {string} attachmentId
- * @returns {Promise<void>}
- */
-
-/**
- * @callback TaskDetailsDialogPropsCloseMobileLabels
- * @returns {Promise<void>}
- */
-
-/**
- * @callback TaskDetailsDialogPropsCloseMobileComments
- * @returns {Promise<void>}
- */
-
-/**
- * @callback TaskDetailsDialogPropsCloseMobileSubtasks
- * @returns {Promise<void>}
- */
-
-/**
- * @callback TaskDetailsDialogPropsOpenDetails
- * @param {TaskNode} task
- * @returns {void}
- */
-
-/**
- * @callback TaskDetailsDialogPropsNotifyAttachedFiles
- * @param {Array<File>} files
- * @returns {void}
- */
-
-/**
- * @callback TaskDetailsDialogPropsPastedFiles
- * @param {DataTransfer} clipboardData
- * @returns {Array<File>}
- */
-/**
  * Data, state, and actions for the task details modal.
  *
  * @typedef {Object} TaskDetailsDialogProps
@@ -118,15 +67,15 @@ type TaskDetailsPatch = Parameters<ApplicationApi["updateTask"]>[1];
  * @property {Dispatch<SetStateAction<string>>} setDetailSubtask - Updates the new subtask title.
  * @property {Dispatch<SetStateAction<string | null>>} setEditingCommentId - Updates the comment being edited.
  * @property {Dispatch<SetStateAction<string>>} setEditingCommentBody - Updates the comment text draft.
- * @property {TaskDetailsDialogPropsConfirmDeletion} confirmDeletion - Requests confirmation before deletion.
- * @property {TaskDetailsDialogPropsSaveTaskDetails} saveTaskDetails - Saves changed task fields.
- * @property {TaskDetailsDialogPropsRemoveCommentAttachment} removeCommentAttachment - Removes a file attached to a comment.
- * @property {TaskDetailsDialogPropsCloseMobileLabels} closeMobileLabels - Saves labels and closes the mobile panel.
- * @property {TaskDetailsDialogPropsCloseMobileComments} closeMobileComments - Closes the mobile comments panel.
- * @property {TaskDetailsDialogPropsCloseMobileSubtasks} closeMobileSubtasks - Closes the mobile subtasks panel.
- * @property {TaskDetailsDialogPropsOpenDetails} openDetails - Opens the task details dialog.
- * @property {TaskDetailsDialogPropsNotifyAttachedFiles} notifyAttachedFiles - Reports the selected files.
- * @property {TaskDetailsDialogPropsPastedFiles} pastedFiles - Files pasted from the clipboard.
+ * @property confirmDeletion - Requests confirmation before deletion.
+ * @property saveTaskDetails - Saves changed task fields.
+ * @property removeCommentAttachment - Removes a file attached to a comment.
+ * @property closeMobileLabels - Saves labels and closes the mobile panel.
+ * @property closeMobileComments - Closes the mobile comments panel.
+ * @property closeMobileSubtasks - Closes the mobile subtasks panel.
+ * @property openDetails - Opens the task details dialog.
+ * @property notifyAttachedFiles - Reports the selected files.
+ * @property pastedFiles - Files pasted from the clipboard.
  */
 export type TaskDetailsDialogProps = {
   api: ApplicationApi;

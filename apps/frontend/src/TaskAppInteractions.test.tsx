@@ -17,7 +17,6 @@ beforeEach(() => {
 });
 
 describe("TaskApp", () => {
-  /** Deleting saved data from mobile sections requires user confirmation. */
   it("asks before removing saved labels, comments, and subtasks from mobile sections", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> => {
@@ -60,7 +59,6 @@ describe("TaskApp", () => {
     expect(deleteTask).not.toHaveBeenCalled();
   });
 
-  /** Navigating between routes closes the open mobile panel. */
   it("closes the mobile sidebar after each route selection", async () => {
     const user = userEvent.setup();
     renderApp(baseApi([]));
@@ -78,14 +76,12 @@ describe("TaskApp", () => {
     await waitFor(() => expect(sidebar).not.toHaveClass("mobile-sidebar-open"));
   });
 
-  /** The main screen displays the task list. */
   it("renders a task list", async () => {
     renderApp(baseApi([task({ id: "1", title: "Plan MVP" })]));
 
     expect(await screen.findByText("Plan MVP")).toBeInTheDocument();
   });
 
-  /** A task row displays its description and comment count. */
   it("shows a task description and comment count in the task list", async () => {
     const description = "A detailed description that is available directly from the task list.";
     renderApp(
@@ -109,7 +105,6 @@ describe("TaskApp", () => {
     expect(within(row).getByLabelText("2 comments")).toHaveTextContent("2");
   });
 
-  /** Label suggestions can be added, and selected labels can be removed. */
   it("adds suggested labels and removes label chips in task details", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
@@ -133,7 +128,6 @@ describe("TaskApp", () => {
     await waitFor(() => expect(updateTask).toHaveBeenCalledWith("task-1", { labels: ["review"] }));
   });
 
-  /** Cover keyboard save and cancel, due dates, and labels while editing. */
   it("edits text on demand with Save, Cancel, Enter and Escape, and edits dates and labels", async () => {
     const updateTask = vi.fn(
       async (id: string, patch: Parameters<ApplicationApi["updateTask"]>[1]): Promise<Task> =>
@@ -195,7 +189,6 @@ describe("TaskApp", () => {
     expect(within(dialog).queryByRole("button", { name: "Save task" })).not.toBeInTheDocument();
   });
 
-  /** Details show task placement and parents, and the form can change its list. */
   it("shows task location and parent links, and moves tasks between Inbox and projects", async () => {
     const moveTask = vi.fn(
       async (id: string, projectId: string | null, sectionId: string | null): Promise<Task> =>
@@ -246,7 +239,6 @@ describe("TaskApp", () => {
     expect(within(dialog).queryByRole("navigation", { name: "Task location" })).not.toBeInTheDocument();
   });
 
-  /** Submitting the form creates a task with the entered title. */
   it("calls the create handler when a task is submitted", async () => {
     const createTask = vi.fn(async (title: string): Promise<Task> => task({ id: "created", title }));
 
@@ -264,7 +256,6 @@ describe("TaskApp", () => {
     await waitFor(() => expect(createTask).toHaveBeenCalledWith("Write tests", null, null, null));
   });
 
-  /** Newly created projects are available when creating a later task. */
   it("creates projects and sends new tasks to the selected project", async () => {
     let projects = [] as Array<Project>;
     const createTask = vi.fn(
@@ -304,7 +295,6 @@ describe("TaskApp", () => {
     );
   });
 
-  /** A new subtask is saved under the selected parent task. */
   it("creates subtasks under an existing task", async () => {
     const createTask = vi.fn(
       async (
@@ -329,7 +319,6 @@ describe("TaskApp", () => {
     await waitFor(() => expect(createTask).toHaveBeenCalledWith("Write outline", null, null, "task-1"));
   });
 
-  /** The context menu shows actions when right-clicking an Inbox task. */
   it("opens task actions from the right-click menu in Inbox", async () => {
     renderApp({ ...baseApi([task({ id: "1", title: "Plan MVP" })]) });
 
@@ -347,7 +336,6 @@ describe("TaskApp", () => {
     expect(screen.getByLabelText("Edit Plan MVP")).toHaveFocus();
   });
 
-  /** Clicking within a subtree selects its root task. */
   it("selects the root task when clicking anywhere in its subtree", async () => {
     renderApp({
       ...baseApi([
@@ -385,7 +373,6 @@ describe("TaskApp", () => {
     expect(taskRow("Child")).not.toHaveClass("selection-selected");
   });
 
-  /** The S key enables selection in any keyboard layout; Escape exits the mode. */
   it("toggles selection mode with the S key in any keyboard layout and exits with Escape", async () => {
     renderApp({ ...baseApi([task({ id: "root", title: "Parent" })]) });
 
@@ -400,7 +387,6 @@ describe("TaskApp", () => {
     expect(taskRow("Parent")).toHaveClass("selection-mode");
   });
 
-  /** Bulk move applies to selected root tasks and clears the selection. */
   it("moves selected top-level tasks and cancels selection", async () => {
     const moveTask = vi.fn(
       async (

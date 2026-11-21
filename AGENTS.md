@@ -34,7 +34,36 @@ Self-hosted Todoist clone (MVP). A fast, hierarchical task manager with drag-and
 - E2E tests in Playwright must use functional helpers (closures), not Page Object Model classes. E2E testing is a mandatory part of the MVP.
 - Organize frontend code by feature and responsibility. Keep `App.tsx` focused on application setup, route composition, and shared providers; put feature pages, substantial dialogs, reusable UI, hooks, API calls, and feature-specific helpers in focused modules. Do not keep expanding a central component with unrelated workflows. Extract a module when it owns a distinct UI flow or when a change would otherwise add substantial conditional/state logic to an existing component.
 - Keep Hono route handlers as HTTP adapters: parse and validate input, enforce authentication/authorization, call a focused repository or functional service, and map the result to an HTTP response. Put multi-step business workflows and file-system operations in focused functional modules so they can be tested independently of routing.
-- Use descriptive names and keep functions and modules focused on one responsibility. Prefer explicit data flow and small pure helpers over deeply nested handlers or broad components. Add comments for non-obvious constraints and decisions, not to narrate straightforward code.
+- Use descriptive names and keep functions and modules focused on one responsibility. Prefer explicit data flow and small pure helpers over deeply nested handlers or broad components.
+- Maintain the project's current comprehensive code comments. Add and update concise comments in English for exported and important internal functions, types, interfaces, type fields, function parameters, configuration fields, and test helpers so their purpose and contracts remain documented. Add comments to meaningful branches and expressions inside functions, including straightforward operations when a nearby explanation helps identify their intent or role in the flow. Document validation rules, assumptions, constraints, side effects, and decisions where they appear. Do not add a comment immediately before a `test(` or `it(` block when its test title already describes the scenario; put explanations for non-obvious setup on the setup code or helper instead. Keep comments synchronized with behavior when code changes; do not remove existing comments merely because the code appears self-explanatory. Avoid comments that are stale, contradictory, or unrelated to the code they describe.
+- Every declared function (including local functions and named function expressions) and every data structure (including types, interfaces, and structured object declarations) MUST have a JSDoc comment in standard `/** ... */` format immediately before its declaration. Inline arrow-function callbacks passed directly as arguments do not need their own JSDoc; this includes callbacks such as array `map` handlers and test callbacks passed to `test` or `it`. Describe each documented function's purpose and relevant parameters/return value. For a data structure, describe its purpose and every field in that structure's JSDoc using `@property` tags; do not put field descriptions in separate comments inside the declaration. Use tags such as `@param`, `@returns`, and `@property` to document the contract. Keep the JSDoc concise, in English, and synchronized with the implementation.
+- Do not add separate `@callback` JSDoc typedef blocks for TypeScript callback types. TypeScript already declares the callback signature; describe a callback-valued data field's purpose in its `@property` text without duplicating the signature.
+
+  Examples:
+
+  ```ts
+  /** User account data returned by the API.
+   * @property {string} id - Stable account identifier.
+   * @property {string} name - Display name shown in the interface.
+   */
+  type UserAccount = {
+    id: string;
+    name: string;
+  };
+
+  /** Finds an account by its stable identifier.
+   * @param accounts Accounts available to the current user.
+   * @param id Identifier to look up.
+   * @returns The matching account, or `undefined` when it does not exist.
+   */
+  const findAccount = (accounts: Array<UserAccount>, id: string): UserAccount | undefined => {
+    for (const account of accounts) {
+      if (account.id === id) return account;
+    }
+    return undefined;
+  };
+  ```
+
 - Provide root-level `pnpm lint` and `pnpm format:check` scripts and run them for code changes. If either check is not configured, configure it as part of the next non-documentation code change; do not leave formatting and linting as manual review-only conventions.
 - Keep the largest eagerly loaded frontend JavaScript chunk at or below Vite's 500 KiB warning threshold. Lazy-load substantial routes and tools that are not needed for the initial screen. Do not raise `build.chunkSizeWarningLimit` just to silence a warning; document a justified exception and its impact if the limit cannot be met.
 

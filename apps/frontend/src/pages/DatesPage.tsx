@@ -5,27 +5,6 @@ import { calendarWeekdays } from "../components/TaskFormFields";
 import { renderTaskNodes } from "../components/TaskTreeView";
 
 /**
- * @callback DatesPagePropsCalendarTaskLocation
- * @param {Task} task
- * @returns {string}
- */
-
-/**
- * @callback DatesPagePropsShiftCalendarMonth
- * @param {number} amount
- * @returns {void}
- */
-
-/**
- * @callback DatesPagePropsOnToday
- * @returns {void}
- */
-
-/**
- * @callback DatesPagePropsOnLeaveDate
- * @returns {void}
- */
-/**
  * Calendar screen data and handlers for selecting, moving, and opening tasks.
  *
  * @typedef {Object} DatesPageProps
@@ -39,13 +18,13 @@ import { renderTaskNodes } from "../components/TaskTreeView";
  * @property {Array<Task>} calendarTasks - Tasks displayed in the calendar view.
  * @property {number} calendarTaskCount - Number of tasks displayed in the calendar.
  * @property {string | null} activeCalendarDate - Selected calendar date.
- * @property {DatesPagePropsCalendarTaskLocation} calendarTaskLocation - Determines a task's position in the calendar list.
+ * @property calendarTaskLocation - Determines a task's position in the calendar list.
  * @property {Dispatch<SetStateAction<string>>} setCalendarMonth - Selects the calendar month.
- * @property {DatesPagePropsShiftCalendarMonth} shiftCalendarMonth - Moves the calendar to an adjacent month.
- * @property {DatesPagePropsOnToday} onToday - Selects today's date.
+ * @property shiftCalendarMonth - Moves the calendar to an adjacent month.
+ * @property onToday - Selects today's date.
  * @property {CalendarPanelProps["onMarkDate"]} onMarkDate - Marks a date in the calendar.
  * @property {CalendarPanelProps["onDropDate"]} onDropDate - Handles dropping a task on a date.
- * @property {DatesPagePropsOnLeaveDate} onLeaveDate - Handles ending a drag over a date.
+ * @property onLeaveDate - Handles ending a drag over a date.
  * @property {CalendarPanelProps["onTaskDragStart"]} onTaskDragStart - Starts dragging a task from the calendar.
  * @property {CalendarPanelProps["onTaskDragEnd"]} onTaskDragEnd - Ends dragging a task in the calendar.
  * @property {CalendarPanelProps["onTaskOpen"]} onTaskOpen - Opens task details.

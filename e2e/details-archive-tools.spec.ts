@@ -8,7 +8,6 @@ import { expect, test } from "./fixtures";
  */
 const unique = (label: string) => `${label} ${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
 
-/** Edit task details and copy the full Markdown export to the clipboard. */
 test("edits task details and copies all Markdown", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   page.on("dialog", (dialog) => dialog.accept());
@@ -177,7 +176,6 @@ test("edits task details and copies all Markdown", async ({ context, page }) => 
   expect(copiedMarkdown.match(/^# /gm)).toHaveLength(1);
 });
 
-/** Renaming a project and section preserves their visual order after reload. */
 test("renaming projects and sections preserves their visual order after reload", async ({ page }) => {
   await page.goto("/");
   const projectNames = [unique("Order project A"), unique("Order project B"), unique("Order project C")];
@@ -249,7 +247,6 @@ test("renaming projects and sections preserves their visual order after reload",
   await verifySectionOrder();
 });
 
-/** Project archiving and restoration work alongside table browsing. */
 test("archives and restores projects, and views table records", async ({ page }) => {
   await page.goto("/");
   const title = unique("Archive candidate");

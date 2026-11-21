@@ -9,8 +9,6 @@ import { createMemoryUserRepository } from "./users";
 afterEach(cleanupTestResources);
 
 describe("settings and session authentication", () => {
-  /** The cookie security flag is enabled in production but can be disabled locally. */
-  /** Session cookies use Secure in production, with an override for local HTTP. */
   it("keeps production session cookies secure unless explicitly disabled for local HTTP", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -46,8 +44,6 @@ describe("settings and session authentication", () => {
     expect(httpLogin.headers["set-cookie"][0]).not.toMatch(/; Secure/i);
   });
 
-  /** The test reset API is unavailable unless explicitly enabled outside production. */
-  /** The reset API is available only when explicitly allowed in a non-production environment. */
   it("keeps the Playwright reset API unavailable unless explicitly enabled outside production", async () => {
     const agent = await createTestAgent();
     await agent.post("/api/playwright/reset").expect(404);
@@ -63,8 +59,6 @@ describe("settings and session authentication", () => {
     );
   });
 
-  /** The API requires an administrator password to be configured before normal use. */
-  /** The application blocks protected routes until the administrator sets a password. */
   it("blocks API access until the administrator configures a password", async () => {
     const server = await createTestServer(createApp());
     const agent = request(server);
@@ -84,8 +78,6 @@ describe("settings and session authentication", () => {
     await agent.post("/tasks").send({ title: "Anonymous task" }).expect(503);
   });
 
-  /** Verify the default setting and that it can be saved through the API. */
-  /** Deletion confirmation is enabled by default and saved in user settings. */
   it("defaults to delete confirmations and allows updating that preference", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -115,8 +107,6 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.settings.confirmDelete).toBe(false));
   });
 
-  /** The Inbox description is stored separately for the current user. */
-  /** The Inbox description persists across requests. */
   it("persists the Inbox description", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -144,8 +134,6 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.description).toBe("Inbox notes"));
   });
 
-  /** Private routes are available through the user's HttpOnly cookie. */
-  /** The HttpOnly cookie grants access only to the current session owner's data. */
   it("protects app routes with a user-specific HttpOnly session cookie", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -176,8 +164,6 @@ describe("settings and session authentication", () => {
     await agent.get("/tasks").expect(401);
   });
 
-  /** Users can update their own details, while login names remain unique. */
-  /** Users can change their username and password as long as the username remains unique. */
   it("allows users to update their own username and password with unique usernames", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -233,8 +219,6 @@ describe("settings and session authentication", () => {
       .expect(({ body }) => expect(body.settings.username).toBe("newadmin"));
   });
 
-  /** Only administrators can manage accounts, and the last administrator cannot be deleted. */
-  /** Account management is restricted to administrators and protects the last one. */
   it("allows only administrators to manage accounts and preserves an administrator", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([
@@ -261,8 +245,6 @@ describe("settings and session authentication", () => {
     await agent.delete("/users/00000000-0000-4000-8000-000000000001").expect(409);
   });
 
-  /** Verify that all account operations and sign-in accept non-empty passwords. */
-  /** User creation, password changes, and sign-in accept any non-empty password. */
   it("accepts any non-empty password when creating users, updating passwords, and logging in", async () => {
     const passwordHash = await hashPassword("administrator-password");
     const userRepository = createMemoryUserRepository([
@@ -296,8 +278,6 @@ describe("settings and session authentication", () => {
     await updatedPasswordLogin.get("/tasks").expect(200);
   });
 
-  /** Tasks belonging to one account must not be visible to another. */
-  /** One user's requests must not expose or modify another user's tasks. */
   it("keeps task data isolated by user", async () => {
     const passwordHash = await hashPassword("a-long-test-password");
     const userRepository = createMemoryUserRepository([

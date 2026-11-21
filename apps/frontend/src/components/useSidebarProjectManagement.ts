@@ -9,21 +9,6 @@ import { appendById, removeById, replaceById } from "../queryData";
 import { projectQueryKey, sectionQueryKey, taskQueryKey } from "../queryKeys";
 
 /**
- * @callback SidebarProjectManagementOptionsOnInboxSelect
- * @returns {void}
- */
-
-/**
- * @callback SidebarProjectManagementOptionsOnProjectSelect
- * @param {ProjectId} projectId
- * @returns {void}
- */
-
-/**
- * @callback SidebarProjectManagementOptionsCloseSidebar
- * @returns {void}
- */
-/**
  * API and current state required for project tree operations.
  *
  * @typedef {Object} SidebarProjectManagementOptions
@@ -31,9 +16,9 @@ import { projectQueryKey, sectionQueryKey, taskQueryKey } from "../queryKeys";
  * @property {Array<Project>} activeProjects - User's active projects.
  * @property {ProjectId | null} selectedProjectId - ID of the selected project.
  * @property {boolean} [confirmDelete] - Whether to ask for confirmation before deleting.
- * @property {SidebarProjectManagementOptionsOnInboxSelect} [onInboxSelect] - Navigates to the Inbox.
- * @property {SidebarProjectManagementOptionsOnProjectSelect} [onProjectSelect] - Opens a project.
- * @property {SidebarProjectManagementOptionsCloseSidebar} closeSidebar - Closes the sidebar.
+ * @property [onInboxSelect] - Navigates to the Inbox.
+ * @property [onProjectSelect] - Opens a project.
+ * @property closeSidebar - Closes the sidebar.
  */
 type SidebarProjectManagementOptions = {
   api: ApplicationApi | null;
