@@ -1,74 +1,83 @@
 import { z } from "zod";
 
-/** Validates task creation data and supplies empty default context values. */
+/** Validates task creation data and supplies empty default context values.
+ * @property {string} title - Required display title for the task.
+ * @property {string | null} parentId - Parent task, or `null` to place the task at the tree root.
+ * @property {string | null} projectId - Owning project, or `null` for the Inbox.
+ * @property {string | null} sectionId - Owning section, or `null` for the project root.
+ */
 export const createTaskSchema = z.object({
-  /** New task title with surrounding whitespace removed. */
   title: z.string().trim().min(1),
-  /** Parent task ID, or the default root value. */
   parentId: z.string().nullable().default(null),
-  /** Project ID, or the Inbox by default. */
   projectId: z.string().nullable().default(null),
-  /** Section ID, or the project root by default. */
   sectionId: z.string().nullable().default(null),
 });
 
-/** Validates project or subproject data before creation. */
+/** Validates project or subproject data before creation.
+ * @property {string} title - Required project title.
+ * @property {string | null} parentId - Parent project, or `null` for a top-level project.
+ */
 export const createProjectSchema = z.object({
-  /** Non-empty title for the new project. */
   title: z.string().trim().min(1),
-  /** Parent project, or `null` for a top-level project. */
   parentId: z.string().nullable().default(null),
 });
-/** Validates a new section title and its project. */
+/** Validates a new section title and its project.
+ * @property {string} title - Required section title.
+ * @property {string | null} projectId - Owning project, or `null` for an Inbox section.
+ */
 export const createSectionSchema = z.object({
-  /** Non-empty section title. */
   title: z.string().trim().min(1),
-  /** Owning project, or the Inbox by default. */
   projectId: z.string().nullable().default(null),
 });
 
-/** Validates the username and password submitted at sign-in. */
+/** Validates the username and password submitted at sign-in.
+ * @property {string} username - Account name used to look up the signing-in user.
+ * @property {string} password - Password submitted for authentication.
+ */
 export const loginSchema = z.object({
-  /** Login name with surrounding whitespace removed. */
   username: z.string().trim().min(1).max(64),
-  /** Plaintext password used to verify the stored hash. */
   password: z.string().min(1),
 });
 
-/** Validates user settings. */
+/** Validates user settings.
+ * @property {boolean} confirmDelete - Whether destructive actions require confirmation.
+ */
 export const updateSettingsSchema = z.object({
-  /** Whether to ask for confirmation before deleting. */
   confirmDelete: z.boolean(),
 });
-/** Validates a username or password change and rejects an empty update. */
+/** Validates optional account changes and rejects a request with no changes.
+ * @property {string} [username] - Replacement account name.
+ * @property {string} [password] - Replacement password, which the server hashes before storing.
+ */
 export const updateAccountSchema = z
   .object({ username: z.string().trim().min(1).max(64).optional(), password: z.string().min(1).optional() })
-  /** Require at least one field so the request changes the account. */
   .refine((patch) => Object.keys(patch).length > 0);
-/** Validates a new account created by an administrator. */
+/** Validates a new account created by an administrator.
+ * @property {string} username - Account name for the new user.
+ * @property {string} password - Initial password, hashed by the server before storage.
+ * @property {boolean} isAdmin - Whether the account receives administrator privileges; defaults to false.
+ */
 export const createUserSchema = z.object({
-  /** Unique username for the new account. */
   username: z.string().trim().min(1).max(64),
-  /** Plaintext password that the backend hashes before storing. */
   password: z.string().min(1),
-  /** Whether to grant administrator privileges to the new account. */
   isAdmin: z.boolean().default(false),
 });
-/** Validates a set of changes to an existing account. */
+/** Validates optional changes to an existing account and rejects an empty update.
+ * @property {string} [username] - Replacement account name.
+ * @property {string} [password] - Replacement password, hashed by the server before storage.
+ * @property {boolean} [isAdmin] - Replacement administrator role.
+ */
 export const updateUserSchema = z
   .object({
-    /** New username, if it is changing. */
     username: z.string().trim().min(1).max(64).optional(),
-    /** New password before server-side hashing. */
     password: z.string().min(1).optional(),
-    /** New user role, if the administrator is changing it. */
     isAdmin: z.boolean().optional(),
   })
-  /** Reject an empty PATCH so each accepted request changes at least one field. */
   .refine((patch) => Object.keys(patch).length > 0);
-/** Validates the Inbox description and limits the amount of stored text. */
+/** Validates the Inbox description and limits the amount of stored text.
+ * @property {string} description - Descriptive text shown for the user's Inbox.
+ */
 export const inboxDescriptionSchema = z.object({
-  /** Description text, limited to 20,000 characters. */
   description: z.string().max(20000),
 });
 
@@ -79,7 +88,6 @@ export const inboxDescriptionSchema = z.object({
  * @returns The parsed JSON body or an empty object.
  */
 export const parseJson = async (request: Request) => {
-  /** Routes may accept requests without a body, so check the header first. */
   const contentType = request.headers.get("content-type") ?? "";
 
   if (!contentType.includes("application/json")) {

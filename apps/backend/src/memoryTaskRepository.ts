@@ -151,7 +151,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Creates a nested project under an existing parent. */
     createSubproject: async (title, parentId) => {
-      /** A subproject cannot be created when its parent does not exist. */
       if (!projects.some((project) => project.id === parentId)) throw new Error("Parent project not found");
       const createdAt = now();
       const siblings = projects
@@ -230,7 +229,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Updates a project's supported fields and modification time. */
     updateProject: async (id, patch) => {
-      /** A missing project cannot be updated. */
       const existing = projects.find((project) => project.id === id);
 
       if (existing === undefined) {
@@ -325,7 +323,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Updates whether a project is archived. */
     setProjectArchived: async (id, archived) => {
-      /** Update the archive flag without changing the project contents. */
       const existing = projects.find((project) => project.id === id);
       if (existing === undefined) return null;
       const updated = { ...existing, archived, updatedAt: now() };
@@ -367,7 +364,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Creates a section in the Inbox or the specified project. */
     createSection: async (title, projectId) => {
-      /** Give the new section a key after the project's last section. */
       const createdAt = now();
       const siblings = sections.filter((section) => section.projectId === projectId);
       const section = {
@@ -385,7 +381,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Renames an existing section. */
     updateSection: async (id, title) => {
-      /** Preserve the other section fields and update only its title and modification time. */
       const existing = sections.find((section) => section.id === id);
 
       if (existing === undefined) {
@@ -446,7 +441,6 @@ export const createMemoryTaskRepository = (initialTasks: Array<Task> = []): Task
     },
     /** Applies a partial update to an existing task. */
     patch: async (id, patch) => {
-      /** For a partial update, preserve the original task and carry over unchanged fields. */
       const existing = tasks.find((task) => task.id === id);
 
       if (existing === undefined) {
