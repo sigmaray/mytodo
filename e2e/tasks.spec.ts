@@ -197,6 +197,57 @@ test("moves a selected task group to a project with drag and drop", async ({ pag
   await expect(page.getByRole("button", { name: secondTitle, exact: true })).toBeVisible();
 });
 
+test("reorders root tasks up and down by one position inside a project", async ({ page }, testInfo) => {
+  const suffix = `${testInfo.workerIndex}-${Date.now()}`;
+  const projectTitle = `Task reorder project ${suffix}`;
+  const sourceTitle = `Task reorder source ${suffix}`;
+  const targetTitle = `Task reorder target ${suffix}`;
+  const nextTitle = `Task reorder next ${suffix}`;
+  const api = createE2eApi(page.request);
+  const project = await api.createProject(projectTitle);
+  const target = await api.createTask(targetTitle, { projectId: project.id });
+  const source = await api.createTask(sourceTitle, { projectId: project.id });
+  const next = await api.createTask(nextTitle, { projectId: project.id });
+  const seedOrderResponse = await page.request.post("/tools-api/query", {
+    data: {
+      sql: `UPDATE tasks SET lexical_order = CASE id WHEN '${target.id}' THEN '000' WHEN '${source.id}' THEN '000U' WHEN '${next.id}' THEN '000' END WHERE id IN ('${target.id}', '${source.id}', '${next.id}')`,
+    },
+  });
+  expect(seedOrderResponse.ok()).toBe(true);
+  await page.goto(`/?project=${encodeURIComponent(project.id)}`);
+
+  const order = async () =>
+    page
+      .locator("[aria-label$=' tasks'] > .task-list > .task-item > .task-row")
+      .evaluateAll((rows) => rows.map((row) => row.querySelector(".task-title")?.textContent?.trim()));
+  await expect.poll(order).toEqual([targetTitle, nextTitle, sourceTitle]);
+
+  const sourceRow = page
+    .locator(".task-row")
+    .filter({ has: page.getByRole("button", { name: sourceTitle, exact: true }) });
+  const targetRow = page
+    .locator(".task-row")
+    .filter({ has: page.getByRole("button", { name: targetTitle, exact: true }) });
+  await sourceRow.dragTo(targetRow, { targetPosition: { x: 80, y: 3 } });
+
+  await expect
+    .poll(async () => {
+      const rows = await order();
+      return rows.indexOf(sourceTitle) < rows.indexOf(targetTitle);
+    })
+    .toBe(true);
+
+  await sourceRow.dragTo(targetRow, { targetPosition: { x: 80, y: 36 } });
+  await expect.poll(order).toEqual([targetTitle, sourceTitle, nextTitle]);
+  await page.reload();
+  await expect
+    .poll(async () => {
+      const rows = await order();
+      return rows;
+    })
+    .toEqual([targetTitle, sourceTitle, nextTitle]);
+});
+
 test("toggles task selection with S in any layout and exits with Escape", async ({ page }, testInfo) => {
   const title = `Selection shortcut ${testInfo.workerIndex}-${Date.now()}`;
   await createE2eApi(page.request).createTask(title);

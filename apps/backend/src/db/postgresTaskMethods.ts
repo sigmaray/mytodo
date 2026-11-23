@@ -36,7 +36,11 @@ export const createPostgresTaskMethods = (
 ): Pick<TaskRepository, "list" | "create" | "patch" | "addComment" | "move" | "delete"> => ({
   /** Loads the user's tasks and related comments in a stable order. */
   list: async () => {
-    const rows = await db.select().from(tasksTable).where(eq(tasksTable.userId, userId)).orderBy(rowOrder);
+    const rows = await db
+      .select()
+      .from(tasksTable)
+      .where(eq(tasksTable.userId, userId))
+      .orderBy(...rowOrder);
     const taskIds = rows.map((row) => row.id);
     const commentRows =
       taskIds.length === 0
@@ -245,19 +249,46 @@ export const createPostgresTaskMethods = (
             AND parent_id IS NOT DISTINCT FROM ${move.parentId}
             AND project_id IS NOT DISTINCT FROM ${move.projectId}
             AND section_id IS NOT DISTINCT FROM ${move.sectionId}
-          ORDER BY lexical_order COLLATE "C"
+          ORDER BY lexical_order COLLATE "C", created_at, id
         `;
       const beforeIndex =
         move.beforeId === null ? -1 : siblings.findIndex((task) => task.id === move.beforeId);
       const afterIndex = move.afterId === null ? -1 : siblings.findIndex((task) => task.id === move.afterId);
+      const insertionIndex =
+        beforeIndex >= 0 ? beforeIndex : afterIndex >= 0 ? afterIndex + 1 : siblings.length;
       const low =
         afterIndex >= 0
           ? (siblings[afterIndex]?.lexicalOrder ?? null)
-          : move.beforeId === null && move.afterId === null
-            ? (siblings.at(-1)?.lexicalOrder ?? null)
+          : beforeIndex >= 0
+            ? (siblings[beforeIndex - 1]?.lexicalOrder ?? null)
+            : move.beforeId === null && move.afterId === null
+              ? (siblings.at(-1)?.lexicalOrder ?? null)
+              : null;
+      const high =
+        beforeIndex >= 0
+          ? (siblings[beforeIndex]?.lexicalOrder ?? null)
+          : afterIndex >= 0
+            ? (siblings[afterIndex + 1]?.lexicalOrder ?? null)
             : null;
-      const high = beforeIndex >= 0 ? (siblings[beforeIndex]?.lexicalOrder ?? null) : null;
-      const lexicalOrder = generateLexicalOrder(low, high);
+      let lexicalOrder = generateLexicalOrder(low, high);
+      if ((low !== null && lexicalOrder <= low) || (high !== null && lexicalOrder >= high)) {
+        /** Duplicate or exhausted neighboring keys need one local reindex to create an insertion gap. */
+        let previousOrder: string | null = null;
+        const orderedIds = siblings.map((task) => task.id);
+        orderedIds.splice(insertionIndex, 0, id);
+        for (const siblingId of orderedIds) {
+          const nextOrder = generateLexicalOrder(previousOrder, null);
+          if (siblingId === id) {
+            lexicalOrder = nextOrder;
+          } else {
+            await transaction`
+              UPDATE tasks SET lexical_order = ${nextOrder}
+              WHERE id = ${siblingId} AND user_id = ${userId}
+            `;
+          }
+          previousOrder = nextOrder;
+        }
+      }
       const rows = await transaction<{ id: string }[]>`
           UPDATE tasks SET parent_id = ${move.parentId}, project_id = ${move.projectId}, section_id = ${move.sectionId}, lexical_order = ${lexicalOrder}, updated_at = now()
           WHERE id = ${id} AND user_id = ${userId} RETURNING id

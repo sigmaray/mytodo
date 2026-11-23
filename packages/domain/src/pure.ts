@@ -21,7 +21,7 @@ const compareTaskOrder = (left: Task, right: Task) =>
     ? -1
     : left.lexicalOrder > right.lexicalOrder
       ? 1
-      : left.createdAt.localeCompare(right.createdAt);
+      : left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id);
 
 /**
  * Builds a tree node from a task’s fields and its prepared child nodes.
@@ -103,7 +103,17 @@ export const generateLexicalOrder = (before: string | null, after: string | null
     return findMiddle(index + 1, `${prefix}${left[index] ?? firstDigit}`);
   };
 
-  return findMiddle(0, "");
+  const middle = findMiddle(0, "");
+
+  /**
+   * Repeated front insertions can leave a boundary made only of minimum digits.
+   * In that case a prefix of the boundary is the only valid key before it.
+   */
+  if (before === null && after !== null && middle >= after && after.length > 0) {
+    return after.slice(0, -1);
+  }
+
+  return middle;
 };
 
 /**

@@ -98,8 +98,12 @@ export const toSection = (row: SectionRow): Section => ({
   updatedAt: normalizeDate(row.updatedAt),
 });
 
-/** SQL ordering for tasks by the ASCII order of the lexicalOrder key. */
-export const rowOrder = asc(sql`${tasksTable.lexicalOrder} COLLATE "C"`);
+/** SQL ordering for tasks by their lexical key and stable tie-breakers. */
+export const rowOrder = [
+  asc(sql`${tasksTable.lexicalOrder} COLLATE "C"`),
+  asc(tasksTable.createdAt),
+  asc(tasksTable.id),
+];
 /** SQL ordering for projects using the same order as the domain logic. */
 export const projectOrder = asc(sql`${projectsTable.lexicalOrder} COLLATE "C"`);
 /** SQL ordering for sections by their lexical key. */
@@ -172,7 +176,7 @@ export const findSiblingOrder = async (
         nullableEq(tasksTable.sectionId, sectionId),
       ),
     )
-    .orderBy(rowOrder);
+    .orderBy(...rowOrder);
   /** A missing neighbor does not set a boundary; with no neighbors, append the new item. */
   const successorIndex = beforeId === null ? -1 : siblings.findIndex((task) => task.id === beforeId);
   const predecessorIndex = afterId === null ? -1 : siblings.findIndex((task) => task.id === afterId);

@@ -223,7 +223,7 @@ export const createPostgresProjectMethods = (
       .select()
       .from(tasksTable)
       .where(and(eq(tasksTable.projectId, id), eq(tasksTable.userId, userId)))
-      .orderBy(rowOrder);
+      .orderBy(...rowOrder);
     const createdAt = new Date();
     const newProjectId = crypto.randomUUID();
     const copiedProject = await db

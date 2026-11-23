@@ -13,3 +13,4 @@ playwright-report/
 dumps/
 v-attachments/
 v-postgres/
+*.dump

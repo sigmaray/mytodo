@@ -56,6 +56,13 @@ describe("generateLexicalOrder", () => {
     expect(generateLexicalOrder(null, "1") < "1").toBe(true);
     expect(generateLexicalOrder("z", null) > "z").toBe(true);
   });
+
+  it("creates a valid key before a boundary exhausted by repeated front inserts", () => {
+    const beforeFirstTask = generateLexicalOrder(null, "000");
+
+    expect(beforeFirstTask).toBe("00");
+    expect(beforeFirstTask < "000").toBe(true);
+  });
 });
 
 describe("computeDropPlacement", () => {
